@@ -47,7 +47,7 @@ export function salesApiConfig() {
   const token = process.env.SALES_API_TOKEN?.trim() ?? "";
   return {
     url: process.env.SALES_API_URL?.trim() || "http://uaagrostore.com/APPs/api.php",
-    companyId: process.env.SALES_API_COMPANY_ID?.trim() || "2",
+    companyId: process.env.SALES_API_COMPANY_ID?.trim() || process.env.ERP_COMPANY_ID?.trim() || "2",
     token,
     ready: token.length > 0,
   };

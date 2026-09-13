@@ -7,7 +7,7 @@ const CHANGE_PW = "/change-password";
 
 // Public API endpoints that external services call without a session: the Meta WhatsApp webhook and
 // the cron scheduler (the sales-sync route checks its own CRON_SECRET bearer token).
-const PUBLIC_PREFIXES = ["/api/whatsapp/webhook", "/api/cron/"];
+const PUBLIC_PREFIXES = ["/api/whatsapp/webhook", "/api/cron/", "/api/health"];
 
 // Campaigners (part-time call team) are locked to the Campaigns page + the Training help + the forced
 // password change. Every other route redirects them to Campaigns.

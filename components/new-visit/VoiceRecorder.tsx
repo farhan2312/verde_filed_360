@@ -174,7 +174,7 @@ export function VoiceRecorder({
         <button
           type="button"
           onClick={start}
-          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#BDBDBD] px-4 py-3 text-[13px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]"
+          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#BDBDBD] px-4 py-3 text-[13px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]"
         >
           <span aria-hidden>🎙️</span> Record Voice Note
         </button>

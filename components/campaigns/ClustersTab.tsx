@@ -56,7 +56,7 @@ export function ClustersTab({ initial, zones, crops, pests, stores, canChain, ca
             : `Clusters are dynamic and built by the central team. Counts below are ${scopeLabel ? `your district (${scopeLabel})` : "your"} members only.`}
         </div>
         {canCreate && (
-          <button type="button" onClick={() => setBuilding(true)} className="rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white">+ New cluster</button>
+          <button type="button" onClick={() => setBuilding(true)} className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white">+ New cluster</button>
         )}
       </div>
 
@@ -69,7 +69,7 @@ export function ClustersTab({ initial, zones, crops, pests, stores, canChain, ca
               <div className="flex items-center gap-2">
                 <span className="text-[13.5px] font-bold text-[#1A1C1A]">{c.name}</span>
                 <span className="rounded-full bg-[#F5F7F5] px-2 py-0.5 text-[10px] font-semibold text-[#616161]">{ORIGIN_LABEL[c.origin] ?? c.origin}</span>
-                {c.mode === "dynamic" && <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10px] font-semibold text-[#678722]">● live</span>}
+                {c.mode === "dynamic" && <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10px] font-semibold text-[#7DA02E]">● live</span>}
               </div>
               <div className="mt-0.5 truncate text-[11.5px] text-[#9E9E9E]" title={c.description}>{c.description}</div>
               <div className="mt-0.5 text-[10.5px] text-[#BDBDBD]">
@@ -77,9 +77,9 @@ export function ClustersTab({ initial, zones, crops, pests, stores, canChain, ca
                 {c.createdAt ? ` · ${fmtDate(c.createdAt)}` : ""}
               </div>
             </div>
-            <div className="text-[13px] font-bold text-[#678722]">{n(c.count)}</div>
+            <div className="text-[13px] font-bold text-[#7DA02E]">{n(c.count)}</div>
             <div className="text-[11px] text-[#9E9E9E]">farmers</div>
-            <button type="button" onClick={() => setViewing(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#678722] hover:bg-[#F3F8E6]">View</button>
+            <button type="button" onClick={() => setViewing(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">View</button>
             {canCreate && (
               <button type="button" onClick={() => askRemove(c)} disabled={pending} className="rounded-[8px] bg-[#FDECEA] px-3 py-1.5 text-[12px] font-semibold text-[#C62828] hover:bg-[#F9DCD8] disabled:opacity-50">Delete</button>
             )}
@@ -167,7 +167,7 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
 
   return (
     <Modal open onClose={createdId != null ? onCreated : onClose} className="max-w-[560px]">
-      <ModalHeader eyebrow="Cluster" eyebrowColor="#678722" title="Build a cluster" subtitle="Pick filters — membership stays live" onClose={createdId != null ? onCreated : onClose} />
+      <ModalHeader eyebrow="Cluster" eyebrowColor="#7DA02E" title="Build a cluster" subtitle="Pick filters — membership stays live" onClose={createdId != null ? onCreated : onClose} />
       <div className="max-h-[68vh] overflow-y-auto px-5 py-4">
         {createdId != null ? (
           <ChainNext message={`Cluster "${name.trim()}" created`} nextLabel="Next: create a project →"
@@ -192,7 +192,7 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
             {([["any", "Any source"], ["sales", "Bought"], ["visit", "Seen on visit"]] as const).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setCropSource(k)}
                 className="rounded-md px-2.5 py-0.5 text-[10.5px] font-semibold transition-colors"
-                style={{ background: cropSource === k ? "#fff" : "transparent", color: cropSource === k ? "#678722" : "#9E9E9E", boxShadow: cropSource === k ? "0 1px 2px rgba(0,0,0,0.12)" : "none" }}>
+                style={{ background: cropSource === k ? "#fff" : "transparent", color: cropSource === k ? "#7DA02E" : "#9E9E9E", boxShadow: cropSource === k ? "0 1px 2px rgba(0,0,0,0.12)" : "none" }}>
                 {l}
               </button>
             ))}
@@ -209,7 +209,7 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
           {cropOpts.filter((c) => !crops.includes(c.crop)).map((c) => <option key={c.crop} value={c.crop}>{cropLabel(c.crop)} ({c.count.toLocaleString("en-IN")})</option>)}
         </select>
         <div className="mb-3 flex flex-wrap gap-1.5">{crops.map((c) => (
-          <button key={c} type="button" onClick={() => toggle(crops, setCrops, c)} className="rounded-full border-[1.5px] border-[#678722] bg-[#F3F8E6] px-3 py-1 text-[12px] font-semibold text-[#678722]">{cropLabel(c)} ✕</button>
+          <button key={c} type="button" onClick={() => toggle(crops, setCrops, c)} className="rounded-full border-[1.5px] border-[#7DA02E] bg-[#F5F9EA] px-3 py-1 text-[12px] font-semibold text-[#7DA02E]">{cropLabel(c)} ✕</button>
         ))}</div>
 
         <div className="mb-1.5 text-[11px] font-semibold uppercase text-[#9E9E9E]">Target pest / disease (any of)</div>
@@ -232,7 +232,7 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
         </select>
         {zoneList.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-1.5">{zoneList.map((z) => (
-            <button key={z} type="button" onClick={() => toggleZone(z)} className="rounded-full border-[1.5px] border-[#678722] bg-[#F3F8E6] px-3 py-1 text-[12px] font-semibold text-[#678722]">{z} ✕</button>
+            <button key={z} type="button" onClick={() => toggleZone(z)} className="rounded-full border-[1.5px] border-[#7DA02E] bg-[#F5F9EA] px-3 py-1 text-[12px] font-semibold text-[#7DA02E]">{z} ✕</button>
           ))}</div>
         )}
 
@@ -254,19 +254,19 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
         <input className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-2.5 py-2 text-[13px]" value={q} onChange={(e) => setQ(e.target.value)} placeholder="name / village / mobile" />
 
         {/* WhatsApp opt-in */}
-        <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-lg border border-[#E4EFC9] bg-[#F1F8F1] px-3 py-2 text-[12.5px] font-semibold text-[#516A1B]">
+        <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-lg border border-[#E9F2CF] bg-[#F1F8F1] px-3 py-2 text-[12.5px] font-semibold text-[#66852A]">
           <input type="checkbox" checked={waOptIn} onChange={(e) => setWaOptIn(e.target.checked)} style={{ accentColor: "#0B8A3D" }} />
           ⚡ WhatsApp opted-in only
         </label>
 
         <div className="mt-4 flex items-center justify-between rounded-[10px] bg-[#F5F7F5] px-4 py-3">
           <div className="text-[12px] text-[#616161]">Matches</div>
-          <div className="text-[18px] font-bold text-[#678722]">{!hasAny ? "—" : counting ? "…" : n(count ?? 0)}</div>
+          <div className="text-[18px] font-bold text-[#7DA02E]">{!hasAny ? "—" : counting ? "…" : n(count ?? 0)}</div>
         </div>
         {err && <div className="mt-2 text-[12px] text-[#C62828]">{err}</div>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
-          <button type="button" onClick={save} disabled={saving || !name.trim() || !hasAny || !count} className="rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Create cluster"}</button>
+          <button type="button" onClick={save} disabled={saving || !name.trim() || !hasAny || !count} className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Create cluster"}</button>
         </div>
         </>)}
       </div>
@@ -293,7 +293,7 @@ function MembersModal({ cluster, onClose }: { cluster: ClusterVM; onClose: () =>
 
   return (
     <Modal open onClose={onClose} className="max-w-[900px]">
-      <ModalHeader eyebrow={cluster.description} eyebrowColor="#678722" title={cluster.name}
+      <ModalHeader eyebrow={cluster.description} eyebrowColor="#7DA02E" title={cluster.name}
         subtitle={`${n(cluster.count)} farmers · live${cluster.createdBy ? ` · created by ${cluster.createdBy}${cluster.createdByCode ? ` (${cluster.createdByCode})` : ""}` : ""}${cluster.createdAt ? ` · ${fmtDate(cluster.createdAt)}` : ""}`}
         onClose={onClose} />
       <div className="flex items-center justify-between gap-2 border-b border-[#F0F0F0] px-5 py-2.5">
@@ -301,7 +301,7 @@ function MembersModal({ cluster, onClose }: { cluster: ClusterVM; onClose: () =>
         <div className="flex items-center gap-2">
           {exportErr && <span className="text-[11px] font-semibold text-[#C62828]">{exportErr}</span>}
           <button type="button" onClick={doExport} disabled={exporting || !data}
-            className="inline-flex items-center gap-1.5 rounded-[9px] bg-[#516A1B] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#678722] disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 rounded-[9px] bg-[#66852A] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#7DA02E] disabled:opacity-50">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
             {exporting ? "Exporting…" : "Export Excel"}
           </button>
@@ -323,7 +323,7 @@ function MembersModal({ cluster, onClose }: { cluster: ClusterVM; onClose: () =>
                       <span title={f.crops.join(", ")} className="cursor-default">
                         {f.crops.slice(0, 3).join(", ")}
                         {f.crops.length > 3 && (
-                          <span className="ml-1 inline-block whitespace-nowrap rounded bg-[#EEF3EE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#678722]">+{f.crops.length - 3} more</span>
+                          <span className="ml-1 inline-block whitespace-nowrap rounded bg-[#EEF3EE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#7DA02E]">+{f.crops.length - 3} more</span>
                         )}
                       </span>
                     )}

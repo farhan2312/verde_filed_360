@@ -9,14 +9,14 @@ export const SEGMENT_LABELS = [
 export type SegmentLabel = (typeof SEGMENT_LABELS)[number];
 
 export const SEGMENT_COLORS: Record<SegmentLabel, string> = {
-  "High Value": "#678722",
+  "High Value": "#7DA02E",
   "Medium Value": "#1565C0",
   "New/Low": "#D4881F",
   Dormant: "#9E9E9E",
 };
 
 export const SEGMENT_BGS: Record<SegmentLabel, string> = {
-  "High Value": "#F3F8E6",
+  "High Value": "#F5F9EA",
   "Medium Value": "#E3F2FD",
   "New/Low": "#FEF6E9",
   Dormant: "#F5F5F5",
@@ -49,7 +49,7 @@ export const LEAD_STATUS_COLORS: Record<LeadStatusLabel, string> = {
   New: "#D4881F",
   Contacted: "#1565C0",
   "Follow-up": "#7B1FA2",
-  Converted: "#678722",
+  Converted: "#7DA02E",
   Dormant: "#9E9E9E",
 };
 

@@ -9,7 +9,7 @@
     font-family: var(--font-dm-sans), system-ui, sans-serif;
   }
   ::selection {
-    background: #e4efc9;
+    background: #e9f2cf;
   }
 }
 
@@ -29,7 +29,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #678722;
+    background: #7DA02E;
     cursor: pointer;
   }
   input[type="range"]::-moz-range-thumb {
@@ -37,7 +37,7 @@
     height: 20px;
     border: none;
     border-radius: 50%;
-    background: #678722;
+    background: #7DA02E;
     cursor: pointer;
   }
 
@@ -47,14 +47,14 @@
     width: 26px;
     height: 26px;
     background: #ffffff;
-    border: 2px solid #678722;
+    border: 2px solid #7DA02E;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
   }
   .nv-bucket-range::-moz-range-thumb {
     width: 26px;
     height: 26px;
     background: #ffffff;
-    border: 2px solid #678722;
+    border: 2px solid #7DA02E;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
   }
 }

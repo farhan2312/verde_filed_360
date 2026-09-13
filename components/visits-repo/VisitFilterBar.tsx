@@ -81,7 +81,7 @@ export function VisitFilterBar({
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Search farmer, phone, village, officer…"
           aria-label="Search visits"
-          className="w-[240px] rounded-lg border-[1.5px] border-[#E0E0E0] px-3 py-[6px] text-xs outline-none focus:border-[#678722]"
+          className="w-[240px] rounded-lg border-[1.5px] border-[#E0E0E0] px-3 py-[6px] text-xs outline-none focus:border-[#7DA02E]"
         />
         <div className="w-px h-6 bg-[#F0F0F0] mx-1" />
 
@@ -95,9 +95,9 @@ export function VisitFilterBar({
               onClick={() => setPeriod(p.key)}
               className="px-[14px] py-[6px] rounded-[20px] text-xs font-semibold cursor-pointer transition-all hover:opacity-85"
               style={{
-                background: active ? "#262250" : "white",
+                background: active ? "#5C7D22" : "white",
                 color: active ? "white" : "#616161",
-                border: `1.5px solid ${active ? "#262250" : "#E0E0E0"}`,
+                border: `1.5px solid ${active ? "#5C7D22" : "#E0E0E0"}`,
               }}
             >
               {p.label}

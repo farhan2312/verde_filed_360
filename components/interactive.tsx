@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { CloseIcon } from "./icons";
 
-/* ── Toggle switch (design: on #678722 / off #BDBDBD, knob slides) ── */
+/* ── Toggle switch (design: on #7DA02E / off #BDBDBD, knob slides) ── */
 export function Toggle({
   checked,
   onChange,
@@ -31,7 +31,7 @@ export function Toggle({
     >
       <span
         className="relative h-[26px] w-[46px] rounded-full transition-colors"
-        style={{ background: checked ? "#678722" : "#BDBDBD" }}
+        style={{ background: checked ? "#7DA02E" : "#BDBDBD" }}
       >
         <span
           className="absolute top-[3px] h-5 w-5 rounded-full bg-white shadow transition-all"
@@ -40,7 +40,7 @@ export function Toggle({
       </span>
       <span
         className="text-[12px] font-semibold"
-        style={{ color: checked ? "#678722" : "#9E9E9E" }}
+        style={{ color: checked ? "#7DA02E" : "#9E9E9E" }}
       >
         {checked ? labels.on : labels.off}
       </span>

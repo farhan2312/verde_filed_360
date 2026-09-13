@@ -70,7 +70,7 @@ export function FarmerFilterBar({
   const toggle = (list: string[], key: string) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
 
   const anyFilter = selected.store || selected.zone || selected.crop || selected.pest || selected.spend || selected.values.length || selected.lifecycles.length || selected.wa;
-  const select = "rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[9px] text-[12.5px] text-[#424242] outline-none focus:border-[#678722]";
+  const select = "rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[9px] text-[12.5px] text-[#424242] outline-none focus:border-[#7DA02E]";
 
   const ChipGroup = ({ title, chips, dim }: { title: string; chips: SegChipVM[]; dim: "values" | "lifecycles" }) => (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -103,7 +103,7 @@ export function FarmerFilterBar({
           placeholder="Search by name, village, or mobile..."
           value={value}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="flex-1 max-w-[420px] px-[18px] py-[11px] border-[1.5px] border-[#E0E0E0] rounded-xl text-[13px] bg-white box-border outline-none focus:border-[#678722] focus:shadow-[0_0_0_3px_rgba(46,125,50,0.1)]"
+          className="flex-1 max-w-[420px] px-[18px] py-[11px] border-[1.5px] border-[#E0E0E0] rounded-xl text-[13px] bg-white box-border outline-none focus:border-[#7DA02E] focus:shadow-[0_0_0_3px_rgba(46,125,50,0.1)]"
         />
         <ChipGroup title={VALUE_TITLE} chips={valueChips} dim="values" />
         <ChipGroup title={LIFECYCLE_TITLE} chips={lifecycleChips} dim="lifecycles" />
@@ -130,7 +130,7 @@ export function FarmerFilterBar({
           ))}
         </select>
         <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border-[1.5px] px-3 py-[9px] text-[12.5px] font-semibold"
-          style={{ borderColor: selected.wa ? "#0B8A3D" : "#E0E0E0", background: selected.wa ? "#F1F8F1" : "white", color: selected.wa ? "#516A1B" : "#616161" }}>
+          style={{ borderColor: selected.wa ? "#0B8A3D" : "#E0E0E0", background: selected.wa ? "#F1F8F1" : "white", color: selected.wa ? "#66852A" : "#616161" }}>
           <input type="checkbox" checked={!!selected.wa} onChange={(e) => push({ wa: e.target.checked })} style={{ accentColor: "#0B8A3D" }} />
           ⚡ WhatsApp opted-in
         </label>

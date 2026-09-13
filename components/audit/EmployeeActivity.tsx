@@ -39,7 +39,7 @@ function Kpi({ label, value, color }: { label: string; value: number; color?: st
 }
 
 const PILLS: [Bucket, string][] = [["today", "Today"], ["week", "This Week"], ["month", "This Month"], ["all", "All time"]];
-const INPUT = "rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1 text-[12px] outline-none focus:border-[#678722]";
+const INPUT = "rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1 text-[12px] outline-none focus:border-[#7DA02E]";
 
 export function EmployeeActivity() {
   const [bucket, setBucket] = useState<Bucket>("month");
@@ -70,7 +70,7 @@ export function EmployeeActivity() {
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Total employees" value={data?.kpis.total ?? 0} />
-        <Kpi label="Active accounts" value={data?.kpis.activeAccounts ?? 0} color="#678722" />
+        <Kpi label="Active accounts" value={data?.kpis.activeAccounts ?? 0} color="#7DA02E" />
         <Kpi label="Inactive accounts" value={data?.kpis.inactiveAccounts ?? 0} color="#C62828" />
         <Kpi label="Active in period" value={data?.kpis.activeInPeriod ?? 0} color="#1565C0" />
       </div>
@@ -83,7 +83,7 @@ export function EmployeeActivity() {
           return (
             <button key={b} type="button" onClick={() => setBucket(b)}
               className="rounded-full border px-3 py-1 text-[11.5px] font-semibold"
-              style={{ borderColor: on ? "#678722" : "#E0E0E0", color: on ? "#678722" : "#616161", background: on ? "#F3F8E6" : "#fff" }}>{label}</button>
+              style={{ borderColor: on ? "#7DA02E" : "#E0E0E0", color: on ? "#7DA02E" : "#616161", background: on ? "#F5F9EA" : "#fff" }}>{label}</button>
           );
         })}
         <div className="flex items-center gap-1.5">
@@ -93,7 +93,7 @@ export function EmployeeActivity() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name / code / mobile…"
-            className="w-[200px] rounded-[8px] border border-[#E0E0E0] px-2.5 py-1 text-[12px] outline-none focus:border-[#678722]" />
+            className="w-[200px] rounded-[8px] border border-[#E0E0E0] px-2.5 py-1 text-[12px] outline-none focus:border-[#7DA02E]" />
           <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className={INPUT}>
             <option value="all">All statuses</option>
             <option value="active">Active only</option>
@@ -139,7 +139,7 @@ function Row({ e }: { e: EmployeeRow }) {
       <td className="px-4 py-3 text-[#616161]">{e.territory}</td>
       <td className="px-4 py-3">
         {e.active
-          ? <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10.5px] font-bold text-[#678722]">Active{e.activeInPeriod ? " · in period" : ""}</span>
+          ? <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10.5px] font-bold text-[#7DA02E]">Active{e.activeInPeriod ? " · in period" : ""}</span>
           : <span className="rounded-full bg-[#FDECEA] px-2 py-0.5 text-[10.5px] font-bold text-[#C62828]">Inactive</span>}
       </td>
       <td className="px-4 py-3 text-right font-bold text-[#1A1C1A]">{e.periodVisits.toLocaleString("en-IN")}</td>

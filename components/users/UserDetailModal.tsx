@@ -7,7 +7,7 @@ import { getUserActivity, type UserActivityRow } from "@/app/actions/users";
 import type { UserRow } from "./types";
 
 const ACTION_COLOR: Record<string, string> = {
-  CREATE: "#678722", UPDATE: "#1565C0", CONFIG: "#7B1FA2", EXPORT: "#00838F", DELETE: "#C62828", LOGIN: "#616161",
+  CREATE: "#7DA02E", UPDATE: "#1565C0", CONFIG: "#7B1FA2", EXPORT: "#00838F", DELETE: "#C62828", LOGIN: "#616161",
 };
 
 function Field({ label, value, accent }: { label: string; value: string; accent?: string }) {
@@ -36,7 +36,7 @@ export function UserDetailModal({ user, onClose }: { user: UserRow; onClose: () 
           <Field label="Role" value={user.roleLabel} accent={role.c} />
           <Field label="Store" value={user.storeName} />
           <Field label="District / territory" value={user.territory || user.zone} />
-          <Field label="Status" value={user.status} accent={user.status === "Active" ? "#678722" : "#9E9E9E"} />
+          <Field label="Status" value={user.status} accent={user.status === "Active" ? "#7DA02E" : "#9E9E9E"} />
           <Field label="Last active" value={user.lastActive} />
           <Field label="Visits (MTD)" value={user.visitsMtd} />
         </div>

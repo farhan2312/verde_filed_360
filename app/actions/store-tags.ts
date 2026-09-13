@@ -7,10 +7,10 @@ import { getScope, type Scope } from "@/lib/scope";
 
 export interface StoreTagVM { id: number; name: string; color: string; sortOrder: number }
 
-const PALETTE = ["#678722", "#1565C0", "#E65100", "#6A1B9A", "#00838F", "#C62828", "#EDA942"];
+const PALETTE = ["#7DA02E", "#1565C0", "#E65100", "#6A1B9A", "#00838F", "#C62828", "#EDA942"];
 const SEED: { name: string; color: string }[] = [
   { name: "Priority", color: "#C62828" },
-  { name: "High Potential", color: "#678722" },
+  { name: "High Potential", color: "#7DA02E" },
   { name: "Border", color: "#E65100" },
   { name: "Urban", color: "#1565C0" },
   { name: "New", color: "#6A1B9A" },

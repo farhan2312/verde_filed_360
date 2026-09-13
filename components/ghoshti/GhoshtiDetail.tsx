@@ -18,7 +18,7 @@ const fmtDateTime = (iso: string) =>
 
 const STATUS_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
   PENDING: { bg: "#FFF3E0", fg: "#E65100", label: "Pending approval" },
-  APPROVED: { bg: "#F3F8E6", fg: "#678722", label: "Approved" },
+  APPROVED: { bg: "#F5F9EA", fg: "#7DA02E", label: "Approved" },
   REJECTED: { bg: "#FDECEA", fg: "#C62828", label: "Rejected" },
 };
 
@@ -59,7 +59,7 @@ export function GhoshtiDetail({ initial, role }: { initial: GhoshtiDetailVM; rol
       {dialog}
 
       <div className="mb-4 flex items-center justify-between gap-2">
-        <Link href="/ghoshti" className="text-[12.5px] font-semibold text-[#678722] hover:underline">← All meetups</Link>
+        <Link href="/ghoshti" className="text-[12.5px] font-semibold text-[#7DA02E] hover:underline">← All meetups</Link>
         <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: st.bg, color: st.fg }}>{st.label}</span>
       </div>
 
@@ -82,7 +82,7 @@ export function GhoshtiDetail({ initial, role }: { initial: GhoshtiDetailVM; rol
         {g.notes && <div className="mt-3 rounded-[10px] bg-[#FAFAFA] px-3.5 py-2.5 text-[12.5px] text-[#424242]">{g.notes}</div>}
 
         {g.status === "APPROVED" && g.approvedBy && (
-          <div className="mt-3 rounded-[10px] bg-[#F1F8F1] px-3.5 py-2 text-[12px] text-[#678722]">
+          <div className="mt-3 rounded-[10px] bg-[#F1F8F1] px-3.5 py-2 text-[12px] text-[#7DA02E]">
             ✓ Approved by <b>{g.approvedBy}</b>{g.approvedAt ? ` · ${fmtDateTime(g.approvedAt)}` : ""}
           </div>
         )}
@@ -96,7 +96,7 @@ export function GhoshtiDetail({ initial, role }: { initial: GhoshtiDetailVM; rol
         {g.canApprove && (
           <div className="mt-4 flex items-center gap-2 border-t border-[#F0F0F0] pt-4">
             <button type="button" onClick={approve}
-              className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B]">✓ Approve meetup</button>
+              className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A]">✓ Approve meetup</button>
             <button type="button" onClick={() => setRejecting(true)}
               className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[12.5px] font-semibold text-[#C62828] hover:bg-[#FDECEA]">Reject</button>
           </div>
@@ -112,7 +112,7 @@ export function GhoshtiDetail({ initial, role }: { initial: GhoshtiDetailVM; rol
           </div>
           {g.canRecordAttendance ? (
             <button type="button" onClick={() => setAdding(true)}
-              className="rounded-[10px] bg-[#678722] px-3.5 py-1.5 text-[12px] font-semibold text-white hover:bg-[#516A1B]">+ Add attendees</button>
+              className="rounded-[10px] bg-[#7DA02E] px-3.5 py-1.5 text-[12px] font-semibold text-white hover:bg-[#66852A]">+ Add attendees</button>
           ) : g.status === "PENDING" && g.canEdit ? (
             <span className="rounded-full bg-[#FFF3E0] px-3 py-1.5 text-[11.5px] font-semibold text-[#E65100]">🔒 Locked until approved</span>
           ) : null}
@@ -151,7 +151,7 @@ export function GhoshtiDetail({ initial, role }: { initial: GhoshtiDetailVM; rol
                     </td>
                     <td className="px-4 py-3">
                       {a.isExisting
-                        ? <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10.5px] font-bold text-[#678722]">Existing</span>
+                        ? <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10.5px] font-bold text-[#7DA02E]">Existing</span>
                         : <span className="rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[10.5px] font-bold text-[#E65100]">New</span>}
                     </td>
                     <td className="px-4 py-3 text-[#9E9E9E]">{a.remarks || "—"}</td>
@@ -250,12 +250,12 @@ function AddAttendeesModal({
     });
   };
 
-  const inputCls = "rounded-[10px] border border-[#E0E0E0] px-3 py-2 text-[13px] outline-none focus:border-[#678722]";
+  const inputCls = "rounded-[10px] border border-[#E0E0E0] px-3 py-2 text-[13px] outline-none focus:border-[#7DA02E]";
 
   return (
     <Modal open onClose={onClose} className="max-w-[600px]">
       {dialog}
-      <ModalHeader eyebrow="Attendees" eyebrowColor="#678722" title="Add attendees" onClose={onClose} />
+      <ModalHeader eyebrow="Attendees" eyebrowColor="#7DA02E" title="Add attendees" onClose={onClose} />
       <div className="max-h-[76vh] overflow-y-auto px-5 py-4">
         {/* Column headers */}
         <div className="mb-1.5 hidden gap-2 px-0.5 text-[10px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E] sm:flex">
@@ -272,7 +272,7 @@ function AddAttendeesModal({
                 <input value={row.mobile} onChange={(e) => onMobile(row.id, e.target.value)} inputMode="numeric" maxLength={10}
                   placeholder="10-digit" className={`${inputCls} w-full tracking-[0.5px]`} />
                 {row.status === "checking" && <div className="mt-0.5 text-[10px] text-[#9E9E9E]">Checking…</div>}
-                {row.status === "found" && <div className="mt-0.5 text-[10px] font-semibold text-[#678722]">✓ Existing farmer</div>}
+                {row.status === "found" && <div className="mt-0.5 text-[10px] font-semibold text-[#7DA02E]">✓ Existing farmer</div>}
                 {row.status === "new" && <div className="mt-0.5 text-[10px] font-semibold text-[#E65100]">New number</div>}
               </div>
               <input value={row.name} onChange={(e) => patch(row.id, { name: e.target.value })}
@@ -286,19 +286,19 @@ function AddAttendeesModal({
         </div>
 
         <button type="button" onClick={addRow}
-          className="mt-2.5 flex items-center gap-1.5 rounded-[10px] border border-dashed border-[#E4EFC9] bg-[#F1F8F1] px-3 py-2 text-[12.5px] font-semibold text-[#678722] hover:bg-[#F3F8E6]">
+          className="mt-2.5 flex items-center gap-1.5 rounded-[10px] border border-dashed border-[#E9F2CF] bg-[#F1F8F1] px-3 py-2 text-[12.5px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">
           + Add attendee
         </button>
 
         <div className="mt-2 text-[11.5px] text-[#9E9E9E]">Enter a phone number and the name fills in automatically if they&apos;re an existing farmer. Name &amp; remarks are optional.</div>
 
         {err && <div className="mt-3 rounded-[8px] bg-[#FDECEA] px-3 py-2 text-[12px] font-semibold text-[#C62828]">{err}</div>}
-        {msg && <div className="mt-3 rounded-[8px] bg-[#F3F8E6] px-3 py-2 text-[12px] font-semibold text-[#678722]">{msg}</div>}
+        {msg && <div className="mt-3 rounded-[8px] bg-[#F5F9EA] px-3 py-2 text-[12px] font-semibold text-[#7DA02E]">{msg}</div>}
 
         <div className="mt-4 flex items-center justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[12.5px] font-semibold text-[#616161] hover:bg-[#F5F5F5]">Close</button>
           <button type="button" onClick={submit} disabled={saving}
-            className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50">
+            className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50">
             {saving ? "Adding…" : "Add attendees"}
           </button>
         </div>

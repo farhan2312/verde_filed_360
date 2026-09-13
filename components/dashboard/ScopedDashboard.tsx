@@ -17,7 +17,7 @@ export function ScopedDashboard({ data, name }: { data: ScopedDashboardData; nam
   const scopeChip = data.kind === "store" ? "My store only" : data.kind === "zone" ? "My district only" : "Organization-wide";
   return (
     <div className={`${CARD} overflow-hidden`}>
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#516A1B] to-[#678722] px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#7DA02E] to-[#93B93C] px-5 py-4">
         <div className="min-w-0">
           <div className="text-[12px] font-medium text-white/70">Namaste, {name}</div>
           <div className="truncate text-[18px] font-bold text-white">{data.label}</div>

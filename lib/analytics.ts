@@ -143,9 +143,9 @@ export async function getAnalytics(period: string): Promise<AnalyticsData> {
   const regularish = cnt("REGULAR");
   const highValue = cnt("HNI") + cnt("POTENTIAL_HNI");
   const funnelRaw = [
-    { label: "All Customers", count: totalFarmers, color: "#678722" },
-    { label: "Active (12M)", count: activeP12, color: "#8CB337" },
-    { label: "Regular", count: regularish, color: "#B3D170" },
+    { label: "All Customers", count: totalFarmers, color: "#7DA02E" },
+    { label: "Active (12M)", count: activeP12, color: "#93B93C" },
+    { label: "Regular", count: regularish, color: "#BDD67F" },
     { label: "High-value", count: highValue, color: "#EDA942" },
     { label: "HNI", count: cnt("HNI"), color: "#FF8F00" },
   ];
@@ -153,14 +153,14 @@ export async function getAnalytics(period: string): Promise<AnalyticsData> {
 
   // ── Segmentation by spend ──
   const spendOrder = ["₹12K+ (HNI)", "₹10–12K (Potential)", "₹5–10K", "₹2.5–5K", "< ₹2.5K", "0 · none"];
-  const spendColor: Record<string, string> = { "₹12K+ (HNI)": "#516A1B", "₹10–12K (Potential)": "#678722", "₹5–10K": "#8CB337", "₹2.5–5K": "#B3D170", "< ₹2.5K": "#D3E4AB", "0 · none": "#E0E0E0" };
+  const spendColor: Record<string, string> = { "₹12K+ (HNI)": "#66852A", "₹10–12K (Potential)": "#7DA02E", "₹5–10K": "#93B93C", "₹2.5–5K": "#BDD67F", "< ₹2.5K": "#DBE9B4", "0 · none": "#E0E0E0" };
   const spendMap = new Map(spendRows.map((r) => [r.bucket, r.n]));
   const land: LandSegment[] = spendOrder.filter((b) => spendMap.has(b)).map((b) => ({
     label: b, count: spendMap.get(b) ?? 0, pct: totalFarmers ? Math.round(((spendMap.get(b) ?? 0) / totalFarmers) * 100) : 0, color: spendColor[b],
   }));
 
   // ── Data quality (profile completeness) ──
-  const qColor = (p: number) => (p >= 90 ? "#678722" : p >= 75 ? "#8CB337" : p >= 50 ? "#EDA942" : "#E65100");
+  const qColor = (p: number) => (p >= 90 ? "#7DA02E" : p >= 75 ? "#93B93C" : p >= 50 ? "#EDA942" : "#E65100");
   const qualityRows: QualityRow[] = [
     { label: "Mobile Number", pct: quality.mobile, color: qColor(quality.mobile) },
     { label: "Village", pct: quality.village, color: qColor(quality.village) },
@@ -176,7 +176,7 @@ export async function getAnalytics(period: string): Promise<AnalyticsData> {
   const insights: Insight[] = [
     { title: "Win-back opportunity", text: `${grouped(lapsed)} customers are Lapsed (no purchase in 12 months) — the biggest single re-engagement pool.`, accent: "#C62828" },
     { title: "At-risk revenue", text: `${grouped(atRisk)} customers bought 7–12 months ago but not recently. Prioritise before the season.`, accent: "#E65100" },
-    { title: "High-value base", text: `${grouped(hni)} HNI customers (₹12K+ in 12 months) anchor revenue — protect with 1:1 outreach.`, accent: "#678722" },
+    { title: "High-value base", text: `${grouped(hni)} HNI customers (₹12K+ in 12 months) anchor revenue — protect with 1:1 outreach.`, accent: "#7DA02E" },
     { title: topZone ? `Top region: ${topZone.name}` : "Growth", text: topZone ? `${topZone.name} leads with ${grouped(topZone.visits)} farmers, ${topZone.conv}% active. ${grouped(newc)} new customers added org-wide in 12M.` : `${grouped(newc)} new customers added in the last 12 months.`, accent: "#1565C0" },
   ];
 

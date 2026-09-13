@@ -138,7 +138,7 @@ export function StoresTab({ data, canEdit }: { data: StoreMgmtData; canEdit: boo
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors",
                   active
-                    ? s.id === "closed" ? "bg-[#C62828] text-white" : s.accent ? "bg-[#E65100] text-white" : "bg-[#262250] text-white"
+                    ? s.id === "closed" ? "bg-[#C62828] text-white" : s.accent ? "bg-[#E65100] text-white" : "bg-[#5C7D22] text-white"
                     : s.id === "closed" ? "text-[#C62828]" : s.accent ? "text-[#E65100]" : "text-[#757575]",
                 )}
               >
@@ -151,10 +151,10 @@ export function StoresTab({ data, canEdit }: { data: StoreMgmtData; canEdit: boo
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search store, code, district or RM…"
-          className="min-w-[200px] flex-1 rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2 text-[13px] outline-none focus:border-[#678722]"
+          className="min-w-[200px] flex-1 rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2 text-[13px] outline-none focus:border-[#7DA02E]"
         />
         <SearchableSelect
-          className="min-w-[150px] rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2 text-[13px] text-[#424242] outline-none focus:border-[#678722]"
+          className="min-w-[150px] rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2 text-[13px] text-[#424242] outline-none focus:border-[#7DA02E]"
           placeholder="All districts" searchPlaceholder="Search districts…"
           value={fZone || null} onChange={(v) => setFZone(v ?? "")}
           options={zones.map((z) => ({ value: z, label: z }))}
@@ -163,7 +163,7 @@ export function StoresTab({ data, canEdit }: { data: StoreMgmtData; canEdit: boo
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="rounded-[10px] bg-[#678722] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#516A1B]"
+            className="rounded-[10px] bg-[#7DA02E] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#66852A]"
           >
             + Add Store
           </button>
@@ -253,7 +253,7 @@ export function StoresTab({ data, canEdit }: { data: StoreMgmtData; canEdit: boo
                         type="button"
                         onClick={() => setEditing(sr)}
                         aria-label={`Edit ${sr.shortName}`}
-                        className="inline-flex items-center rounded-lg bg-[#F5F7F5] px-[8px] py-[6px] text-[#678722] hover:bg-[#F3F8E6]"
+                        className="inline-flex items-center rounded-lg bg-[#F5F7F5] px-[8px] py-[6px] text-[#7DA02E] hover:bg-[#F5F9EA]"
                       >
                         <EditPencil />
                       </button>

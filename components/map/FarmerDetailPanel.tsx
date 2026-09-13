@@ -95,7 +95,7 @@ export function FarmerDetailPanel({
           <Row label="Crop" value={farmer.crop ?? "—"} />
           <Row label="Land" value={farmer.land != null ? `${farmer.land} acres` : "—"} shaded />
           <Row label="Segment" value={farmer.segment ?? "—"} valueColor={segColor} bold />
-          <Row label="Status" value={farmer.status ?? "—"} valueColor="#678722" shaded />
+          <Row label="Status" value={farmer.status ?? "—"} valueColor="#7DA02E" shaded />
           <Row label="Last Visit" value={farmer.lastVisit} />
         </div>
 
@@ -113,7 +113,7 @@ export function FarmerDetailPanel({
         {/* CTA */}
         <Link
           href={`/farmers/${farmer.id}`}
-          className="block rounded-[10px] bg-[#678722] py-[11px] text-center text-[12.5px] font-semibold text-white transition-colors hover:bg-[#516A1B] active:scale-[0.97]"
+          className="block rounded-[10px] bg-[#7DA02E] py-[11px] text-center text-[12.5px] font-semibold text-white transition-colors hover:bg-[#66852A] active:scale-[0.97]"
         >
           View Full Profile →
         </Link>

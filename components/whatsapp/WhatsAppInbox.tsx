@@ -79,12 +79,12 @@ export function WhatsAppInbox({ initial }: { initial: InboxData | null }) {
         <div className={`flex w-full flex-col border-r border-[#F0F0F0] sm:w-[340px] ${selected ? "hidden sm:flex" : "flex"}`}>
           <div className="border-b border-[#F0F0F0] p-2.5">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, number, message…"
-              className="mb-2 w-full rounded-[8px] border border-[#E0E0E0] px-3 py-1.5 text-[12.5px] outline-none focus:border-[#678722]" />
+              className="mb-2 w-full rounded-[8px] border border-[#E0E0E0] px-3 py-1.5 text-[12.5px] outline-none focus:border-[#7DA02E]" />
             <div className="flex gap-1">
               {([["all", "All"], ["unread", "Unread"], ["unmatched", "Not registered"]] as [Filter, string][]).map(([f, l]) => (
                 <button key={f} type="button" onClick={() => setFilter(f)}
                   className="rounded-full px-3 py-1 text-[11.5px] font-semibold"
-                  style={{ background: filter === f ? "#F3F8E6" : "#F5F5F5", color: filter === f ? "#678722" : "#9E9E9E" }}>{l}</button>
+                  style={{ background: filter === f ? "#F5F9EA" : "#F5F5F5", color: filter === f ? "#7DA02E" : "#9E9E9E" }}>{l}</button>
               ))}
             </div>
           </div>
@@ -161,7 +161,7 @@ function ThreadView({ thread, quickReplies, templates, onBack, onSent, onManageQ
           </div>
         </div>
         <span className="ml-auto rounded-full px-2 py-0.5 text-[10.5px] font-bold"
-          style={{ background: thread.within24h ? "#F3F8E6" : "#FFF3E0", color: thread.within24h ? "#678722" : "#E65100" }}>
+          style={{ background: thread.within24h ? "#F5F9EA" : "#FFF3E0", color: thread.within24h ? "#7DA02E" : "#E65100" }}>
           {thread.within24h ? "● Session open" : "Session closed · template only"}
         </span>
       </div>
@@ -213,7 +213,7 @@ function Composer({ thread, quickReplies, templates, onSent, onManageQuickReplie
   const [err, setErr] = useState<string | null>(null);
   const [sending, start] = useTransition();
   const selTpl = templates.find((t) => t.name === tplName) ?? null;
-  const INP = "rounded-[10px] border border-[#E0E0E0] px-3 py-2 text-[13px] outline-none focus:border-[#678722]";
+  const INP = "rounded-[10px] border border-[#E0E0E0] px-3 py-2 text-[13px] outline-none focus:border-[#7DA02E]";
 
   const pickTpl = (name: string) => { setTplName(name); const t = templates.find((x) => x.name === name); setParams(t ? Array(t.varCount).fill("") : []); };
 
@@ -326,7 +326,7 @@ function QuickRepliesManager({ initial, onClose, onChanged }: { initial: QuickRe
     if (!(await confirm({ title: "Delete quick reply?", message: qr.label, confirmLabel: "Delete" }))) return;
     start(async () => { await deleteQuickReply(qr.id); reload(); });
   };
-  const INP = "rounded-[10px] border border-[#E0E0E0] px-3 py-2 text-[13px] outline-none focus:border-[#678722]";
+  const INP = "rounded-[10px] border border-[#E0E0E0] px-3 py-2 text-[13px] outline-none focus:border-[#7DA02E]";
 
   return (
     <Modal open onClose={onClose} className="max-w-[520px]">
@@ -337,7 +337,7 @@ function QuickRepliesManager({ initial, onClose, onChanged }: { initial: QuickRe
           <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (e.g. Price list)" className={INP} />
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder="Message text…" className={`${INP} resize-y`} />
           {err && <div className="text-[11px] font-semibold text-[#C62828]">{err}</div>}
-          <button type="button" onClick={add} className="self-start rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white">+ Add quick reply</button>
+          <button type="button" onClick={add} className="self-start rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white">+ Add quick reply</button>
         </div>
         <div className="mt-3 flex flex-col gap-1.5">
           {rows.length === 0 ? <div className="text-[12px] text-[#BDBDBD]">No quick replies yet.</div> : rows.map((qr) => (

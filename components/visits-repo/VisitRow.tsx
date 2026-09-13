@@ -25,7 +25,7 @@ export function VisitRow({ row }: { row: VisitRecord }) {
               {row.farmerName}
             </span>
             {row.reviewed && (
-              <span className="inline-flex items-center rounded-full px-[7px] py-[1px] text-[9.5px] font-bold shrink-0" style={{ background: "#F3F8E6", color: "#678722" }}>
+              <span className="inline-flex items-center rounded-full px-[7px] py-[1px] text-[9.5px] font-bold shrink-0" style={{ background: "#F5F9EA", color: "#7DA02E" }}>
                 ✓ Reviewed
               </span>
             )}
@@ -82,7 +82,7 @@ export function VisitRow({ row }: { row: VisitRecord }) {
       </div>
 
       {/* Action */}
-      <div className="text-[11px] font-semibold text-[#678722]">View →</div>
+      <div className="text-[11px] font-semibold text-[#7DA02E]">View →</div>
     </div>
   );
 }

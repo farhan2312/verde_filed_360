@@ -23,7 +23,7 @@ export function VisitDateFilter({ minDate, from, to, onChange }: {
 
   const active = from != null || to != null;
   const BUCKETS: [string, number][] = [["Last 7 days", 7], ["Last 30 days", 30], ["Last 90 days", 90]];
-  const INPUT = "rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1 text-[12px] text-[#1A1C1A] outline-none focus:border-[#678722]";
+  const INPUT = "rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1 text-[12px] text-[#1A1C1A] outline-none focus:border-[#7DA02E]";
 
   return (
     <div className="mb-3 rounded-[12px] border border-black/[0.04] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -31,13 +31,13 @@ export function VisitDateFilter({ minDate, from, to, onChange }: {
         <span className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#9E9E9E]">Visit dates:</span>
         {BUCKETS.map(([label, d]) => (
           <button key={label} type="button" onClick={() => bucket(d)}
-            className="rounded-full border border-[#E0E0E0] px-3 py-1 text-[11.5px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]">{label}</button>
+            className="rounded-full border border-[#E0E0E0] px-3 py-1 text-[11.5px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]">{label}</button>
         ))}
         <button type="button" onClick={() => bucket("month")}
-          className="rounded-full border border-[#E0E0E0] px-3 py-1 text-[11.5px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]">This month</button>
+          className="rounded-full border border-[#E0E0E0] px-3 py-1 text-[11.5px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]">This month</button>
         <button type="button" onClick={() => bucket("all")}
           className="rounded-full border px-3 py-1 text-[11.5px] font-semibold"
-          style={{ borderColor: active ? "#E0E0E0" : "#678722", color: active ? "#616161" : "#678722", background: active ? "#fff" : "#F3F8E6" }}>All time</button>
+          style={{ borderColor: active ? "#E0E0E0" : "#7DA02E", color: active ? "#616161" : "#7DA02E", background: active ? "#fff" : "#F5F9EA" }}>All time</button>
 
         {/* From / To date pickers — bounds keep the range valid (From ≤ To ≤ today). */}
         <div className="ml-auto flex flex-wrap items-center gap-1.5">

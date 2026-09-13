@@ -47,7 +47,7 @@ export function FarmerClustersScreen({ clusters, farmers, stores }: Props) {
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-[10px] bg-[#262250] px-5 py-[9px] text-[13px] font-bold text-white transition-colors hover:bg-[#678722]"
+          className="flex items-center gap-2 rounded-[10px] bg-[#5C7D22] px-5 py-[9px] text-[13px] font-bold text-white transition-colors hover:bg-[#7DA02E]"
         >
           <PlusGlyph />
           Create New Cluster
@@ -107,13 +107,13 @@ function EmptyClusters({ onCreate }: { onCreate: () => void }) {
         <button
           type="button"
           onClick={onCreate}
-          className="inline-flex items-center gap-2 rounded-[10px] bg-[#262250] px-6 py-[10px] text-[13px] font-bold text-white transition-colors hover:bg-[#678722]"
+          className="inline-flex items-center gap-2 rounded-[10px] bg-[#5C7D22] px-6 py-[10px] text-[13px] font-bold text-white transition-colors hover:bg-[#7DA02E]"
         >
           Create Cluster
         </button>
         <Link
           href="/map"
-          className="inline-flex items-center gap-2 rounded-[10px] border border-[#E0E0E0] px-6 py-[10px] text-[13px] font-bold text-[#262250] transition-colors hover:bg-[#F0F7F0]"
+          className="inline-flex items-center gap-2 rounded-[10px] border border-[#E0E0E0] px-6 py-[10px] text-[13px] font-bold text-[#5C7D22] transition-colors hover:bg-[#F0F7F0]"
         >
           Open Map View →
         </Link>
@@ -138,13 +138,13 @@ function ClusterListCard({
       onClick={onSelect}
       className={cn(
         "rounded-[14px] border-[1.5px] bg-white px-[18px] py-4 text-left shadow-card transition-all duration-150",
-        "hover:border-[#678722] hover:shadow-[0_2px_8px_rgba(46,125,50,0.1)]",
-        selected ? "border-[#678722] shadow-[0_2px_8px_rgba(46,125,50,0.1)]" : "border-[#E0E0E0]",
+        "hover:border-[#7DA02E] hover:shadow-[0_2px_8px_rgba(46,125,50,0.1)]",
+        selected ? "border-[#7DA02E] shadow-[0_2px_8px_rgba(46,125,50,0.1)]" : "border-[#E0E0E0]",
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="text-sm font-bold leading-[1.3] text-[#1A1C1A]">{cluster.name}</div>
-        <div className="flex-none rounded-[20px] bg-[#F3F8E6] px-[9px] py-[2px] text-[10.5px] font-bold text-[#678722]">
+        <div className="flex-none rounded-[20px] bg-[#F5F9EA] px-[9px] py-[2px] text-[10.5px] font-bold text-[#7DA02E]">
           {cluster.farmerCount} farmers
         </div>
       </div>
@@ -181,9 +181,9 @@ function ClusterDetailPanel({ cluster }: { cluster: ClusterView }) {
       <div className="border-b border-[#F0F0F0] px-[22px] pb-4 pt-5">
         <div className="mb-[6px] text-[17px] font-extrabold text-[#1A1C1A]">{cluster.name}</div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-[5px] rounded-[20px] border border-[#E4EFC9] bg-[#F3F8E6] px-3 py-1">
+          <div className="flex items-center gap-[5px] rounded-[20px] border border-[#E9F2CF] bg-[#F5F9EA] px-3 py-1">
             <InfoGlyph />
-            <span className="text-[11px] font-bold text-[#678722]">
+            <span className="text-[11px] font-bold text-[#7DA02E]">
               {detailCriteriaText(cluster.criteria)}
             </span>
           </div>
@@ -192,7 +192,7 @@ function ClusterDetailPanel({ cluster }: { cluster: ClusterView }) {
         <div className="flex gap-2">
           <Link
             href={`/actions?clusterSource=${cluster.id}`}
-            className="flex-1 rounded-[10px] bg-[#262250] px-0 py-[9px] text-center text-[12.5px] font-bold text-white transition-colors hover:bg-[#678722]"
+            className="flex-1 rounded-[10px] bg-[#5C7D22] px-0 py-[9px] text-center text-[12.5px] font-bold text-white transition-colors hover:bg-[#7DA02E]"
           >
             View Linked Action →
           </Link>
@@ -283,7 +283,7 @@ function ClusterFarmerRow({ farmer, globalIndex }: { farmer: ClusterMemberRow; g
             {farmer.segment}
           </div>
         ) : (
-          <div className="text-[11px] font-semibold text-[#678722]">{farmer.ltv}</div>
+          <div className="text-[11px] font-semibold text-[#7DA02E]">{farmer.ltv}</div>
         )}
         <div className="text-[10px] text-[#BDBDBD]">{farmer.lastVisit}</div>
       </div>

@@ -18,9 +18,9 @@ function Sparkline({ values }: { values: number[] }) {
   const [lx, ly] = pts[pts.length - 1];
   return (
     <svg width={W} height={H} className="shrink-0" aria-hidden>
-      <polygon points={area} fill="#678722" opacity={0.10} />
-      <polyline points={line} fill="none" stroke="#678722" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={lx} cy={ly} r={2.4} fill="#678722" />
+      <polygon points={area} fill="#7DA02E" opacity={0.10} />
+      <polyline points={line} fill="none" stroke="#7DA02E" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={lx} cy={ly} r={2.4} fill="#7DA02E" />
     </svg>
   );
 }
@@ -34,7 +34,7 @@ function Bars({ rows }: { rows: { label: string; n: number }[] }) {
         <div key={r.label} className="flex items-center gap-2">
           <span className="w-[92px] shrink-0 truncate text-[11.5px] text-[#616161]" title={r.label}>{r.label}</span>
           <div className="relative h-[18px] flex-1 overflow-hidden rounded-[5px] bg-[#F1F8F1]">
-            <div className="h-full rounded-[5px] bg-[#678722]" style={{ width: `${Math.max(4, (r.n / max) * 100)}%` }} />
+            <div className="h-full rounded-[5px] bg-[#7DA02E]" style={{ width: `${Math.max(4, (r.n / max) * 100)}%` }} />
           </div>
           <span className="w-9 shrink-0 text-right text-[11.5px] font-semibold text-[#1A1C1A]">{n(r.n)}</span>
         </div>
@@ -55,7 +55,7 @@ export function LeadConversionsCard() {
     <div className={`${CARD} mt-4 p-5`}>
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span className="text-[14px] font-bold text-[#1A1C1A]">🌱 Lead → customer conversions</span>
-        {data && <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[11px] font-bold text-[#678722]">{n(data.total)} total</span>}
+        {data && <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[11px] font-bold text-[#7DA02E]">{n(data.total)} total</span>}
         {data && denom > 0 && (
           <span className="rounded-full bg-[#E3F2FD] px-2 py-0.5 text-[11px] font-bold text-[#1565C0]"
             title={`${n(data.total)} converted of ${n(denom)} ever-registered leads (${n(data.currentLeads)} still open)`}>

@@ -10,7 +10,7 @@ const n = (x: number) => Math.round(x).toLocaleString("en-IN");
 const inr = (x: number) => "₹" + Math.round(x).toLocaleString("en-IN");
 const short = (x: number) => (x >= 1e7 ? (x / 1e7).toFixed(1) + "Cr" : x >= 1e5 ? (x / 1e5).toFixed(1) + "L" : x >= 1e3 ? (x / 1e3).toFixed(0) + "k" : String(Math.round(x)));
 const CAT_COLOR: Record<string, string> = {
-  "FERTILIZER BULK": "#678722", "FERTILIZER": "#8CB337", "SEEDS": "#EDA942",
+  "FERTILIZER BULK": "#7DA02E", "FERTILIZER": "#93B93C", "SEEDS": "#EDA942",
   "CPC (CROP PROTECTION CHEMICALS)": "#C62828", "MICRO NUTRIENTS": "#1565C0",
   "OTHERS": "#757575", "MECHANICAL SPRAYER": "#6A1B9A", "ELECTRICAL EQUIPMENT": "#00838F",
 };
@@ -56,7 +56,7 @@ export function MovementDashboard({ overview, movers, stores }: {
           <div className="flex items-end gap-[3px] overflow-x-auto pb-1" style={{ height: 160 }}>
             {overview.trend.map((t) => (
               <div key={t.ym} className="group flex min-w-[16px] flex-1 flex-col items-center justify-end" title={`${t.ym}: ${n(t.units)} units · ${inr(t.rev)}`}>
-                <div className="w-full rounded-t-[3px] bg-[#678722] transition-colors group-hover:bg-[#516A1B]" style={{ height: `${(t.units / maxTrend) * 130}px` }} />
+                <div className="w-full rounded-t-[3px] bg-[#7DA02E] transition-colors group-hover:bg-[#66852A]" style={{ height: `${(t.units / maxTrend) * 130}px` }} />
                 <div className="mt-1 rotate-0 text-[8px] text-[#BDBDBD]">{t.ym.slice(2)}</div>
               </div>
             ))}
@@ -79,7 +79,7 @@ export function MovementDashboard({ overview, movers, stores }: {
 
       {/* Movers */}
       <div className="mt-[14px] grid grid-cols-1 gap-[14px] lg:grid-cols-2">
-        <MoverTable title="Fast movers" subtitle={`Top units in the 90 days to ${overview.asof ?? "—"}`} accent="#678722"
+        <MoverTable title="Fast movers" subtitle={`Top units in the 90 days to ${overview.asof ?? "—"}`} accent="#7DA02E"
           rows={movers.fast.map((f) => ({ id: f.id, name: f.name, cat: f.cat, right: n(f.units) + " u", sub: inr(f.rev), onClick: () => setDrill({ id: f.id, name: f.name }) }))} />
         <MoverTable title="Dead stock" subtitle="No sale in 180+ days of activity" accent="#C62828"
           rows={movers.dead.map((d) => ({ id: d.id, name: d.name, cat: d.cat, right: d.daysIdle + "d idle", sub: `last ${d.last ?? "—"}`, onClick: () => setDrill({ id: d.id, name: d.name }) }))} />
@@ -97,7 +97,7 @@ export function MovementDashboard({ overview, movers, stores }: {
                   <td className="py-2 font-semibold text-[#1A1C1A]">{s.name}</td>
                   <td className="text-right text-[#616161]">{n(s.units)}</td>
                   <td className="text-right text-[#616161]">{n(s.bills)}</td>
-                  <td><div className="flex items-center gap-2"><div className="h-2 flex-1 rounded-full bg-[#F0F0F0]"><div className="h-2 rounded-full bg-[#678722]" style={{ width: `${(s.rev / maxStore) * 100}%` }} /></div><span className="w-[70px] text-right text-[11px] font-semibold text-[#678722]">{inr(s.rev)}</span></div></td>
+                  <td><div className="flex items-center gap-2"><div className="h-2 flex-1 rounded-full bg-[#F0F0F0]"><div className="h-2 rounded-full bg-[#7DA02E]" style={{ width: `${(s.rev / maxStore) * 100}%` }} /></div><span className="w-[70px] text-right text-[11px] font-semibold text-[#7DA02E]">{inr(s.rev)}</span></div></td>
                 </tr>
               ))}
             </tbody>
@@ -164,7 +164,7 @@ function ProductDrill({ product, onClose }: { product: { id: number; name: strin
   const maxS = Math.max(1, ...(data?.stores.map((s) => s.units) ?? [1]));
   return (
     <Modal open onClose={onClose} className="max-w-[720px]">
-      <ModalHeader eyebrow="Product movement" eyebrowColor="#678722" title={product.name} subtitle="Monthly units & top stores" onClose={onClose} />
+      <ModalHeader eyebrow="Product movement" eyebrowColor="#7DA02E" title={product.name} subtitle="Monthly units & top stores" onClose={onClose} />
       <div className="max-h-[64vh] overflow-y-auto px-5 py-4">
         {!data ? <div className="py-8 text-center text-[13px] text-[#9E9E9E]">Loading…</div> : (
           <>
@@ -172,7 +172,7 @@ function ProductDrill({ product, onClose }: { product: { id: number; name: strin
             <div className="mb-4 flex items-end gap-[3px]" style={{ height: 120 }}>
               {data.monthly.map((m) => (
                 <div key={m.ym} className="flex min-w-[14px] flex-1 flex-col items-center justify-end" title={`${m.ym}: ${n(m.units)} units`}>
-                  <div className="w-full rounded-t-[2px] bg-[#678722]" style={{ height: `${(m.units / maxM) * 96}px` }} />
+                  <div className="w-full rounded-t-[2px] bg-[#7DA02E]" style={{ height: `${(m.units / maxM) * 96}px` }} />
                   <div className="mt-0.5 text-[7.5px] text-[#BDBDBD]">{m.ym.slice(2)}</div>
                 </div>
               ))}
@@ -182,8 +182,8 @@ function ProductDrill({ product, onClose }: { product: { id: number; name: strin
               {data.stores.map((s) => (
                 <div key={s.name} className="flex items-center gap-2">
                   <span className="w-[42%] truncate text-[12px] text-[#424242]">{s.name}</span>
-                  <div className="h-2 flex-1 rounded-full bg-[#F0F0F0]"><div className="h-2 rounded-full bg-[#678722]" style={{ width: `${(s.units / maxS) * 100}%` }} /></div>
-                  <span className="w-[50px] text-right text-[11px] font-semibold text-[#678722]">{short(s.units)}</span>
+                  <div className="h-2 flex-1 rounded-full bg-[#F0F0F0]"><div className="h-2 rounded-full bg-[#7DA02E]" style={{ width: `${(s.units / maxS) * 100}%` }} /></div>
+                  <span className="w-[50px] text-right text-[11px] font-semibold text-[#7DA02E]">{short(s.units)}</span>
                 </div>
               ))}
             </div>

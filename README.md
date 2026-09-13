@@ -100,8 +100,8 @@ Generate `AUTH_SECRET`: `node -e "console.log(require('crypto').randomBytes(48).
 
 - Logo: `public/logo.svg` (full wordmark, used on login) and `public/logo-mark.svg` (leaf mark,
   used in the sidebar and as favicon).
-- Palette lives in `tailwind.config.ts` — lime-green `brand` scale from the logo (`#A4C954`),
-  navy `brand-900/950` (`#262250`) for the sidebar, orange `gold` accent (`#EDA942`).
+- Palette lives in `tailwind.config.ts` — a light-green `brand` scale built around the logo lime
+  (`#A4C954`; primary `#7DA02E`), mid-green sidebar (`brand-900/950`), orange `gold` accent (`#EDA942`).
 
 ## Data model
 

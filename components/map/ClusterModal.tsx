@@ -87,12 +87,12 @@ export function ClusterModal({
             ))}
           </select>
 
-          <div className="mt-3.5 flex items-center gap-2 rounded-[10px] border border-[#E4EFC9] bg-[#F0F7F0] px-3.5 py-2.5">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="#678722">
+          <div className="mt-3.5 flex items-center gap-2 rounded-[10px] border border-[#E9F2CF] bg-[#F0F7F0] px-3.5 py-2.5">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="#7DA02E">
               <circle cx="6.5" cy="6.5" r="6.5" />
               <path d="M4 6.5l1.8 1.8L9.5 4.5" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <div className="text-[12px] font-semibold text-[#678722]">
+            <div className="text-[12px] font-semibold text-[#7DA02E]">
               {matchedFarmers.length} farmers selected · criteria will be saved with this cluster
             </div>
           </div>
@@ -154,7 +154,7 @@ export function ClusterModal({
           <button
             type="button"
             onClick={onSave}
-            className="flex flex-[2] items-center justify-center gap-2 rounded-[10px] bg-[#262250] py-[11px] text-center text-[13px] font-bold text-white hover:bg-[#678722]"
+            className="flex flex-[2] items-center justify-center gap-2 rounded-[10px] bg-[#5C7D22] py-[11px] text-center text-[13px] font-bold text-white hover:bg-[#7DA02E]"
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
               <path d="M6.5 1v11M1 6.5h11" />

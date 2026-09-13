@@ -20,7 +20,7 @@ export const PERSONAS: Record<RoleKey, Persona> = {
     name: "Rajesh Verma",
     role: "Regional Manager",
     init: "RV",
-    color: "linear-gradient(135deg,#8CB337,#EDA942)",
+    color: "linear-gradient(135deg,#93B93C,#EDA942)",
   },
   officer: {
     key: "officer",
@@ -81,7 +81,7 @@ export const KEY_TO_PRISMA: Record<RoleKey, string> = {
 
 /** Avatar gradient stops per role (used in the Users table + new accounts). */
 export const ROLE_GRAD: Record<RoleKey, [string, string]> = {
-  regional: ["#8CB337", "#EDA942"],
+  regional: ["#93B93C", "#EDA942"],
   officer: ["#1565C0", "#42A5F5"],
   central: ["#7B1FA2", "#CE93D8"],
   sysadmin: ["#E65100", "#FF8F00"],

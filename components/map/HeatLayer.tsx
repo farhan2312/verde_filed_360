@@ -47,8 +47,8 @@ export function HeatLayer({
       // Stops compressed toward the warm end so the busiest stores actually reach
       // orange/red (a single isolated blob peaks well below alpha 1.0).
       gradient: {
-        0.15: "#516A1B",
-        0.3: "#B3D170",
+        0.15: "#66852A",
+        0.3: "#BDD67F",
         0.45: "#D4E157",
         0.55: "#FFB300",
         0.65: "#E53935",

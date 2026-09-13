@@ -13,7 +13,7 @@ const CARD = "rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3
 const n = (x: number) => x.toLocaleString("en-IN");
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   PLANNED: { bg: "#EEF3FB", color: "#1565C0" },
-  ACTIVE: { bg: "#F3F8E6", color: "#678722" },
+  ACTIVE: { bg: "#F5F9EA", color: "#7DA02E" },
   COMPLETED: { bg: "#F5F5F5", color: "#616161" },
 };
 
@@ -41,7 +41,7 @@ export function ProjectsTab({ initial, clusters, initialClusterId }: { initial: 
           A project bundles one or more farmer clusters. Run a campaign on the whole project, or on a single cluster inside it.
         </div>
         <button type="button" onClick={() => setBuilding(true)} disabled={clusters.length === 0}
-          className="rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">+ New project</button>
+          className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">+ New project</button>
       </div>
 
       {clusters.length === 0 && (
@@ -75,10 +75,10 @@ export function ProjectsTab({ initial, clusters, initialClusterId }: { initial: 
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[13px] font-bold text-[#678722]">{n(p.audienceCount)}</div>
+                  <div className="text-[13px] font-bold text-[#7DA02E]">{n(p.audienceCount)}</div>
                   <div className="text-[10.5px] text-[#9E9E9E]">unique farmers</div>
                 </div>
-                <button type="button" onClick={() => setEditing(p)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#678722] hover:bg-[#F3F8E6]">Edit</button>
+                <button type="button" onClick={() => setEditing(p)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">Edit</button>
                 <button type="button" onClick={() => setExtendingP(p)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#6A1B9A] hover:bg-[#F3E5F5]">Extend</button>
                 <button type="button" onClick={() => askRemove(p)} disabled={pending} className="rounded-[8px] bg-[#FDECEA] px-3 py-1.5 text-[12px] font-semibold text-[#C62828] hover:bg-[#F9DCD8] disabled:opacity-50">Delete</button>
               </div>
@@ -174,7 +174,7 @@ function ProjectBuilder({ clusters, project, preselect, onClose, onSaved }: {
     <Modal open onClose={createdId != null ? onSaved : onClose} className="max-w-[560px]">
       <ModalHeader
         eyebrow="Step 2 · Project"
-        eyebrowColor="#678722"
+        eyebrowColor="#7DA02E"
         title={project ? "Edit project" : "New project"}
         subtitle="Bundle reusable clusters — audience is their live union"
         onClose={createdId != null ? onSaved : onClose}
@@ -203,12 +203,12 @@ function ProjectBuilder({ clusters, project, preselect, onClose, onSaved }: {
             return (
               <button key={c.id} type="button" onClick={() => toggle(c.id)}
                 className="flex items-center justify-between rounded-[10px] border-[1.5px] px-3 py-2 text-left transition-colors"
-                style={{ background: on ? "#F3F8E6" : "#fff", borderColor: on ? "#678722" : "#E0E0E0" }}>
+                style={{ background: on ? "#F5F9EA" : "#fff", borderColor: on ? "#7DA02E" : "#E0E0E0" }}>
                 <div className="min-w-0">
-                  <div className="truncate text-[12.5px] font-semibold" style={{ color: on ? "#516A1B" : "#1A1C1A" }}>{c.name}</div>
+                  <div className="truncate text-[12.5px] font-semibold" style={{ color: on ? "#66852A" : "#1A1C1A" }}>{c.name}</div>
                   <div className="truncate text-[11px] text-[#9E9E9E]" title={c.description}>{c.description}</div>
                 </div>
-                <div className="ml-3 shrink-0 text-[12px] font-bold" style={{ color: on ? "#678722" : "#9E9E9E" }}>{n(c.count)}</div>
+                <div className="ml-3 shrink-0 text-[12px] font-bold" style={{ color: on ? "#7DA02E" : "#9E9E9E" }}>{n(c.count)}</div>
               </button>
             );
           })}
@@ -216,14 +216,14 @@ function ProjectBuilder({ clusters, project, preselect, onClose, onSaved }: {
 
         <div className="mt-4 flex items-center justify-between rounded-[10px] bg-[#F5F7F5] px-4 py-3">
           <div className="text-[12px] text-[#616161]">{picked.length} cluster{picked.length === 1 ? "" : "s"} · summed reach</div>
-          <div className="text-[18px] font-bold text-[#678722]">{n(reach)}</div>
+          <div className="text-[18px] font-bold text-[#7DA02E]">{n(reach)}</div>
         </div>
         <div className="mt-1 text-[11px] text-[#9E9E9E]">Actual project audience de-duplicates farmers shared across clusters.</div>
         {err && <div className="mt-2 text-[12px] text-[#C62828]">{err}</div>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
           <button type="button" onClick={save} disabled={saving || (!project && (!name.trim() || !startDate || !endDate)) || picked.length === 0}
-            className="rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">
+            className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">
             {saving ? "Saving…" : project ? "Save changes" : "Create project"}
           </button>
         </div>

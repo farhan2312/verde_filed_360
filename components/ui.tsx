@@ -129,7 +129,7 @@ export function Avatar({
         width: size,
         height: size,
         fontSize: Math.round(size * 0.38),
-        background: background ?? "#678722",
+        background: background ?? "#7DA02E",
       }}
     >
       {text}
@@ -140,7 +140,7 @@ export function Avatar({
 /* ── Progress bar ── */
 export function ProgressBar({
   pct,
-  color = "#678722",
+  color = "#7DA02E",
   track = "#EEEEEE",
   height = 8,
   className,
@@ -170,8 +170,8 @@ export function StatTile({
   value,
   change,
   sub,
-  accent = "#678722",
-  bg = "#F3F8E6",
+  accent = "#7DA02E",
+  bg = "#F5F9EA",
 }: {
   title: string;
   value: React.ReactNode;
@@ -214,8 +214,8 @@ export function Stepper({
     <div className="flex items-center">
       {steps.map((label, i) => {
         const state = i < current ? "past" : i === current ? "current" : "future";
-        const circleBg = state === "future" ? "#E0E0E0" : state === "current" ? "#678722" : "#B3D170";
-        const textColor = state === "future" ? "#BDBDBD" : state === "current" ? "#678722" : "#8CB337";
+        const circleBg = state === "future" ? "#E0E0E0" : state === "current" ? "#7DA02E" : "#BDD67F";
+        const textColor = state === "future" ? "#BDBDBD" : state === "current" ? "#7DA02E" : "#93B93C";
         return (
           <div key={label} className="flex flex-1 items-center last:flex-none">
             <div className="flex flex-col items-center gap-1.5">
@@ -232,7 +232,7 @@ export function Stepper({
             {i < steps.length - 1 && (
               <div
                 className="mx-2 h-0.5 flex-1 rounded"
-                style={{ background: i < current ? "#B3D170" : "#E8E8E8" }}
+                style={{ background: i < current ? "#BDD67F" : "#E8E8E8" }}
               />
             )}
           </div>

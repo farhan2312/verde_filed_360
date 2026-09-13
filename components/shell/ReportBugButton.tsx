@@ -92,7 +92,7 @@ export function ReportBugButton() {
     else setErr(res.error ?? "Could not submit.");
   };
 
-  const input = "w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#678722]";
+  const input = "w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#7DA02E]";
   const label = "mb-1 block text-[11.5px] font-semibold text-[#616161]";
 
   return (

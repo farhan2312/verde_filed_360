@@ -100,7 +100,7 @@ export function ActionRegistry({
       <div className="mb-4 grid grid-cols-3 gap-3">
         <Kpi label="Open" value={counts.open} color="#1565C0" />
         <Kpi label="Overdue" value={counts.overdue} color="#C62828" />
-        <Kpi label="Done" value={counts.done} color="#678722" />
+        <Kpi label="Done" value={counts.done} color="#7DA02E" />
       </div>
 
       {/* Controls */}
@@ -109,22 +109,22 @@ export function ActionRegistry({
           {TABS.map(({ key, label }) => (
             <button key={key} type="button" onClick={() => setTab(key)}
               className="rounded-[8px] px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors"
-              style={{ background: tab === key ? "#fff" : "transparent", color: tab === key ? "#678722" : "#9E9E9E", boxShadow: tab === key ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
+              style={{ background: tab === key ? "#fff" : "transparent", color: tab === key ? "#7DA02E" : "#9E9E9E", boxShadow: tab === key ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
               {label}
             </button>
           ))}
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search farmer / reason…"
-          className="min-w-[200px] flex-1 rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-[7px] text-[12.5px] outline-none focus:border-[#678722]" />
+          className="min-w-[200px] flex-1 rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-[7px] text-[12.5px] outline-none focus:border-[#7DA02E]" />
         {!isOfficer && stores.length > 1 && (
           <select value={storeFilter} onChange={(e) => setStoreFilter(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#678722]">
+            className="rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#7DA02E]">
             <option value="">All stores</option>
             {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         )}
         <button type="button" onClick={() => setAdding(true)}
-          className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B]">
+          className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A]">
           + New action
         </button>
       </div>
@@ -163,13 +163,13 @@ export function ActionRegistry({
                   <td className="px-4 py-3 text-[#616161]">{a.reason || "—"}{a.note && <div className="text-[10.5px] text-[#9E9E9E]">{a.note}</div>}</td>
                   <td className="px-4 py-3">
                     {a.visitId
-                      ? <Link href={`/visits/${a.visitId}`} className="text-[#678722] hover:underline">Visit ↗</Link>
+                      ? <Link href={`/visits/${a.visitId}`} className="text-[#7DA02E] hover:underline">Visit ↗</Link>
                       : <span className="text-[#9E9E9E]">Manual</span>}
                   </td>
                   <td className="px-4 py-3 text-[#9E9E9E]">{a.createdBy || "—"}</td>
                   <td className="px-4 py-3">
                     {a.status === "DONE"
-                      ? <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10.5px] font-bold text-[#678722]" title={a.completionNote || undefined}>Done{a.completionNote ? " 📝" : ""}</span>
+                      ? <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10.5px] font-bold text-[#7DA02E]" title={a.completionNote || undefined}>Done{a.completionNote ? " 📝" : ""}</span>
                       : <span className="rounded-full bg-[#E3F2FD] px-2 py-0.5 text-[10.5px] font-bold text-[#1565C0]">Open</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -177,7 +177,7 @@ export function ActionRegistry({
                       <button type="button" onClick={() => openComments(a)} title="Working comments" className="rounded-md bg-[#F3E5F5] px-2 py-1 text-[11px] font-semibold text-[#6A1B9A] hover:bg-[#E9D5F0]">✎ Edit{a.workingComment ? " 💬" : ""}</button>
                       {a.status === "DONE"
                         ? <button type="button" onClick={() => reopen(a.id)} className="rounded-md bg-[#F5F5F5] px-2.5 py-1 text-[11px] font-semibold text-[#616161] hover:bg-[#EEE]">Reopen</button>
-                        : <button type="button" onClick={() => { setCompleting(a); setDoneNote(""); }} className="rounded-md bg-[#678722] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#516A1B]">Mark done</button>}
+                        : <button type="button" onClick={() => { setCompleting(a); setDoneNote(""); }} className="rounded-md bg-[#7DA02E] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#66852A]">Mark done</button>}
                     </div>
                   </td>
                 </tr>
@@ -199,7 +199,7 @@ export function ActionRegistry({
       <Modal open={completing != null} onClose={() => setCompleting(null)} className="max-w-[480px]">
         {completing && (
           <>
-            <ModalHeader eyebrow="Complete action" eyebrowColor="#678722" title={`Mark done — ${completing.farmerName}`} onClose={() => setCompleting(null)} />
+            <ModalHeader eyebrow="Complete action" eyebrowColor="#7DA02E" title={`Mark done — ${completing.farmerName}`} onClose={() => setCompleting(null)} />
             <div className="px-5 py-4">
               <div className="mb-3 text-[12.5px] text-[#616161]">
                 {completing.reason || "Follow-up"} · due {fmtDate(completing.dueDate)}
@@ -208,11 +208,11 @@ export function ActionRegistry({
               <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Closing summary <span className="text-[#C62828]">*</span></label>
               <textarea value={doneNote} onChange={(e) => setDoneNote(e.target.value)} rows={3} autoFocus
                 placeholder="Required — what was the outcome / how was it resolved?"
-                className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+                className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
               <div className="mt-4 flex items-center justify-end gap-2">
                 <button type="button" onClick={() => setCompleting(null)} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[12.5px] font-semibold text-[#616161] hover:bg-[#F5F5F5]">Cancel</button>
                 <button type="button" onClick={confirmDone} disabled={!doneNote.trim()}
-                  className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50">Mark done</button>
+                  className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50">Mark done</button>
               </div>
             </div>
           </>
@@ -305,20 +305,20 @@ function NewActionModal({
 
   return (
     <Modal open onClose={onClose} className="max-w-[560px]">
-      <ModalHeader eyebrow="Action Registry" eyebrowColor="#678722" title="New follow-up action" onClose={onClose} />
+      <ModalHeader eyebrow="Action Registry" eyebrowColor="#7DA02E" title="New follow-up action" onClose={onClose} />
       <div className="max-h-[76vh] overflow-y-auto px-5 py-4">
         {/* Farmer */}
         <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Farmer</label>
         {picked ? (
-          <div className="mt-1 flex items-center justify-between rounded-[10px] border border-[#E4EFC9] bg-[#F1F8F1] px-3 py-2">
-            <div><div className="text-[13px] font-semibold text-[#516A1B]">{picked.name}</div>
+          <div className="mt-1 flex items-center justify-between rounded-[10px] border border-[#E9F2CF] bg-[#F1F8F1] px-3 py-2">
+            <div><div className="text-[13px] font-semibold text-[#66852A]">{picked.name}</div>
               <div className="text-[11px] text-[#66857A]">{picked.village}{picked.mobile ? ` · ${picked.mobile}` : ""}{picked.storeName ? ` · ${picked.storeName}` : ""}</div></div>
             <button type="button" onClick={() => { setPicked(null); setResults([]); setTerm(""); }} className="text-[12px] font-semibold text-[#C62828]">Change</button>
           </div>
         ) : (
           <div className="relative">
             <input value={term} onChange={(e) => search(e.target.value)} placeholder="Search by name or mobile…"
-              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
             {(searching || results.length > 0) && (
               <div className="absolute z-10 mt-1 max-h-[220px] w-full overflow-y-auto rounded-[10px] border border-[#E0E0E0] bg-white shadow-lg">
                 {searching && <div className="px-3 py-2 text-[12px] text-[#9E9E9E]">Searching…</div>}
@@ -339,12 +339,12 @@ function NewActionModal({
           <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Due date</label>
             <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
           </div>
           <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Reason</label>
             <select value={reason} onChange={(e) => setReason(e.target.value)}
-              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]">
+              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]">
               <option value="">Select…</option>
               {FOLLOWUP_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -355,7 +355,7 @@ function NewActionModal({
           <div className="mt-4">
             <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Assign to store</label>
             <select value={storeId} onChange={(e) => setStoreId(e.target.value ? Number(e.target.value) : "")}
-              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]">
+              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]">
               <option value="">Select a store…</option>
               {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -365,7 +365,7 @@ function NewActionModal({
         <div className="mt-4">
           <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Note (optional)</label>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
-            className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+            className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
         </div>
 
         {err && <div className="mt-3 rounded-[8px] bg-[#FDECEA] px-3 py-2 text-[12px] font-semibold text-[#C62828]">{err}</div>}
@@ -373,7 +373,7 @@ function NewActionModal({
         <div className="mt-4 flex items-center justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[12.5px] font-semibold text-[#616161] hover:bg-[#F5F5F5]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving}
-            className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50">
+            className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50">
             {saving ? "Creating…" : "Create action"}
           </button>
         </div>

@@ -13,7 +13,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const ACCOUNTS = [
-  { code: "VERDE999", pw: "verde999", name: "Verde Agrotech Admin", role: "SYSADMIN", label: "System Admin", gradA: "#262250", gradB: "#678722", territory: "All Regions" },
+  { code: "VERDE999", pw: "verde999", name: "Verde Agrotech Admin", role: "SYSADMIN", label: "System Admin", gradA: "#5C7D22", gradB: "#7DA02E", territory: "All Regions" },
 ] as const;
 
 async function main() {

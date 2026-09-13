@@ -10,7 +10,7 @@ const LANGS = ["en", "en_US", "hi", "en_GB"];
 const LANG_LABEL: Record<string, string> = { en: "English", en_US: "English (US)", en_GB: "English (UK)", hi: "Hindi" };
 
 const STATUS_STYLE: Record<string, { bg: string; c: string }> = {
-  APPROVED: { bg: "#F3F8E6", c: "#678722" },
+  APPROVED: { bg: "#F5F9EA", c: "#7DA02E" },
   PENDING: { bg: "#FEF6E9", c: "#8D6E00" },
   IN_APPEAL: { bg: "#FEF6E9", c: "#8D6E00" },
   REJECTED: { bg: "#FDECEA", c: "#C62828" },
@@ -87,7 +87,7 @@ export function WhatsAppTemplatesCard({ initial }: {
       {dialog}
       <div className="mb-1 flex items-center gap-2">
         <span className="text-[15px] font-bold text-[#1A1C1A]">WhatsApp templates</span>
-        <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10.5px] font-bold text-[#0B8A3D]">Meta Cloud API</span>
+        <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10.5px] font-bold text-[#0B8A3D]">Meta Cloud API</span>
       </div>
       <p className="mb-4 text-[12px] text-[#9E9E9E]">Create &amp; submit templates for approval without leaving the portal. Approved <b>marketing</b> templates are what you send to your opted-in list. Admin-only.</p>
 
@@ -105,8 +105,8 @@ export function WhatsAppTemplatesCard({ initial }: {
                 <div key={pr.key} className="flex flex-wrap items-center gap-2">
                   <span className="min-w-[170px] text-[12px] font-semibold text-[#1A1C1A]">{pr.label}</span>
                   <span className="rounded-full bg-[#F5F7F5] px-2 py-0.5 text-[9.5px] font-bold text-[#616161]">{pr.category}</span>
-                  <button type="button" onClick={() => applyPreset(pr.key, "en")} className="rounded-md border border-[#CFE3D4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0B8A3D] hover:bg-[#F3F8E6]">English</button>
-                  <button type="button" onClick={() => applyPreset(pr.key, "hi")} className="rounded-md border border-[#CFE3D4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0B8A3D] hover:bg-[#F3F8E6]">हिंदी</button>
+                  <button type="button" onClick={() => applyPreset(pr.key, "en")} className="rounded-md border border-[#CFE3D4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA]">English</button>
+                  <button type="button" onClick={() => applyPreset(pr.key, "hi")} className="rounded-md border border-[#CFE3D4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA]">हिंदी</button>
                   <span className="text-[10.5px] text-[#9E9E9E]">{pr.vars.map((v, i) => `{{${i + 1}}} ${v}`).join(" · ")}</span>
                 </div>
               ))}
@@ -137,7 +137,7 @@ export function WhatsAppTemplatesCard({ initial }: {
             </div>
             <div className="mt-3 flex items-center justify-between">
               <label className="text-[10px] font-bold uppercase text-[#9E9E9E]">Body — use {"{{1}}"}, {"{{2}}"} for variables</label>
-              <button type="button" onClick={insertVar} className="rounded-md border border-[#E0E0E0] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#0B8A3D] hover:bg-[#F3F8E6]">+ Insert {`{{${varCount + 1}}}`}</button>
+              <button type="button" onClick={insertVar} className="rounded-md border border-[#E0E0E0] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA]">+ Insert {`{{${varCount + 1}}}`}</button>
             </div>
             <textarea className={`${inputCls} mt-1 resize-y`} rows={3} value={body} onChange={(e) => setBody(e.target.value)} dir="auto"
               placeholder={"Namaste {{1}}! Verde Agrotech has a special offer on {{2}} this week. Visit your nearest store."} />
@@ -169,7 +169,7 @@ export function WhatsAppTemplatesCard({ initial }: {
                 )}
               </div>
             )}
-            {msg && <div className={`mt-2 rounded-[8px] px-3 py-2 text-[12px] font-medium ${msg.ok ? "bg-[#F3F8E6] text-[#678722]" : "bg-[#FDECEA] text-[#C62828]"}`}>{msg.text}</div>}
+            {msg && <div className={`mt-2 rounded-[8px] px-3 py-2 text-[12px] font-medium ${msg.ok ? "bg-[#F5F9EA] text-[#7DA02E]" : "bg-[#FDECEA] text-[#C62828]"}`}>{msg.text}</div>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={submit} disabled={busy || !name.trim() || !body.trim()}
                 className="rounded-[10px] bg-[#0B8A3D] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#0A6E31] disabled:opacity-50">
@@ -228,12 +228,12 @@ function TemplateRow({ t, onRemove }: { t: WaTemplate; onRemove: (t: WaTemplate)
           {!editing ? (
             <div className="flex flex-wrap items-center gap-1.5">
               {Array.from({ length: varCount }).map((_, i) => (
-                <span key={i} className="rounded-full bg-[#F1F8F1] px-2 py-0.5 text-[10px] font-semibold text-[#678722]">
+                <span key={i} className="rounded-full bg-[#F1F8F1] px-2 py-0.5 text-[10px] font-semibold text-[#7DA02E]">
                   <span className="font-mono text-[#9E9E9E]">{`{{${i + 1}}}`}</span> {labels[i]?.trim() || `Variable ${i + 1}`}
                 </span>
               ))}
               <button type="button" onClick={() => { setSaved(false); setEditing(true); }} className="text-[11px] font-semibold text-[#0B8A3D] hover:underline">✎ Rename variables</button>
-              {saved && <span className="text-[10.5px] font-semibold text-[#678722]">Saved ✓</span>}
+              {saved && <span className="text-[10.5px] font-semibold text-[#7DA02E]">Saved ✓</span>}
             </div>
           ) : (
             <div className="rounded-[8px] border border-[#ECEFEC] bg-[#FAFBFA] p-2">

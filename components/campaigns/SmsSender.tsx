@@ -71,9 +71,9 @@ export function SmsSender({
               No comm plan is tagged to this campaign. Tag one in the campaign, or add it in the Comm Plan tab.
             </div>
           ) : sentOk ? (
-            <div className="rounded-[12px] bg-[#F3F8E6] px-4 py-8 text-center">
+            <div className="rounded-[12px] bg-[#F5F9EA] px-4 py-8 text-center">
               <div className="text-[34px]">✅</div>
-              <div className="mt-1 text-[15px] font-bold text-[#516A1B]">SMS sent</div>
+              <div className="mt-1 text-[15px] font-bold text-[#66852A]">SMS sent</div>
               <div className="mt-1 text-[12.5px] text-[#4C6B50]">{onSent ? "Moving to the next farmer…" : "Marked as reached by SMS."}</div>
             </div>
           ) : (

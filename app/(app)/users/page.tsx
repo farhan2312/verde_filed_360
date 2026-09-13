@@ -92,7 +92,7 @@ async function loadUsers(): Promise<UserRow[]> {
         workEmail: u.workEmail ?? "",
         roleLabel: u.roleLabel ?? "",
         roleKey: PRISMA_TO_KEY[u.role] ?? "officer",
-        grad: `linear-gradient(135deg, ${u.gradA ?? "#678722"}, ${u.gradB ?? "#B3D170"})`,
+        grad: `linear-gradient(135deg, ${u.gradA ?? "#7DA02E"}, ${u.gradB ?? "#BDD67F"})`,
         territory: u.territory ?? "",
         // storeId is a loose reference — a deleted store leaves a dangling id, so fall back to "—".
         storeName: u.storeId != null ? storeById.get(u.storeId) ?? "—" : "—",

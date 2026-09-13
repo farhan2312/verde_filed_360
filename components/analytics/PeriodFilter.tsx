@@ -34,9 +34,9 @@ export function PeriodFilter({ initial }: { initial: string }) {
             onClick={() => select(p.key)}
             className="px-[18px] py-[7px] rounded-[20px] text-xs font-semibold cursor-pointer hover:opacity-85"
             style={{
-              background: selected ? "#678722" : "white",
+              background: selected ? "#7DA02E" : "white",
               color: selected ? "white" : "#616161",
-              border: `1.5px solid ${selected ? "#678722" : "#E0E0E0"}`,
+              border: `1.5px solid ${selected ? "#7DA02E" : "#E0E0E0"}`,
             }}
           >
             {p.label}

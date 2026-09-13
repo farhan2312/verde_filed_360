@@ -130,7 +130,7 @@ export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply }: 
             <thead>
               <tr className="border-b border-[#F0F0F0] bg-[#FAFAFA] text-[#9E9E9E]">
                 <th className="w-9 px-3 py-2.5 text-center">
-                  <input type="checkbox" checked={allShownSelected} onChange={toggleAllShown} style={{ accentColor: "#678722" }} aria-label="Select all shown" />
+                  <input type="checkbox" checked={allShownSelected} onChange={toggleAllShown} style={{ accentColor: "#7DA02E" }} aria-label="Select all shown" />
                 </th>
                 <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.3px]">Store</th>
                 <th className="px-3 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.3px]">District</th>
@@ -147,7 +147,7 @@ export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply }: 
                 return (
                   <tr key={s.id} className={`border-b border-[#F5F5F5] ${checked ? "bg-brand-50/50" : "hover:bg-surface-100"}`}>
                     <td className="px-3 py-2.5 text-center">
-                      <input type="checkbox" checked={checked} onChange={() => toggleSel(s.id)} style={{ accentColor: "#678722" }} />
+                      <input type="checkbox" checked={checked} onChange={() => toggleSel(s.id)} style={{ accentColor: "#7DA02E" }} />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">

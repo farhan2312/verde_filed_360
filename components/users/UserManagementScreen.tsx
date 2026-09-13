@@ -37,7 +37,7 @@ export function UserManagementScreen({
               onClick={() => setTab(t.id)}
               className={cn(
                 "cursor-pointer rounded-lg px-[22px] py-2 text-[13px] font-semibold transition-all duration-150",
-                active ? "bg-[#262250] text-white" : "bg-transparent text-[#757575]",
+                active ? "bg-[#5C7D22] text-white" : "bg-transparent text-[#757575]",
               )}
             >
               {t.label}

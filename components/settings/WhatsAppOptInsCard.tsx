@@ -61,7 +61,7 @@ export function WhatsAppOptInsCard({ initial, qrConfig }: { initial: { total: nu
     <div className="rounded-2xl border border-black/[0.03] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="mb-1 flex items-center gap-2">
         <span className="text-[15px] font-bold text-[#1A1C1A]">WhatsApp opt-ins</span>
-        <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10.5px] font-bold text-[#0B8A3D]">{total} opted in</span>
+        <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10.5px] font-bold text-[#0B8A3D]">{total} opted in</span>
       </div>
       <p className="mb-4 text-[12px] text-[#9E9E9E]">Print the QR on posters/bills. When a customer scans it and sends the message, they’re captured here as an opted-in contact you can market to.</p>
 
@@ -78,11 +78,11 @@ export function WhatsAppOptInsCard({ initial, qrConfig }: { initial: { total: nu
             className="rounded-[10px] bg-[#0B8A3D] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#0A6E31] disabled:opacity-50">
             {gen ? "Generating…" : "Generate QR + link"}</button>
           <button type="button" onClick={saveForVisitForm} disabled={savingCfg}
-            className="rounded-[10px] border border-[#0B8A3D] px-4 py-2 text-[13px] font-bold text-[#0B8A3D] hover:bg-[#F3F8E6] disabled:opacity-50"
+            className="rounded-[10px] border border-[#0B8A3D] px-4 py-2 text-[13px] font-bold text-[#0B8A3D] hover:bg-[#F5F9EA] disabled:opacity-50"
             title="Show this exact QR on the last page of the New Visit form so officers can get farmers to opt in during a visit">
             {savingCfg ? "Saving…" : "★ Use on visit form"}</button>
         </div>
-        {saved && <div className="mt-2 rounded-[8px] bg-[#F3F8E6] px-3 py-2 text-[12px] font-semibold text-[#678722]">{saved}</div>}
+        {saved && <div className="mt-2 rounded-[8px] bg-[#F5F9EA] px-3 py-2 text-[12px] font-semibold text-[#7DA02E]">{saved}</div>}
         {qrErr && <div className="mt-2 rounded-[8px] bg-[#FDECEA] px-3 py-2 text-[12px] font-semibold text-[#C62828]">{qrErr}</div>}
 
         {qr && (
@@ -94,7 +94,7 @@ export function WhatsAppOptInsCard({ initial, qrConfig }: { initial: { total: nu
               <div className="break-all rounded-[8px] bg-white px-2.5 py-2 font-mono text-[11.5px] text-[#424242] ring-1 ring-[#EEE]">{link}</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <a href={qr} download="verde-whatsapp-optin-qr.png"
-                  className="rounded-[8px] border border-[#0B8A3D] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F3F8E6]">⬇ Download QR (PNG)</a>
+                  className="rounded-[8px] border border-[#0B8A3D] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA]">⬇ Download QR (PNG)</a>
                 <button type="button" onClick={() => navigator.clipboard?.writeText(link)}
                   className="rounded-[8px] border border-[#E0E0E0] px-3 py-1.5 text-[12px] font-semibold text-[#616161] hover:bg-[#F5F5F5]">Copy link</button>
               </div>
@@ -113,7 +113,7 @@ export function WhatsAppOptInsCard({ initial, qrConfig }: { initial: { total: nu
           <button type="button" onClick={() => refresh()} disabled={loading}
             className="rounded-[8px] border border-[#E0E0E0] px-3 py-1.5 text-[12px] font-semibold text-[#616161] hover:bg-[#F5F5F5] disabled:opacity-50">{loading ? "…" : "Refresh"}</button>
           <button type="button" onClick={exportXlsx} disabled={exporting || rows.length === 0}
-            className="rounded-[8px] border border-[#0B8A3D] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F3F8E6] disabled:opacity-50">{exporting ? "…" : "⬇ Excel"}</button>
+            className="rounded-[8px] border border-[#0B8A3D] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA] disabled:opacity-50">{exporting ? "…" : "⬇ Excel"}</button>
         </div>
       </div>
       {rows.length === 0 ? (
@@ -133,7 +133,7 @@ export function WhatsAppOptInsCard({ initial, qrConfig }: { initial: { total: nu
                   <td className="py-2 text-[#424242]">{r.farmerName || r.name || "—"}</td>
                   <td className="py-2">
                     {r.farmerId
-                      ? <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10px] font-bold text-[#678722]">✓ Registered farmer</span>
+                      ? <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10px] font-bold text-[#7DA02E]">✓ Registered farmer</span>
                       : <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-bold text-[#9E9E9E]">Not registered farmer</span>}
                   </td>
                   <td className="py-2 text-[#9E9E9E]"><span className="line-clamp-1">{r.lastMessage || "—"}</span></td>

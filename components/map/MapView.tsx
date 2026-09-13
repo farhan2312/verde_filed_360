@@ -118,7 +118,7 @@ export function MapView({
         {([["map", "🗺️ Map"], ["tags", "🏷️ Store Tags"]] as [MapTab, string][]).map(([k, label]) => (
           <button key={k} type="button" onClick={() => setTab(k)}
             className="rounded-[8px] px-5 py-2 text-[12.5px] font-bold transition-colors"
-            style={{ background: tab === k ? "#fff" : "transparent", color: tab === k ? "#678722" : "#9E9E9E", boxShadow: tab === k ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
+            style={{ background: tab === k ? "#fff" : "transparent", color: tab === k ? "#7DA02E" : "#9E9E9E", boxShadow: tab === k ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
             {label}
           </button>
         ))}
@@ -146,7 +146,7 @@ export function MapView({
           className={cn(
             "flex items-center gap-1.5 rounded-[20px] border-[1.5px] px-3.5 py-1.5 text-[11.5px] font-semibold",
             showHeat
-              ? "border-[#E4EFC9] bg-[#F3F8E6] text-[#678722]"
+              ? "border-[#E9F2CF] bg-[#F5F9EA] text-[#7DA02E]"
               : "border-[#E0E0E0] bg-[#F5F5F5] text-[#616161] hover:bg-[#EEEEEE]",
           )}
         >
@@ -158,7 +158,7 @@ export function MapView({
           className={cn(
             "flex items-center gap-1.5 rounded-[20px] border-[1.5px] px-3.5 py-1.5 text-[11.5px] font-semibold",
             showStorePins
-              ? "border-[#E4EFC9] bg-[#F3F8E6] text-[#678722]"
+              ? "border-[#E9F2CF] bg-[#F5F9EA] text-[#7DA02E]"
               : "border-[#E0E0E0] bg-[#F5F5F5] text-[#616161] hover:bg-[#EEEEEE]",
           )}
         >
@@ -217,7 +217,7 @@ export function MapView({
               className="h-[10px] w-[80px] rounded-full"
               style={{
                 background:
-                  "linear-gradient(90deg,#516A1B,#B3D170,#D4E157,#FFB300,#E53935)",
+                  "linear-gradient(90deg,#66852A,#BDD67F,#D4E157,#FFB300,#E53935)",
               }}
             />
             <span className="text-[10px] text-[#9E9E9E]">fewer → more</span>

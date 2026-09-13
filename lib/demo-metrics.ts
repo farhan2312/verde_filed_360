@@ -13,7 +13,7 @@ export const DEFAULT_KPI = {
 };
 
 export const KPI_CARDS = [
-  { key: "visits", title: "Total Visits", change: "↑ 12.3%", accent: "#678722", bg: "#F3F8E6", sub: "This month" },
+  { key: "visits", title: "Total Visits", change: "↑ 12.3%", accent: "#7DA02E", bg: "#F5F9EA", sub: "This month" },
   { key: "farmers", title: "Farmers Registered", change: "↑ 8.7%", accent: "#1565C0", bg: "#E3F2FD", sub: "Total database" },
   { key: "convRate", title: "Conversion Rate", change: "↑ 3.2pp", accent: "#D4881F", bg: "#FEF6E9", sub: "Visit → purchase" },
   { key: "followups", title: "Pending Follow-ups", change: "↓ 15%", accent: "#E65100", bg: "#FFF3E0", sub: "Due this week" },
@@ -25,17 +25,17 @@ export const ACTIVITY_BARS = [
 ];
 
 export const FUNNEL = [
-  { label: "New Leads", count: 847, pct: 100, color: "#678722" },
-  { label: "Contacted", count: 612, pct: 72, color: "#8CB337" },
-  { label: "Recommendation", count: 458, pct: 54, color: "#B3D170" },
+  { label: "New Leads", count: 847, pct: 100, color: "#7DA02E" },
+  { label: "Contacted", count: 612, pct: 72, color: "#93B93C" },
+  { label: "Recommendation", count: 458, pct: 54, color: "#BDD67F" },
   { label: "Follow-up", count: 312, pct: 37, color: "#EDA942" },
   { label: "Converted", count: 198, pct: 23, color: "#FF8F00" },
 ];
 
 export const CROPS = [
   { name: "Wheat", pct: 37, color: "#EDA942" },
-  { name: "Rice", pct: 23, color: "#B3D170" },
-  { name: "Sugarcane", pct: 17, color: "#678722" },
+  { name: "Rice", pct: 23, color: "#BDD67F" },
+  { name: "Sugarcane", pct: 17, color: "#7DA02E" },
   { name: "Potato", pct: 12, color: "#8D6E63" },
   { name: "Mustard", pct: 8, color: "#FF8F00" },
   { name: "Other", pct: 3, color: "#BDBDBD" },
@@ -43,7 +43,7 @@ export const CROPS = [
 
 export const INSIGHTS = [
   { title: "Pest Alert", text: "Wheat pest reports in Agra are 34% above seasonal avg. Prioritize spray recommendations.", accent: "#C62828" },
-  { title: "Top Performer", text: "ASR Raj Kumar achieved 94% conversion in Firozabad — highest across all stores.", accent: "#678722" },
+  { title: "Top Performer", text: "ASR Raj Kumar achieved 94% conversion in Firozabad — highest across all stores.", accent: "#7DA02E" },
   { title: "Coverage Gap", text: "15 villages in Mathura block have zero visits this quarter. Reassign territory.", accent: "#D4881F" },
   { title: "Kharif Trend", text: "Early sugarcane adoption up 18% in Mainpuri. Season visits on track to exceed target.", accent: "#1565C0" },
 ];
@@ -79,17 +79,17 @@ export const REGIONS = [
 ];
 
 export const LAND_SEGMENTS = [
-  { label: "Marginal (< 2 ac)", count: 312, pct: 24, color: "#D3E4AB" },
-  { label: "Small (2–5 ac)", count: 428, pct: 33, color: "#B3D170" },
-  { label: "Medium (5–10 ac)", count: 298, pct: 23, color: "#8CB337" },
-  { label: "Large (10–25 ac)", count: 178, pct: 14, color: "#678722" },
-  { label: "Very Large (25+ ac)", count: 68, pct: 5, color: "#516A1B" },
+  { label: "Marginal (< 2 ac)", count: 312, pct: 24, color: "#DBE9B4" },
+  { label: "Small (2–5 ac)", count: 428, pct: 33, color: "#BDD67F" },
+  { label: "Medium (5–10 ac)", count: 298, pct: 23, color: "#93B93C" },
+  { label: "Large (10–25 ac)", count: 178, pct: 14, color: "#7DA02E" },
+  { label: "Very Large (25+ ac)", count: 68, pct: 5, color: "#66852A" },
 ];
 
 export const DATA_QUALITY = [
-  { label: "Farmer Info", pct: 98, color: "#678722" },
-  { label: "Location Data", pct: 94, color: "#8CB337" },
-  { label: "Crop Details", pct: 87, color: "#B3D170" },
+  { label: "Farmer Info", pct: 98, color: "#7DA02E" },
+  { label: "Location Data", pct: 94, color: "#93B93C" },
+  { label: "Crop Details", pct: 87, color: "#BDD67F" },
   { label: "Problem Reports", pct: 72, color: "#EDA942" },
   { label: "Commercial Data", pct: 63, color: "#FF8F00" },
   { label: "Media Attachments", pct: 45, color: "#E65100" },

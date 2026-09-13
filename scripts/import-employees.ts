@@ -44,7 +44,7 @@ const initialsOf = (name: string) =>
 type Role = "ASR" | "REGIONAL";
 const GRAD: Record<Role, [string, string]> = {
   ASR: ["#1565C0", "#42A5F5"],
-  REGIONAL: ["#8CB337", "#EDA942"],
+  REGIONAL: ["#93B93C", "#EDA942"],
 };
 
 async function main() {

@@ -27,7 +27,7 @@ export function RegionalPerformance({ regions }: { regions: Region[] }) {
             <div className="flex gap-1 h-2">
               <div
                 className="h-full rounded"
-                style={{ width: `${r.visitPct}%`, background: "#678722" }}
+                style={{ width: `${r.visitPct}%`, background: "#7DA02E" }}
               />
               <div className="h-full flex-1 bg-[#F0F0F0] rounded" />
             </div>

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { createStoreTag, updateStoreTag, deleteStoreTag, type StoreTagVM } from "@/app/actions/store-tags";
 import { useConfirm } from "@/components/ConfirmDialog";
 
-const PALETTE = ["#678722", "#1565C0", "#E65100", "#6A1B9A", "#00838F", "#C62828", "#EDA942", "#546E7A"];
+const PALETTE = ["#7DA02E", "#1565C0", "#E65100", "#6A1B9A", "#00838F", "#C62828", "#EDA942", "#546E7A"];
 
 /** Settings → Store tags catalog. Create / rename / recolor / delete the tags RMs & admins assign to stores. */
 export function StoreTagsCard({ initial }: { initial: StoreTagVM[] }) {
@@ -57,7 +57,7 @@ export function StoreTagsCard({ initial }: { initial: StoreTagVM[] }) {
           ))}
         </div>
         <button type="button" onClick={add} disabled={busy || !name.trim()}
-          className="rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#516A1B] disabled:opacity-50">Add tag</button>
+          className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#66852A] disabled:opacity-50">Add tag</button>
       </div>
       {err && <div className="mb-2 rounded-[8px] bg-[#FDECEA] px-3 py-2 text-[12px] font-semibold text-[#C62828]">{err}</div>}
 

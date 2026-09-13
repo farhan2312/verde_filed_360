@@ -33,7 +33,7 @@ export function AuditScreen({ auditRows }: { auditRows: AuditRowData[] }) {
           return (
             <button key={k} type="button" onClick={() => switchTab(k)}
               className="relative px-4 py-2.5 text-[13px] font-semibold transition-colors"
-              style={{ color: on ? "#678722" : "#9E9E9E" }}>
+              style={{ color: on ? "#7DA02E" : "#9E9E9E" }}>
               {l}
               {on && <span className="absolute inset-x-2 -bottom-px h-[2.5px] rounded-full bg-brand-600" />}
             </button>

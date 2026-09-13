@@ -7,7 +7,7 @@ const n = (x: number) => x.toLocaleString("en-IN");
 const fmt = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true }); };
 const STATUS: Record<string, { bg: string; c: string; label: string }> = {
   running: { bg: "#FEF6E9", c: "#8D6E00", label: "Running" },
-  done: { bg: "#F3F8E6", c: "#678722", label: "Done" },
+  done: { bg: "#F5F9EA", c: "#7DA02E", label: "Done" },
   canceled: { bg: "#FDECEA", c: "#C62828", label: "Stopped" },
 };
 
@@ -59,9 +59,9 @@ export function BroadcastHistory({ campaignId, reloadKey = 0, defaultOpen = fals
                     return (
                       <tr key={b.id} className="border-b border-[#F6F6F6]">
                         <td className="py-1.5 text-[#616161]">{fmt(b.createdAt)}</td>
-                        <td><span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: b.channel === "WHATSAPP" ? "#F3F8E6" : "#F3E5F5", color: b.channel === "WHATSAPP" ? "#0B8A3D" : "#6A1B9A" }}>{b.channel === "WHATSAPP" ? "WhatsApp" : "SMS"}</span></td>
+                        <td><span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: b.channel === "WHATSAPP" ? "#F5F9EA" : "#F3E5F5", color: b.channel === "WHATSAPP" ? "#0B8A3D" : "#6A1B9A" }}>{b.channel === "WHATSAPP" ? "WhatsApp" : "SMS"}</span></td>
                         <td className="max-w-[200px] truncate text-[#424242]" title={b.templateLabel}>{b.templateLabel || "—"}</td>
-                        <td className="text-right font-semibold text-[#678722]">{n(b.sent)}</td>
+                        <td className="text-right font-semibold text-[#7DA02E]">{n(b.sent)}</td>
                         <td className="text-right text-[#C62828]">{n(b.failed)}</td>
                         <td className="text-right text-[#9E9E9E]">{n(b.remaining)}</td>
                         <td><span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: st.bg, color: st.c }}>{st.label}</span></td>

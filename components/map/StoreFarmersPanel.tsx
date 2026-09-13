@@ -407,7 +407,7 @@ export function StoreFarmersPanel({
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} className="max-w-[460px]">
         <ModalHeader
           eyebrow="Cluster Builder"
-          eyebrowColor="#678722"
+          eyebrowColor="#7DA02E"
           title="Create farmer cluster"
           subtitle={`${storeLabel} · ${grouped(selectedCount)} farmers`}
           onClose={() => setModalOpen(false)}

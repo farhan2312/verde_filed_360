@@ -61,7 +61,7 @@ export function CropSelector({
     <div>
       <div className="mb-2 text-[11px] text-[#9E9E9E]">
         Tap a crop to add it. Tap{" "}
-        <span className="font-semibold text-[#678722]">★</span> to mark the{" "}
+        <span className="font-semibold text-[#7DA02E]">★</span> to mark the{" "}
         <span className="font-semibold text-[#616161]">main</span> crop.
       </div>
 
@@ -74,10 +74,10 @@ export function CropSelector({
               key={c}
               className="flex items-center gap-1.5 rounded-[20px] border-[1.5px] px-3.5 py-[7px] text-[12px] font-medium transition-colors"
               style={{
-                background: sel ? "#F3F8E6" : "#FFFFFF",
-                color: sel ? "#678722" : "#616161",
-                borderColor: sel ? "#678722" : "#E0E0E0",
-                boxShadow: m ? "0 0 0 1px #678722 inset" : undefined,
+                background: sel ? "#F5F9EA" : "#FFFFFF",
+                color: sel ? "#7DA02E" : "#616161",
+                borderColor: sel ? "#7DA02E" : "#E0E0E0",
+                boxShadow: m ? "0 0 0 1px #7DA02E inset" : undefined,
               }}
             >
               {sel && (
@@ -87,7 +87,7 @@ export function CropSelector({
                   aria-pressed={m}
                   onClick={() => !m && makeMain(c)}
                   className="leading-none"
-                  style={{ color: m ? "#678722" : "#BDBDBD", cursor: m ? "default" : "pointer" }}
+                  style={{ color: m ? "#7DA02E" : "#BDBDBD", cursor: m ? "default" : "pointer" }}
                 >
                   {m ? "★" : "☆"}
                 </button>
@@ -115,7 +115,7 @@ export function CropSelector({
       </div>
 
       {main && (
-        <div className="mt-2 text-[11px] text-[#678722]">
+        <div className="mt-2 text-[11px] text-[#7DA02E]">
           Main: <b className="font-bold">{main}</b>
           {cleanOthers.length
             ? ` · +${cleanOthers.length} other${cleanOthers.length > 1 ? "s" : ""}`

@@ -144,10 +144,10 @@ export function MapOfficersModal({
                     <div className="flex items-center gap-1.5 text-[10.5px] text-ink-muted">
                       <span>{o.code || "—"}</span>
                       {o.zone === store.zone && o.zone && (
-                        <span className="rounded-[20px] bg-[#F3F8E6] px-1.5 py-px font-semibold text-[#678722]">same zone</span>
+                        <span className="rounded-[20px] bg-[#F5F9EA] px-1.5 py-px font-semibold text-[#7DA02E]">same zone</span>
                       )}
                       {o.storeId == null ? (
-                        <span className="rounded-[20px] bg-[#F3F8E6] px-1.5 py-px font-semibold text-[#678722]">free</span>
+                        <span className="rounded-[20px] bg-[#F5F9EA] px-1.5 py-px font-semibold text-[#7DA02E]">free</span>
                       ) : elsewhere ? (
                         <span className="rounded-[20px] bg-[#FFF3E0] px-1.5 py-px font-semibold text-[#E65100]">
                           @ {storeNameById[o.storeId] ?? "another store"}
@@ -162,7 +162,7 @@ export function MapOfficersModal({
                     className={
                       moving
                         ? "rounded-lg bg-[#E65100] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#D84315] disabled:opacity-50"
-                        : "rounded-lg bg-[#F3F8E6] px-3 py-1.5 text-[11px] font-semibold text-[#678722] hover:bg-[#E4EFC9] disabled:opacity-50"
+                        : "rounded-lg bg-[#F5F9EA] px-3 py-1.5 text-[11px] font-semibold text-[#7DA02E] hover:bg-[#E9F2CF] disabled:opacity-50"
                     }
                   >
                     {moving ? "Confirm move" : "Assign"}
@@ -182,7 +182,7 @@ export function MapOfficersModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[10px] bg-[#678722] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#516A1B]"
+            className="rounded-[10px] bg-[#7DA02E] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#66852A]"
           >
             Done
           </button>

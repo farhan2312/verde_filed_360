@@ -9,19 +9,19 @@ const ORG_STATS = [
 ];
 
 const REGION_BARS = [
-  { name: "Agra", pct: 88, color: "#678722", label: "847 visits · 45%", labelDark: false },
-  { name: "Amethi", pct: 76, color: "#8CB337", label: "712 visits · 52%", labelDark: false },
-  { name: "Raebareli", pct: 62, color: "#B3D170", label: "584 visits · 38%", labelDark: false },
-  { name: "Lakhimpur Kheri", pct: 48, color: "#C2D98D", label: "456 visits · 35%", labelDark: false },
-  { name: "Mathura", pct: 38, color: "#D3E4AB", label: "378 visits · 31%", labelDark: false },
-  { name: "Hathras", pct: 28, color: "#E4EFC9", label: "245 visits · 28%", labelDark: true },
+  { name: "Agra", pct: 88, color: "#7DA02E", label: "847 visits · 45%", labelDark: false },
+  { name: "Amethi", pct: 76, color: "#93B93C", label: "712 visits · 52%", labelDark: false },
+  { name: "Raebareli", pct: 62, color: "#BDD67F", label: "584 visits · 38%", labelDark: false },
+  { name: "Lakhimpur Kheri", pct: 48, color: "#CCE09A", label: "456 visits · 35%", labelDark: false },
+  { name: "Mathura", pct: 38, color: "#DBE9B4", label: "378 visits · 31%", labelDark: false },
+  { name: "Hathras", pct: 28, color: "#E9F2CF", label: "245 visits · 28%", labelDark: true },
 ];
 
 const TOP_ASRS = [
-  { rank: 1, name: "Raj Kumar", sub: "Agra · 94 visits", score: "96%", scoreColor: "#678722" },
-  { rank: 2, name: "Amit Yadav", sub: "Firozabad · 87 visits", score: "88%", scoreColor: "#678722" },
-  { rank: 3, name: "Vikram Singh", sub: "Mainpuri · 82 visits", score: "84%", scoreColor: "#8CB337" },
-  { rank: 4, name: "Deepak Verma", sub: "Etah · 76 visits", score: "78%", scoreColor: "#B3D170" },
+  { rank: 1, name: "Raj Kumar", sub: "Agra · 94 visits", score: "96%", scoreColor: "#7DA02E" },
+  { rank: 2, name: "Amit Yadav", sub: "Firozabad · 87 visits", score: "88%", scoreColor: "#7DA02E" },
+  { rank: 3, name: "Vikram Singh", sub: "Mainpuri · 82 visits", score: "84%", scoreColor: "#93B93C" },
+  { rank: 4, name: "Deepak Verma", sub: "Etah · 76 visits", score: "78%", scoreColor: "#BDD67F" },
   { rank: 5, name: "Sunil Gupta", sub: "Mathura · 71 visits", score: "74%", scoreColor: "#D4881F" },
 ];
 
@@ -32,7 +32,7 @@ const ALERT_CARDS = [
     text: "Hathras region has 42% lower visits than target. ASR Sunil Gupta inactive for 5 days. Immediate intervention needed.",
   },
   {
-    accent: "#678722",
+    accent: "#7DA02E",
     label: "Achievement",
     text: "Firozabad crossed ₹12L monthly sales — highest ever. Tiloi (Amethi) & Shivgarh (Raebareli) leading on sugarcane conversion.",
   },
@@ -48,7 +48,7 @@ export function CentralBanner() {
     <>
       <div
         className="mb-5 grid grid-cols-2 gap-5 rounded-[14px] px-5 py-[18px] text-white lg:grid-cols-5 lg:px-7 lg:py-[22px]"
-        style={{ background: "linear-gradient(135deg,#4A148C,#7B1FA2,#9C27B0)" }}
+        style={{ background: "linear-gradient(135deg,#66852A,#7DA02E,#93B93C)" }}
       >
         {ORG_STATS.map((s) => (
           <div key={s.label}>
@@ -99,7 +99,7 @@ export function CentralBanner() {
               <div
                 key={a.rank}
                 className="flex items-center gap-3 rounded-[10px] px-3 py-2"
-                style={{ background: a.rank === 1 ? "#F3F8E6" : "#F5F7F5" }}
+                style={{ background: a.rank === 1 ? "#F5F9EA" : "#F5F7F5" }}
               >
                 <div
                   className="w-[22px] text-sm font-bold"

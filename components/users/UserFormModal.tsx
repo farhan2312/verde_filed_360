@@ -188,7 +188,7 @@ export function UserFormModal({
             type="button"
             onClick={submit}
             disabled={pending}
-            className="rounded-[10px] bg-[#678722] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50"
+            className="rounded-[10px] bg-[#7DA02E] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50"
           >
             {pending ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
           </button>

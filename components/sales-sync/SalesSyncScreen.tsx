@@ -48,7 +48,7 @@ function ActivityChart({ days }: { days: DayBar[] }) {
         const h = Math.max(d.bills > 0 ? 2 : 0, y(0) - y(d.bills));
         return (
           <g key={d.day}>
-            <rect x={x + bw * 0.18} y={y(0) - h} width={bw * 0.64} height={h} rx="2" fill={d.failed ? "#D4881F" : "#678722"} opacity={d.runs ? 1 : 0.25}>
+            <rect x={x + bw * 0.18} y={y(0) - h} width={bw * 0.64} height={h} rx="2" fill={d.failed ? "#D4881F" : "#7DA02E"} opacity={d.runs ? 1 : 0.25}>
               <title>{`${d.label}: ${d.bills.toLocaleString("en-IN")} bills · ${d.records.toLocaleString("en-IN")} line-items · ${d.runs} run(s)${d.failed ? ` · ${d.failed} failed` : ""}`}</title>
             </rect>
             {d.failed > 0 && <circle cx={x + bw / 2} cy={H - padB + 8} r="2.5" fill="#C62828" />}
@@ -69,7 +69,7 @@ function CoverageStrip({ days }: { days: CoverageDay[] }) {
     <div className="flex flex-wrap gap-[3px]">
       {days.map((d) => {
         const t = d.lines / max;
-        const bg = d.lines === 0 ? "#F0F0F0" : t < 0.25 ? "#D3E4AB" : t < 0.5 ? "#B3D170" : t < 0.75 ? "#8CB337" : "#678722";
+        const bg = d.lines === 0 ? "#F0F0F0" : t < 0.25 ? "#DBE9B4" : t < 0.5 ? "#BDD67F" : t < 0.75 ? "#93B93C" : "#7DA02E";
         return <div key={d.day} title={`${d.label}: ${d.lines.toLocaleString("en-IN")} line-items`} className="h-[14px] w-[14px] rounded-[3px]" style={{ background: bg }} />;
       })}
     </div>
@@ -115,12 +115,12 @@ export function SalesSyncScreen({ runs, days, coverage, stats, apiReady, setting
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-[14px] md:grid-cols-3 xl:grid-cols-6">
-        <StatTile title="Runs · 30 days" value={n(stats.runs30)} sub={successRate == null ? "no runs yet" : `${successRate}% succeeded · ${stats.failed30} failed`} accent={stats.failed30 ? "#D4881F" : "#678722"} />
+        <StatTile title="Runs · 30 days" value={n(stats.runs30)} sub={successRate == null ? "no runs yet" : `${successRate}% succeeded · ${stats.failed30} failed`} accent={stats.failed30 ? "#D4881F" : "#7DA02E"} />
         <StatTile title="Line-items · 30 days" value={n(stats.records30)} sub="fetched from ERP" />
         <StatTile title="Bills · 30 days" value={n(stats.bills30)} sub="written to Farmer 360" />
         <StatTile title="New customers · 30 days" value={n(stats.newCustomers30)} sub="farmers created by mobile" accent="#1565C0" bg="#E3F2FD" />
         <StatTile title="Avg run time" value={secs(stats.avgDurationMs)} sub="per run, 30 days" accent="#7B1FA2" bg="#F3E5F5" />
-        <StatTile title="All-time" value={n(stats.totalBills)} sub={`bills · ${n(stats.totalLines)} lines · ${n(stats.totalFarmers)} farmers${stats.lastBillDate ? ` · to ${stats.lastBillDate}` : ""}`} accent="#262250" bg="#E4EFC9" />
+        <StatTile title="All-time" value={n(stats.totalBills)} sub={`bills · ${n(stats.totalLines)} lines · ${n(stats.totalFarmers)} farmers${stats.lastBillDate ? ` · to ${stats.lastBillDate}` : ""}`} accent="#5C7D22" bg="#E9F2CF" />
       </div>
 
       <div className="grid gap-[18px] lg:grid-cols-[1.6fr_1fr]">

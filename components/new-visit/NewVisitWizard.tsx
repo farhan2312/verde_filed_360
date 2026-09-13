@@ -40,14 +40,14 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function PlusBadge() {
   return (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-      <circle cx="6" cy="6" r="5.5" fill="#678722" />
+      <circle cx="6" cy="6" r="5.5" fill="#7DA02E" />
       <path d="M4 6h4M6 4v4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 function CheckBadge() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="#678722">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="#7DA02E">
       <path d="M6 1a5 5 0 100 10A5 5 0 006 1zm2.3 3.7l-2.6 2.6-1-1a.5.5 0 00-.7.7l1.4 1.4a.5.5 0 00.7 0l3-3a.5.5 0 00-.8-.7z" />
     </svg>
   );
@@ -91,7 +91,7 @@ function AlertIcon() {
 function GroupHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-[#F3F8E6] text-[#678722]">
+      <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-[#F5F9EA] text-[#7DA02E]">
         {icon}
       </span>
       <div className="text-[13.5px] font-extrabold tracking-[0.2px] text-[#1A1C1A]">{title}</div>
@@ -386,10 +386,10 @@ export function NewVisitWizard({
       {/* A. Progress steps */}
       <div className="mb-7 flex items-center gap-1">
         {STEP_LABELS.map((label, i) => {
-          const circleBg = i === step ? "#678722" : step > i ? "#B3D170" : "#E0E0E0";
+          const circleBg = i === step ? "#7DA02E" : step > i ? "#BDD67F" : "#E0E0E0";
           const circleColor = step >= i ? "#FFFFFF" : "#9E9E9E";
-          const textColor = i === step ? "#678722" : step > i ? "#8CB337" : "#BDBDBD";
-          const lineBg = step > i ? "#B3D170" : "#E8E8E8";
+          const textColor = i === step ? "#7DA02E" : step > i ? "#93B93C" : "#BDBDBD";
+          const lineBg = step > i ? "#BDD67F" : "#E8E8E8";
           return (
             <div key={label} className="flex flex-1 items-center gap-1">
               <div
@@ -437,7 +437,7 @@ export function NewVisitWizard({
                         className="rounded-[8px] px-4 py-2 text-[12.5px] font-semibold transition-colors"
                         style={{
                           background: active ? "#FFFFFF" : "transparent",
-                          color: active ? "#678722" : "#9E9E9E",
+                          color: active ? "#7DA02E" : "#9E9E9E",
                           boxShadow: active ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
                         }}
                       >
@@ -451,14 +451,14 @@ export function NewVisitWizard({
               <div>
                 <FieldLabel>Store *</FieldLabel>
                 {storeLocked ? (
-                  <div className="flex items-center gap-2 rounded-[10px] border-[1.5px] border-[#E4EFC9] bg-[#F1F8F1] px-3.5 py-[11px] text-[14px] font-semibold text-[#678722]">
+                  <div className="flex items-center gap-2 rounded-[10px] border-[1.5px] border-[#E9F2CF] bg-[#F1F8F1] px-3.5 py-[11px] text-[14px] font-semibold text-[#7DA02E]">
                     🏪 {stores[0].name}
                   </div>
                 ) : (
                   <select
                     value={form.storeId ?? ""}
                     onChange={(e) => set("storeId", e.target.value ? Number(e.target.value) : null)}
-                    className={`w-full rounded-[10px] border-[1.5px] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722] ${
+                    className={`w-full rounded-[10px] border-[1.5px] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E] ${
                       form.storeId == null ? "border-[#EF9A9A]" : "border-[#E0E0E0]"
                     }`}
                   >
@@ -475,8 +475,8 @@ export function NewVisitWizard({
             </div>
 
             {/* Primary ID hero */}
-            <div className="mb-5 rounded-[13px] border-[1.5px] border-[#D3E4AB] bg-gradient-to-br from-[#F1F8F1] to-[#F3F8E6] p-5">
-              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.7px] text-[#678722]">
+            <div className="mb-5 rounded-[13px] border-[1.5px] border-[#DBE9B4] bg-gradient-to-br from-[#F1F8F1] to-[#F5F9EA] p-5">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.7px] text-[#7DA02E]">
                 <PlusBadge />
                 {primaryIdLabel} *
               </div>
@@ -487,10 +487,10 @@ export function NewVisitWizard({
                 placeholder="Enter 10-digit mobile number"
                 value={form.mobile}
                 onChange={(e) => set("mobile", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                className={`w-full rounded-[10px] border-2 bg-white px-4 py-[13px] text-[16px] tracking-[1px] outline-none focus:ring-[3px] focus:ring-[#678722]/[0.12] ${
+                className={`w-full rounded-[10px] border-2 bg-white px-4 py-[13px] text-[16px] tracking-[1px] outline-none focus:ring-[3px] focus:ring-[#7DA02E]/[0.12] ${
                   form.mobile && !mobileValid
                     ? "border-[#EF9A9A] focus:border-[#C62828]"
-                    : "border-[#E4EFC9] focus:border-[#678722]"
+                    : "border-[#E9F2CF] focus:border-[#7DA02E]"
                 }`}
               />
               <div
@@ -507,8 +507,8 @@ export function NewVisitWizard({
 
             {/* Returning farmer card — details autofilled below, editable */}
             {lookupStatus === "found" && foundFarmer && (
-              <div className="mb-[18px] rounded-xl border-[1.5px] border-[#D3E4AB] bg-[#F3F8E6] px-4 py-3.5">
-                <div className="mb-2.5 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.7px] text-[#678722]">
+              <div className="mb-[18px] rounded-xl border-[1.5px] border-[#DBE9B4] bg-[#F5F9EA] px-4 py-3.5">
+                <div className="mb-2.5 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.7px] text-[#7DA02E]">
                   <CheckBadge />
                   Returning farmer — editing existing record
                 </div>
@@ -552,20 +552,20 @@ export function NewVisitWizard({
                       </div>
                       <div
                         className="mt-0.5 text-[12.5px] font-semibold"
-                        style={{ color: cell.green ? "#678722" : "#1A1C1A" }}
+                        style={{ color: cell.green ? "#7DA02E" : "#1A1C1A" }}
                       >
                         {cell.value}
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mb-2.5 text-[11px] text-[#678722]">
+                <div className="mb-2.5 text-[11px] text-[#7DA02E]">
                   Details are autofilled below — edit any field and submit to update this farmer&apos;s
                   record.
                 </div>
                 <Link
                   href={`/farmers/${foundFarmer.id}`}
-                  className="block rounded-lg bg-[#678722] py-[9px] text-center text-[12px] font-semibold text-white hover:bg-[#516A1B]"
+                  className="block rounded-lg bg-[#7DA02E] py-[9px] text-center text-[12px] font-semibold text-white hover:bg-[#66852A]"
                 >
                   View Full Profile →
                 </Link>
@@ -591,7 +591,7 @@ export function NewVisitWizard({
                   placeholder="Enter farmer name"
                   value={form.name}
                   onChange={onText("name")}
-                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722]"
+                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E]"
                 />
               </div>
               <div>
@@ -601,7 +601,7 @@ export function NewVisitWizard({
                   placeholder="Enter name"
                   value={form.father}
                   onChange={onText("father")}
-                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722]"
+                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E]"
                 />
               </div>
               <div>
@@ -612,7 +612,7 @@ export function NewVisitWizard({
                   placeholder="Village"
                   value={form.village}
                   onChange={onText("village")}
-                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722]"
+                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E]"
                 />
                 <datalist id="nv-villages">
                   {villages.map((v) => (
@@ -625,7 +625,7 @@ export function NewVisitWizard({
                 <select
                   value={form.district}
                   onChange={onText("district")}
-                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722]"
+                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E]"
                 >
                   <option value="">Select district…</option>
                   {form.district && !districts.includes(form.district) && (
@@ -643,7 +643,7 @@ export function NewVisitWizard({
               <select
                 value={form.visitPurpose}
                 onChange={onText("visitPurpose")}
-                className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722]"
+                className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E]"
               >
                 <option value="">Select a reason…</option>
                 {form.visitPurpose && !visitReasons.includes(form.visitPurpose) && (
@@ -662,7 +662,7 @@ export function NewVisitWizard({
                   style={{
                     background:
                       geoStatus === "done"
-                        ? "#678722"
+                        ? "#7DA02E"
                         : geoStatus === "error"
                           ? "#C62828"
                           : "#EDA942",
@@ -676,7 +676,7 @@ export function NewVisitWizard({
                   {geoStatus === "done" && form.gpsLat != null && form.gpsLng != null && (
                     <>
                       GPS Location:{" "}
-                      <span className="font-semibold text-[#678722]">
+                      <span className="font-semibold text-[#7DA02E]">
                         {form.gpsLat.toFixed(4)}° N, {form.gpsLng.toFixed(4)}° E
                       </span>{" "}
                       — Confirmed
@@ -906,7 +906,7 @@ export function NewVisitWizard({
                 placeholder="e.g. Local market, XYZ Agri Store..."
                 value={form.otherShops}
                 onChange={onText("otherShops")}
-                className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]"
+                className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]"
               />
             </div>
 
@@ -945,7 +945,7 @@ export function NewVisitWizard({
                       <button
                         type="button"
                         onClick={() => setServiceDetail("whatsappAvail", form.mobile)}
-                        className="mt-2 text-[11px] font-semibold text-[#678722] hover:underline"
+                        className="mt-2 text-[11px] font-semibold text-[#7DA02E] hover:underline"
                       >
                         Same as mobile ({form.mobile})
                       </button>
@@ -968,7 +968,7 @@ export function NewVisitWizard({
                   type="date"
                   value={form.followUpDate}
                   onChange={onText("followUpDate")}
-                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722]"
+                  className="w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E]"
                 />
               </div>
               <div>
@@ -976,7 +976,7 @@ export function NewVisitWizard({
                 <select
                   value={form.followUpReason}
                   onChange={onText("followUpReason")}
-                  className={`w-full rounded-[10px] border-[1.5px] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722] ${followUpSet && !form.followUpReason.trim() ? "border-[#EF9A9A]" : "border-[#E0E0E0]"}`}
+                  className={`w-full rounded-[10px] border-[1.5px] bg-white px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E] ${followUpSet && !form.followUpReason.trim() ? "border-[#EF9A9A]" : "border-[#E0E0E0]"}`}
                 >
                   <option value="">Select a reason…</option>
                   {options.followUpReason.map((r) => (
@@ -992,7 +992,7 @@ export function NewVisitWizard({
                 onChange={(e) => setForm((f) => ({ ...f, followUpComment: e.target.value }))}
                 rows={3}
                 placeholder={followUpSet ? "What is the next visit for? Add context for the action…" : "Only needed if you set a follow-up date"}
-                className={`w-full resize-y rounded-[10px] border-[1.5px] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#678722] ${followUpSet && !form.followUpComment.trim() ? "border-[#EF9A9A]" : "border-[#E0E0E0]"}`}
+                className={`w-full resize-y rounded-[10px] border-[1.5px] px-3.5 py-[11px] text-[14px] outline-none focus:border-[#7DA02E] ${followUpSet && !form.followUpComment.trim() ? "border-[#EF9A9A]" : "border-[#E0E0E0]"}`}
               />
             </div>
             <p className="mb-6 text-[12px] text-[#9E9E9E]">
@@ -1024,15 +1024,15 @@ export function NewVisitWizard({
             </div>
 
             {optInQr && (
-              <div className="mb-5 rounded-xl border-[1.5px] border-[#D3E4AB] bg-[#F1F8F1] p-[18px]">
+              <div className="mb-5 rounded-xl border-[1.5px] border-[#DBE9B4] bg-[#F1F8F1] p-[18px]">
                 <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.7px] text-[#0B8A3D]">
                   ⚡ WhatsApp updates
                 </div>
                 <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={optInQr} alt="Scan to opt in to WhatsApp updates" className="h-40 w-40 shrink-0 rounded-[10px] border border-[#E4EFC9] bg-white p-1.5" />
+                  <img src={optInQr} alt="Scan to opt in to WhatsApp updates" className="h-40 w-40 shrink-0 rounded-[10px] border border-[#E9F2CF] bg-white p-1.5" />
                   <div className="text-[13px] leading-relaxed text-[#33691E]">
-                    <div className="font-bold text-[#516A1B]">Ask the farmer to scan this</div>
+                    <div className="font-bold text-[#66852A]">Ask the farmer to scan this</div>
                     <div className="mt-1">They&apos;ll open WhatsApp with a ready message — they just tap <b>send</b>. That opts them in to receive product updates &amp; offers from Verde Agrotech on WhatsApp.</div>
                     <div className="mt-1.5 text-[11.5px] text-[#558B2F]">Optional — the visit still submits either way.</div>
                   </div>
@@ -1065,7 +1065,7 @@ export function NewVisitWizard({
             <button
               type="button"
               onClick={prev}
-              className="rounded-[10px] border-[1.5px] border-[#E0E0E0] px-7 py-[11px] text-[13px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]"
+              className="rounded-[10px] border-[1.5px] border-[#E0E0E0] px-7 py-[11px] text-[13px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]"
             >
               Previous
             </button>
@@ -1084,7 +1084,7 @@ export function NewVisitWizard({
                     ? "Select at least one crop to continue."
                     : undefined
               }
-              className="rounded-[10px] bg-[#678722] px-8 py-[11px] text-[13px] font-semibold text-white hover:bg-[#516A1B] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#678722]"
+              className="rounded-[10px] bg-[#7DA02E] px-8 py-[11px] text-[13px] font-semibold text-white hover:bg-[#66852A] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#7DA02E]"
             >
               Continue
             </button>
@@ -1094,7 +1094,7 @@ export function NewVisitWizard({
               onClick={submit}
               disabled={pending || !followUpValid}
               title={!followUpValid ? "Add a follow-up reason and comment (required when a follow-up date is set)." : undefined}
-              className="rounded-[10px] bg-[#678722] px-8 py-[11px] text-[13px] font-semibold text-white hover:bg-[#516A1B] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-[10px] bg-[#7DA02E] px-8 py-[11px] text-[13px] font-semibold text-white hover:bg-[#66852A] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pending ? "Submitting…" : "Submit Visit"}
             </button>

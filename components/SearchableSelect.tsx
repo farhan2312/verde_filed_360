@@ -65,19 +65,19 @@ export function SearchableSelect({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-lg border border-[#E0E0E0] bg-white px-2.5 py-1.5 text-[12.5px] outline-none focus:border-[#678722]"
+              className="w-full rounded-lg border border-[#E0E0E0] bg-white px-2.5 py-1.5 text-[12.5px] outline-none focus:border-[#7DA02E]"
             />
           </div>
           <div className="max-h-[240px] overflow-y-auto py-1">
             <button type="button" onClick={() => { onChange(null); setOpen(false); }}
-              className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#F5F7F5] ${value == null ? "font-semibold text-[#678722]" : "text-[#616161]"}`}>
+              className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#F5F7F5] ${value == null ? "font-semibold text-[#7DA02E]" : "text-[#616161]"}`}>
               {placeholder}
             </button>
             {filtered.length === 0 ? (
               <div className="px-3 py-2 text-[12px] text-[#9E9E9E]">No matches</div>
             ) : filtered.map((o) => (
               <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
-                className={`block w-full truncate px-3 py-1.5 text-left text-[12.5px] hover:bg-[#F5F7F5] ${o.value === value ? "font-semibold text-[#678722]" : "text-[#424242]"}`}>
+                className={`block w-full truncate px-3 py-1.5 text-left text-[12.5px] hover:bg-[#F5F7F5] ${o.value === value ? "font-semibold text-[#7DA02E]" : "text-[#424242]"}`}>
                 {o.label}
               </button>
             ))}

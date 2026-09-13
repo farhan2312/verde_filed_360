@@ -13,12 +13,12 @@ const inr = (x: number | null) => (x == null ? "—" : "₹" + Math.round(x).toL
 const price = (x: number | null) => (x == null ? "—" : "₹" + x.toLocaleString("en-IN", { maximumFractionDigits: 2 }));
 
 const CAT_COLOR: Record<string, string> = {
-  "FERTILIZER BULK": "#678722", "FERTILIZER": "#8CB337", "SEEDS": "#EDA942",
+  "FERTILIZER BULK": "#7DA02E", "FERTILIZER": "#93B93C", "SEEDS": "#EDA942",
   "CPC (CROP PROTECTION CHEMICALS)": "#C62828", "MICRO NUTRIENTS": "#1565C0",
   "OTHERS": "#757575", "MECHANICAL SPRAYER": "#6A1B9A", "ELECTRICAL EQUIPMENT": "#00838F",
 };
 const catColor = (c: string | null) => (c ? CAT_COLOR[c] ?? "#616161" : "#9E9E9E");
-const CONF_COLOR: Record<string, string> = { High: "#678722", Medium: "#EDA942", Low: "#C62828" };
+const CONF_COLOR: Record<string, string> = { High: "#7DA02E", Medium: "#EDA942", Low: "#C62828" };
 
 /** Truncated free-text cell with a hover tooltip carrying the full value. */
 function Trunc({ v, w = "180px" }: { v: string | null; w?: string }) {
@@ -49,7 +49,7 @@ const COLUMNS: Col[] = [
   { key: "gst", label: "GST %", align: "right", render: (p) => <span className="text-[#616161]">{p.taxRate != null ? `${p.taxRate}%` : "—"}</span> },
   { key: "tech", label: "Technical Name", render: (p) => <Trunc v={p.technicalName} w="200px" /> },
   { key: "ai", label: "Active Ingredient(s)", render: (p) => <Trunc v={p.activeIngredients} w="180px" /> },
-  { key: "tCrops", label: "Target Crops", render: (p) => <Chips tags={p.targetCrops} bg="#F3F8E6" fg="#516A1B" /> },
+  { key: "tCrops", label: "Target Crops", render: (p) => <Chips tags={p.targetCrops} bg="#F5F9EA" fg="#66852A" /> },
   { key: "tPests", label: "Target Pests / Diseases / Weeds", render: (p) => <Chips tags={p.targetPests} bg="#FFF3E0" fg="#E65100" /> },
   { key: "cropTag", label: "Seed Crop", render: (p) => p.cropTag ? <span className="whitespace-nowrap rounded-full bg-[#FEF6E9] px-2 py-0.5 text-[10.5px] font-semibold text-[#8D6E00] capitalize">{p.cropTag}</span> : <span className="text-[#DDD]">·</span> },
   { key: "alt", label: "Alternative Products", render: (p) => <Trunc v={p.alternativeProducts} w="200px" /> },
@@ -61,7 +61,7 @@ const COLUMNS: Col[] = [
   { key: "origDesc", label: "Original Description", render: (p) => <Trunc v={p.originalDescription} w="200px" /> },
   { key: "price", label: "Unit price", align: "right", render: (p) => <span className="whitespace-nowrap text-[#1A1C1A]">{price(p.avgPrice)}</span> },
   { key: "qty", label: "Units sold", align: "right", render: (p) => <span className="whitespace-nowrap font-semibold text-[#1A1C1A]">{n(p.totalQty)}</span> },
-  { key: "rev", label: "Revenue", align: "right", render: (p) => <span className="whitespace-nowrap font-bold text-[#678722]">{inr(p.totalRevenue)}</span> },
+  { key: "rev", label: "Revenue", align: "right", render: (p) => <span className="whitespace-nowrap font-bold text-[#7DA02E]">{inr(p.totalRevenue)}</span> },
   { key: "last", label: "Last sold", align: "right", render: (p) => <span className="whitespace-nowrap text-[11.5px] text-[#9E9E9E]">{p.lastSoldAt ?? "—"}</span> },
 ];
 
@@ -147,7 +147,7 @@ export function ProductCatalog({ initial, facets, kpis, canEdit }: {
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <button type="button" onClick={() => setViewing(p)} className="text-[12px] font-semibold text-[#6A1B9A] hover:underline">Details</button>
                     {canEdit && <>
-                      <button type="button" onClick={() => setEditing(p)} className="ml-3 text-[12px] font-semibold text-[#678722] hover:underline">Edit</button>
+                      <button type="button" onClick={() => setEditing(p)} className="ml-3 text-[12px] font-semibold text-[#7DA02E] hover:underline">Edit</button>
                       <button type="button" onClick={() => setMerging(p)} className="ml-3 text-[12px] font-semibold text-[#1565C0] hover:underline">Merge</button>
                     </>}
                   </td>
@@ -255,7 +255,7 @@ function EditModal({ product, facets, onClose, onSaved }: { product: ProductVM; 
 
   return (
     <Modal open onClose={onClose} className="max-w-[520px]">
-      <ModalHeader eyebrow="Product" eyebrowColor="#678722" title="Edit product" subtitle={product.rawName} onClose={onClose} />
+      <ModalHeader eyebrow="Product" eyebrowColor="#7DA02E" title="Edit product" subtitle={product.rawName} onClose={onClose} />
       <div className="max-h-[68vh] overflow-y-auto px-5 py-4">
         <Field label="Display name"><input className="w-full rounded-lg border border-[#E0E0E0] px-3 py-2 text-[13px]" value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <div className="grid grid-cols-2 gap-3">
@@ -267,10 +267,10 @@ function EditModal({ product, facets, onClose, onSaved }: { product: ProductVM; 
         <Field label="GST rate %"><input type="number" className="w-full rounded-lg border border-[#E0E0E0] px-3 py-2 text-[13px]" value={taxRate} onChange={(e) => setTax(e.target.value)} /></Field>
         {err && <div className="mt-1 text-[12px] text-[#C62828]">{err}</div>}
         <div className="mt-4 flex items-center justify-between">
-          <button type="button" onClick={toggle} disabled={saving} className={`rounded-[10px] px-3 py-2 text-[12.5px] font-semibold ${product.active ? "bg-[#FDECEA] text-[#C62828]" : "bg-[#F3F8E6] text-[#678722]"}`}>{product.active ? "Deactivate" : "Reactivate"}</button>
+          <button type="button" onClick={toggle} disabled={saving} className={`rounded-[10px] px-3 py-2 text-[12.5px] font-semibold ${product.active ? "bg-[#FDECEA] text-[#C62828]" : "bg-[#F5F9EA] text-[#7DA02E]"}`}>{product.active ? "Deactivate" : "Reactivate"}</button>
           <div className="flex gap-2">
             <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
-            <button type="button" onClick={save} disabled={saving} className="rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+            <button type="button" onClick={save} disabled={saving} className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
           </div>
         </div>
       </div>

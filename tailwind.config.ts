@@ -2,8 +2,8 @@ import type { Config } from "tailwindcss";
 
 /**
  * Design tokens for Verde Field Intel.
- * Palette from the Verde Agrotech logo: lime-green brand (#A4C954), navy (#262250) for the
- * sidebar / dark surfaces, orange accent (#EDA942); segment colors, soft canvas.
+ * Palette from the Verde Agrotech logo: lime-green brand (#A4C954) with a lighter green scale for
+ * primary actions, a mid-green sidebar, orange accent (#EDA942); segment colors, soft canvas.
  */
 const config: Config = {
   content: [
@@ -21,19 +21,19 @@ const config: Config = {
         canvas: "#F3F4EF",
         // Brand lime greens (primary); 900/950 are the Verde navy used for the sidebar gradient
         brand: {
-          DEFAULT: "#678722",
-          50: "#F3F8E6",
-          100: "#E4EFC9",
-          150: "#D3E4AB",
-          200: "#C2D98D",
-          300: "#B3D170",
+          DEFAULT: "#7DA02E",
+          50: "#F5F9EA",
+          100: "#E9F2CF",
+          150: "#DBE9B4",
+          200: "#CCE09A",
+          300: "#BDD67F",
           400: "#A4C954", // logo lime
-          500: "#8CB337",
-          600: "#678722", // primary — dark enough for white text
-          700: "#516A1B",
-          800: "#3E5214",
-          900: "#262250", // logo navy
-          950: "#17143A",
+          500: "#93B93C",
+          600: "#7DA02E", // primary — buttons, links
+          700: "#66852A",
+          800: "#4F681F",
+          900: "#5C7D22", // sidebar gradient top
+          950: "#46611A", // sidebar gradient bottom
         },
         // Accent orange (logo dot)
         gold: {
@@ -46,7 +46,7 @@ const config: Config = {
         },
         // Segment / status palette
         seg: {
-          high: "#678722",
+          high: "#7DA02E",
           medium: "#1565C0",
           low: "#D4881F",
           dormant: "#9E9E9E",

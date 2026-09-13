@@ -124,7 +124,7 @@ export function MobileNav({
               href={item.href}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[9.5px] font-semibold",
-                on ? "text-[#678722]" : "text-[#9E9E9E]",
+                on ? "text-[#7DA02E]" : "text-[#9E9E9E]",
               )}
             >
               <Icon className="h-[21px] w-[21px]" />
@@ -139,7 +139,7 @@ export function MobileNav({
             aria-label="More menu"
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[9.5px] font-semibold",
-              open ? "text-[#678722]" : "text-[#9E9E9E]",
+              open ? "text-[#7DA02E]" : "text-[#9E9E9E]",
             )}
           >
             <svg className="h-[21px] w-[21px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

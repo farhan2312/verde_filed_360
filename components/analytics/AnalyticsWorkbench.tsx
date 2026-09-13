@@ -138,7 +138,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
             return (
               <button key={l} type="button" onClick={() => { setPerfTab(null); setLens(l); }}
                 className="rounded-[8px] px-5 py-2 text-[12.5px] font-bold transition-colors"
-                style={{ background: active ? "#fff" : "transparent", color: active ? "#678722" : "#9E9E9E", boxShadow: active ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
+                style={{ background: active ? "#fff" : "transparent", color: active ? "#7DA02E" : "#9E9E9E", boxShadow: active ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
                 {l === "sales" ? "Sales" : "Visits"}
               </button>
             );
@@ -165,21 +165,21 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
               Preparing Excel… {fmtBytes(exportBytes)}
             </span>
           )}
-          <div className="inline-flex overflow-hidden rounded-[10px] border border-[#678722]">
+          <div className="inline-flex overflow-hidden rounded-[10px] border border-[#7DA02E]">
             <select value={exportScope} onChange={(e) => setExportScope(e.target.value as ExportScope)} disabled={exporting}
               aria-label="What to export"
-              className="cursor-pointer bg-[#F3F8E6] px-2.5 py-2 text-[12.5px] font-semibold text-[#678722] outline-none disabled:opacity-50">
+              className="cursor-pointer bg-[#F5F9EA] px-2.5 py-2 text-[12.5px] font-semibold text-[#7DA02E] outline-none disabled:opacity-50">
               <option value="sales">Sales data</option>
               <option value="visits">Visit data</option>
               <option value="both">Both (sales + visits)</option>
             </select>
             <button type="button" onClick={() => exportExcel(exportScope)} disabled={exporting}
-              className="border-l border-[#678722] bg-[#678722] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50"
+              className="border-l border-[#7DA02E] bg-[#7DA02E] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50"
               title="Export the current filters to Excel (streamed, any size)">
               {exporting ? "Exporting…" : "⬇ Export"}</button>
           </div>
           <button type="button" onClick={() => setSaving(true)} disabled={k.farmers === 0}
-            className="rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">＋ Save as cluster</button>
+            className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">＋ Save as cluster</button>
         </div>
         )}
       </div>
@@ -294,7 +294,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
                       <tr key={fr.id} className="border-b border-[#F5F5F5]">
                         <td className="py-2"><div className="font-semibold text-[#1A1C1A]">{fr.name}</div><div className="text-[11px] text-[#9E9E9E]">{fr.village ?? "—"} · {fr.mobile ?? "—"}</div></td>
                         <td className="py-2"><div className="flex flex-wrap gap-1">
-                          {fr.salesCrops.map((c) => <span key={"s" + c} className="rounded-full bg-[#F3F8E6] px-1.5 py-0.5 text-[10px] font-semibold text-[#678722]">{cropLabel(c)}</span>)}
+                          {fr.salesCrops.map((c) => <span key={"s" + c} className="rounded-full bg-[#F5F9EA] px-1.5 py-0.5 text-[10px] font-semibold text-[#7DA02E]">{cropLabel(c)}</span>)}
                           {fr.visitCrops.map((c) => <span key={"v" + c} className="rounded-full bg-[#E3F2FD] px-1.5 py-0.5 text-[10px] font-semibold text-[#1565C0]">{cropLabel(c)}</span>)}
                           {fr.salesCrops.length === 0 && fr.visitCrops.length === 0 && <span className="text-[#DDD]">—</span>}
                         </div></td>
@@ -322,7 +322,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
  * the bar reads cleanly. Native <details> popover (closed on outside click by the parent listener).
  * `ph` doubles as the "all" placeholder and the reset button label. Options are pre-sorted server-side.
  */
-function MultiSel({ ph, options, selected, onToggle, onClear, accent = "#678722", titleOf }: {
+function MultiSel({ ph, options, selected, onToggle, onClear, accent = "#7DA02E", titleOf }: {
   ph: string; options: [string, string][]; selected: string[]; onToggle: (v: string) => void; onClear: () => void; accent?: string; titleOf?: (v: string) => string;
 }) {
   const [q, setQ] = useState("");
@@ -339,7 +339,7 @@ function MultiSel({ ph, options, selected, onToggle, onClear, accent = "#678722"
         {showSearch && (
           <div className="border-b border-[#F0F0F0] p-1.5">
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…"
-              className="w-full rounded border border-[#E0E0E0] px-2 py-1 text-[12px] outline-none focus:border-[#678722]" />
+              className="w-full rounded border border-[#E0E0E0] px-2 py-1 text-[12px] outline-none focus:border-[#7DA02E]" />
           </div>
         )}
         <div className="max-h-[248px] overflow-y-auto p-1">
@@ -424,7 +424,7 @@ function MergedMatrixCard({ matrix, valueCols, lifecycleCols, onCell, by, onFlip
             {(["detailed", "summary", "raw"] as const).map((v) => (
               <button key={v} type="button" onClick={() => setView(v)}
                 className="rounded-[6px] px-2.5 py-1 text-[11.5px] font-semibold transition-colors"
-                style={{ background: view === v ? "#fff" : "transparent", color: view === v ? "#678722" : "#9E9E9E", boxShadow: view === v ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
+                style={{ background: view === v ? "#fff" : "transparent", color: view === v ? "#7DA02E" : "#9E9E9E", boxShadow: view === v ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
                 {TABS[v]}
               </button>
             ))}
@@ -598,7 +598,7 @@ function SalesRawData({ filters }: { filters: WbFilters }) {
                   <td className={`${TD} text-[#616161]`}>{r.store ?? "—"}</td>
                   <td className="px-3 py-1.5 text-[#424242]">{r.item}</td>
                   <td className={`${TD} text-[#9E9E9E]`}>{r.category ?? "—"}</td>
-                  <td className="px-3 py-1.5">{r.crop ? <span className="rounded-full bg-[#F3F8E6] px-1.5 py-0.5 text-[10px] font-semibold text-[#678722]">{r.crop}</span> : <span className="text-[#DDD]">—</span>}</td>
+                  <td className="px-3 py-1.5">{r.crop ? <span className="rounded-full bg-[#F5F9EA] px-1.5 py-0.5 text-[10px] font-semibold text-[#7DA02E]">{r.crop}</span> : <span className="text-[#DDD]">—</span>}</td>
                   <td className={`${TD} text-right tabular-nums`}>{n(r.qty)}</td>
                   <td className={`${TD} text-[#9E9E9E]`}>{r.uom ?? "—"}</td>
                   <td className={`${TD} text-right font-semibold tabular-nums text-[#1A1C1A]`}>{money(r.base)}</td>
@@ -616,7 +616,7 @@ function SalesRawData({ filters }: { filters: WbFilters }) {
   );
 }
 
-function BarCard({ title, bars, fmt, accent = "#678722" }: { title: string; bars: WbBar[]; fmt: (x: number) => string; accent?: string }) {
+function BarCard({ title, bars, fmt, accent = "#7DA02E" }: { title: string; bars: WbBar[]; fmt: (x: number) => string; accent?: string }) {
   const max = Math.max(1, ...bars.map((b) => b.value));
   const shown = bars.filter((b) => b.value > 0);
   return (
@@ -653,7 +653,7 @@ function DonutCard({ title, slices, unit = "farmers" }: { title: string; slices:
               {shown.map((s) => {
                 const frac = s.value / total;
                 const el = (
-                  <circle key={s.label} cx="75" cy="75" r={R} fill="none" stroke={s.color ?? "#678722"} strokeWidth="20"
+                  <circle key={s.label} cx="75" cy="75" r={R} fill="none" stroke={s.color ?? "#7DA02E"} strokeWidth="20"
                     strokeDasharray={`${frac * C} ${C}`} strokeDashoffset={-acc * C}>
                     <title>{`${s.label}: ${n(s.value)} (${((s.value / total) * 100).toFixed(1)}%)`}</title>
                   </circle>
@@ -670,7 +670,7 @@ function DonutCard({ title, slices, unit = "farmers" }: { title: string; slices:
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             {shown.map((s) => (
               <div key={s.label} className="flex items-center gap-2 text-[12px]">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color ?? "#678722" }} />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color ?? "#7DA02E" }} />
                 <span className="truncate font-medium text-[#424242]"><InfoTip term={s.label}>{s.label}</InfoTip></span>
                 <span className="ml-auto shrink-0 text-[#9E9E9E]">{n(s.value)} · {((s.value / total) * 100).toFixed(1)}%</span>
               </div>
@@ -704,7 +704,7 @@ function HistogramCard({ title, bars, accent = "#1565C0" }: { title: string; bar
 }
 
 /** Monthly purchase trend for one crop, coloured by cropping season (uses the per-line crop tags). */
-const SEASON_COLOR: Record<CropTrendPoint["season"], string> = { Kharif: "#678722", Rabi: "#1565C0", Zaid: "#EDA942" };
+const SEASON_COLOR: Record<CropTrendPoint["season"], string> = { Kharif: "#7DA02E", Rabi: "#1565C0", Zaid: "#EDA942" };
 
 /** Driven by the main crop + FY filters above — no dropdown of its own. No crop → all crops; no FY → all years. */
 function CropTrendCard({ crops, years }: { crops: string[]; years: number[] }) {
@@ -728,7 +728,7 @@ function CropTrendCard({ crops, years }: { crops: string[]; years: number[] }) {
     <div className={`${CARD} p-4`}>
       <div className="mb-1 flex flex-wrap items-center gap-2.5">
         <div className="text-[13px] font-bold text-[#1A1C1A]">Crop purchase trend</div>
-        <span className="rounded-full bg-[#F3F8E6] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#678722]">{crops.length ? crops.map(cropLabel).join(", ") : "All crops"}</span>
+        <span className="rounded-full bg-[#F5F9EA] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#7DA02E]">{crops.length ? crops.map(cropLabel).join(", ") : "All crops"}</span>
         <span className="rounded-full bg-[#E3F2FD] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#1565C0]">{years.length ? years.map(fyLabel).join(", ") : "All FYs"}</span>
         {loading && <span className="text-[11.5px] text-[#9E9E9E]">Loading…</span>}
         <div className="ml-auto flex flex-wrap items-center gap-3 text-[11px] font-medium text-[#616161]">
@@ -770,7 +770,7 @@ function CropTrendCard({ crops, years }: { crops: string[]; years: number[] }) {
 }
 
 /* ── Visit lens board: everything the field-visit wizard collects, nothing sales-derived ── */
-const PALETTE = ["#678722", "#1565C0", "#EDA942", "#6A1B9A", "#C62828", "#00838F", "#E65100", "#5D4037", "#3949AB", "#7CB342"];
+const PALETTE = ["#7DA02E", "#1565C0", "#EDA942", "#6A1B9A", "#C62828", "#00838F", "#E65100", "#5D4037", "#3949AB", "#7CB342"];
 const paint = (bars: WbBar[]): WbBar[] => bars.map((b, i) => ({ ...b, color: b.color ?? PALETTE[i % PALETTE.length] }));
 
 function VisitBoard({ va }: { va: VisitAnalytics | null }) {
@@ -782,12 +782,12 @@ function VisitBoard({ va }: { va: VisitAnalytics | null }) {
       <div className="grid grid-cols-1 gap-[14px] lg:grid-cols-2">
         <DonutCard title="Visit purpose" slices={paint(va.purposes)} unit="visits" />
         <AdoptionCard title="Services & readiness (share of visits)" rows={va.adoption} />
-        <HistogramCard title="Land holding (Bigha)" bars={va.landHolding} accent="#678722" />
+        <HistogramCard title="Land holding (Bigha)" bars={va.landHolding} accent="#7DA02E" />
         <HistogramCard title="Annual agri expense" bars={va.expense} accent="#EDA942" />
         <BarCard title="Field problems (farmers)" bars={va.problems} fmt={n} accent="#C62828" />
         <BarCard title="Crops recorded in visits" bars={va.crops} fmt={n} accent="#EDA942" />
         <BarCard title="Products in use" bars={va.productsUsed} fmt={n} accent="#1565C0" />
-        <BarCard title="Products required — demand signal" bars={va.productsNeeded} fmt={n} accent="#678722" />
+        <BarCard title="Products required — demand signal" bars={va.productsNeeded} fmt={n} accent="#7DA02E" />
         <DonutCard title="Water sources" slices={paint(va.water)} unit="mentions" />
         <BarCard title="Soil types" bars={va.soilTypes} fmt={n} accent="#5D4037" />
         <BarCard title="Crop risks flagged" bars={va.risks} fmt={n} accent="#E65100" />
@@ -817,7 +817,7 @@ function VisitTrendCard({ monthly }: { monthly: VisitMonth[] }) {
             {monthly.map((m) => (
               <div key={m.ym} className="flex min-w-[20px] flex-1 flex-col justify-end" title={`${m.label} ${m.year} · ${n(m.count)} visits`}>
                 <div className="mx-auto mb-0.5 text-[9.5px] font-bold text-[#424242]">{m.count || ""}</div>
-                <div className="w-full rounded-t-[4px] bg-[#678722]" style={{ height: `${Math.max(3, Math.round((m.count / max) * 110))}px` }} />
+                <div className="w-full rounded-t-[4px] bg-[#7DA02E]" style={{ height: `${Math.max(3, Math.round((m.count / max) * 110))}px` }} />
                 <div className="mt-1 text-center text-[9px] leading-tight text-[#9E9E9E]">{m.label}<br /><b className="text-[#616161]">{String(m.year).slice(2)}</b></div>
               </div>
             ))}
@@ -867,7 +867,7 @@ function StoreVisitsTable({ rows }: { rows: VisitStoreRow[] }) {
             <tbody>{rows.map((r) => (
               <tr key={r.store} className="border-b border-[#F8F8F8]">
                 <td className="px-4 py-2 font-semibold text-[#1A1C1A]">{r.store}</td>
-                <td className="py-2 pr-4"><div className="h-2 w-full max-w-[220px] rounded-full bg-[#F0F0F0]"><div className="h-2 rounded-full bg-[#678722]" style={{ width: `${(r.visits / max) * 100}%` }} /></div></td>
+                <td className="py-2 pr-4"><div className="h-2 w-full max-w-[220px] rounded-full bg-[#F0F0F0]"><div className="h-2 rounded-full bg-[#7DA02E]" style={{ width: `${(r.visits / max) * 100}%` }} /></div></td>
                 <td className="py-2 text-right font-bold text-[#1A1C1A]">{n(r.visits)}</td>
                 <td className="py-2 pr-4 text-right text-[#616161]">{n(r.farmers)}</td>
               </tr>
@@ -894,14 +894,14 @@ function SaveModal({ filters, kpi, canChain, onClose }: { filters: WbFilters; kp
   };
   return (
     <Modal open onClose={onClose} className="max-w-[460px]">
-      <ModalHeader eyebrow="Cluster" eyebrowColor="#678722" title="Save filtered set as a cluster" subtitle={`~${n(kpi)} farmers · membership stays live`} onClose={onClose} />
+      <ModalHeader eyebrow="Cluster" eyebrowColor="#7DA02E" title="Save filtered set as a cluster" subtitle={`~${n(kpi)} farmers · membership stays live`} onClose={onClose} />
       <div className="px-5 py-4">
         {msg === "ok" ? (
           canChain && createdId != null ? (
             <ChainNext message={`Cluster "${name.trim()}" created`} nextLabel="Next: create a project →"
               nextHref={`/projects?withCluster=${createdId}`} onDone={onClose} />
           ) : (
-            <div className="rounded-[10px] border border-[#D3E4AB] bg-[#F3F8E6] px-3.5 py-3 text-[13px] font-medium text-[#678722]">✓ Saved — find it on the Farmer Clusters page (live, re-resolving membership).</div>
+            <div className="rounded-[10px] border border-[#DBE9B4] bg-[#F5F9EA] px-3.5 py-3 text-[13px] font-medium text-[#7DA02E]">✓ Saved — find it on the Farmer Clusters page (live, re-resolving membership).</div>
           )
         ) : (
           <>
@@ -910,7 +910,7 @@ function SaveModal({ filters, kpi, canChain, onClose }: { filters: WbFilters; kp
             {msg && <div className="mt-2 text-[12px] text-[#C62828]">{msg}</div>}
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
-              <button type="button" onClick={save} disabled={saving || !name.trim()} className="rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Create cluster"}</button>
+              <button type="button" onClick={save} disabled={saving || !name.trim()} className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Create cluster"}</button>
             </div>
           </>
         )}

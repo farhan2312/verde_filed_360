@@ -49,7 +49,7 @@ function lastActiveColor(s: string) {
 
 const ROLE_CARDS: { accent: string; title: string; body: string }[] = [
   {
-    accent: "#678722",
+    accent: "#7DA02E",
     title: "Regional Manager",
     body: "All views, analytics, farmer data, action planner, lead management",
   },
@@ -128,7 +128,7 @@ export function UsersTab({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="cursor-pointer rounded-[10px] bg-[#678722] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#516A1B]"
+            className="cursor-pointer rounded-[10px] bg-[#7DA02E] px-[22px] py-[9px] text-[13px] font-semibold text-white hover:bg-[#66852A]"
           >
             + Add User
           </button>
@@ -143,7 +143,7 @@ export function UsersTab({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search name, employee code, store, district…"
-            className="w-full max-w-[380px] rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-[16px] py-[9px] text-[13px] outline-none focus:border-[#678722] focus:shadow-[0_0_0_3px_rgba(46,125,50,0.1)]"
+            className="w-full max-w-[380px] rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-[16px] py-[9px] text-[13px] outline-none focus:border-[#7DA02E] focus:shadow-[0_0_0_3px_rgba(46,125,50,0.1)]"
           />
           <button
             type="button"
@@ -173,7 +173,7 @@ export function UsersTab({
           <select
             value={fStore}
             onChange={(e) => setFStore(e.target.value)}
-            className="rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#678722]"
+            className="rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#7DA02E]"
           >
             <option value="">All stores</option>
             <option value={NO_STORE}>— No store mapped</option>
@@ -182,7 +182,7 @@ export function UsersTab({
           <select
             value={fStatus}
             onChange={(e) => setFStatus(e.target.value)}
-            className="rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#678722]"
+            className="rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#7DA02E]"
           >
             <option value="">All statuses</option>
             <option value="Active">Active</option>
@@ -294,7 +294,7 @@ export function UsersTab({
                       <button
                         type="button"
                         onClick={() => setEditing(ur)}
-                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#F5F7F5] px-[10px] py-[5px] text-[11px] font-semibold text-[#678722] hover:bg-[#F3F8E6]"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#F5F7F5] px-[10px] py-[5px] text-[11px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]"
                       >
                         <EditPencil />
                         Edit

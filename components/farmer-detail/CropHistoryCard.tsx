@@ -18,7 +18,7 @@ export function CropHistoryCard({ history }: { history: CropHistoryEntry[] }) {
             <li key={e.id} className="relative flex gap-3 pb-4 last:pb-0">
               {/* timeline rail */}
               <div className="flex flex-col items-center">
-                <span className={`mt-1 h-2.5 w-2.5 flex-none rounded-full ${e.changedFrom ? "bg-[#F2A72C]" : "bg-[#678722]"}`} />
+                <span className={`mt-1 h-2.5 w-2.5 flex-none rounded-full ${e.changedFrom ? "bg-[#F2A72C]" : "bg-[#7DA02E]"}`} />
                 {i < history.length - 1 && <span className="mt-1 w-px flex-1 bg-[#EAEAEA]" />}
               </div>
 
@@ -26,7 +26,7 @@ export function CropHistoryCard({ history }: { history: CropHistoryEntry[] }) {
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="text-[14px] font-bold text-[#1A1C1A]">{e.primary || "—"}</span>
                   {e.season && (
-                    <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10px] font-semibold text-[#678722]">{e.season}</span>
+                    <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10px] font-semibold text-[#7DA02E]">{e.season}</span>
                   )}
                   {e.changedFrom && (
                     <span className="rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[10px] font-bold text-[#E65100]">

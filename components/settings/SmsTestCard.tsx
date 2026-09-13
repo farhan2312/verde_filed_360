@@ -126,13 +126,13 @@ export function SmsTestCard({ smsReady, missing, senderId, waReady, waMissing, w
   // SMS-only side data (balance, delivery log, approved-DLT sync). WhatsApp delivery status lives in a sibling.
   useEffect(() => { if (!isWa) { loadSmsLogs(); if (smsReady) { loadBalance(); loadApproved(); } } }, [isWa]); // eslint-disable-line
 
-  const inputCls = "w-full rounded-[10px] border border-[#E0E0E0] px-3 py-2.5 text-[13px] outline-none focus:border-[#678722]";
+  const inputCls = "w-full rounded-[10px] border border-[#E0E0E0] px-3 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]";
 
   return (
     <div className="rounded-2xl border border-black/[0.03] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="mb-1 flex items-center gap-2">
         <span className="text-[15px] font-bold text-[#1A1C1A]">Test messaging</span>
-        <span className="rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ background: isWa ? "#F3F8E6" : "#F3E5F5", color: accent }}>{isWa ? "Meta WhatsApp" : "ZapSMS"}</span>
+        <span className="rounded-full px-2 py-0.5 text-[10.5px] font-bold" style={{ background: isWa ? "#F5F9EA" : "#F3E5F5", color: accent }}>{isWa ? "Meta WhatsApp" : "ZapSMS"}</span>
       </div>
       <p className="mb-3 text-[12px] text-[#9E9E9E]">Send a one-off message to a farmer or any number to verify the gateway. Admin-only; every send is logged.</p>
 
@@ -151,10 +151,10 @@ export function SmsTestCard({ smsReady, missing, senderId, waReady, waMissing, w
 
       {/* Gateway status */}
       {ready ? (
-        <div className="mb-4 flex items-center justify-between gap-2 rounded-[10px] bg-[#F3F8E6] px-3 py-2 text-[12px] text-[#678722]">
+        <div className="mb-4 flex items-center justify-between gap-2 rounded-[10px] bg-[#F5F9EA] px-3 py-2 text-[12px] text-[#7DA02E]">
           <span>✓ {isWa ? "WhatsApp Cloud API configured." : `Gateway configured${senderId ? ` · sender ${senderId}` : ""}.`}</span>
           {!isWa && bal && (
-            <span className="shrink-0 rounded-full bg-white/70 px-2.5 py-0.5 text-[11px] font-bold text-[#516A1B]"
+            <span className="shrink-0 rounded-full bg-white/70 px-2.5 py-0.5 text-[11px] font-bold text-[#66852A]"
               title={bal.total > 0 ? bal.items.map((i) => `${i.productType}: ${i.credits.toLocaleString("en-IN")}`).join(" · ") : `Raw gateway response: ${bal.raw ?? "—"}`}>
               💳 {bal.currency
                 ? `${bal.currency}${bal.total.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -169,7 +169,7 @@ export function SmsTestCard({ smsReady, missing, senderId, waReady, waMissing, w
       )}
 
       {isWa && (
-        <div className="mb-4 rounded-[10px] bg-[#F3F8E6] px-3 py-2 text-[11.5px] text-[#678722]">
+        <div className="mb-4 rounded-[10px] bg-[#F5F9EA] px-3 py-2 text-[11.5px] text-[#7DA02E]">
           WhatsApp sends only via <b>approved templates</b> — they reach any number, even a cold one (Meta’s 24h window doesn’t apply).
         </div>
       )}
@@ -254,7 +254,7 @@ export function SmsTestCard({ smsReady, missing, senderId, waReady, waMissing, w
             <button type="button" onClick={loadApproved} className="text-[11px] font-semibold text-[#6A1B9A] hover:underline">↻ Sync</button>
           </div>
           <select value={dltId} onChange={(e) => pickDlt(e.target.value)}
-            className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-2.5 text-[13px] text-[#424242] outline-none focus:border-[#678722]">
+            className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-2.5 text-[13px] text-[#424242] outline-none focus:border-[#7DA02E]">
             <option value="">{tpls == null ? "Loading approved templates…" : tpls.length ? "— Pick an approved template —" : "No approved templates found"}</option>
             {(tpls ?? []).map((t) => <option key={t.dltTemplateId} value={t.dltTemplateId}>{t.name} · {t.dltTemplateId}</option>)}
           </select>
@@ -290,7 +290,7 @@ export function SmsTestCard({ smsReady, missing, senderId, waReady, waMissing, w
       )}
 
       {result && (
-        <div className={`mt-3 rounded-[10px] px-3 py-2 text-[12px] font-medium ${result.ok ? "bg-[#F3F8E6] text-[#678722]" : "bg-[#FDECEA] text-[#C62828]"}`}>
+        <div className={`mt-3 rounded-[10px] px-3 py-2 text-[12px] font-medium ${result.ok ? "bg-[#F5F9EA] text-[#7DA02E]" : "bg-[#FDECEA] text-[#C62828]"}`}>
           {result.ok ? "✓ " : "✕ "}{result.text}
         </div>
       )}
@@ -319,8 +319,8 @@ export function SmsTestCard({ smsReady, missing, senderId, waReady, waMissing, w
                   const failed = submitFailed || dlr === "FAILED";
                   const delivered = dlr === "DELIVERED" || !!l.deliveredAt;
                   const label = submitFailed ? "NOT SENT" : dlr || "SUBMITTED";
-                  const color = failed ? "#C62828" : delivered ? "#678722" : "#E65100";
-                  const bg = failed ? "#FDECEA" : delivered ? "#F3F8E6" : "#FFF3E0";
+                  const color = failed ? "#C62828" : delivered ? "#7DA02E" : "#E65100";
+                  const bg = failed ? "#FDECEA" : delivered ? "#F5F9EA" : "#FFF3E0";
                   return (
                     <div key={l.id} className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[#EEE] px-2.5 py-1.5 text-[11.5px]">
                       <span className="font-mono text-[#616161]">{l.mobile}</span>

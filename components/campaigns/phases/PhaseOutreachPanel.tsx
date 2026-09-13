@@ -36,7 +36,7 @@ function PhaseList({ data }: { data: PhaseOutreach }) {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#F3F8E6] px-2.5 py-1 text-[11.5px] font-bold text-[#678722]">Round {data.ordinal}: {data.roundName || "(unnamed)"}</span>
+        <span className="rounded-full bg-[#F5F9EA] px-2.5 py-1 text-[11.5px] font-bold text-[#7DA02E]">Round {data.ordinal}: {data.roundName || "(unnamed)"}</span>
         <span className="text-[12px] text-[#757575]">{data.members.length} to contact{data.purchaseSplit ? " · split by purchase" : ""}</span>
         {data.coupons.length > 0 && (
           <span className="ml-auto flex flex-wrap gap-1.5">
@@ -46,7 +46,7 @@ function PhaseList({ data }: { data: PhaseOutreach }) {
       </div>
 
       {data.members.length === 0 ? (
-        <div className="rounded-[12px] border border-dashed border-[#E4EFC9] bg-[#F1F8F1] px-5 py-10 text-center text-[13px] text-[#66857A]">Nobody to contact in this round in your scope.</div>
+        <div className="rounded-[12px] border border-dashed border-[#E9F2CF] bg-[#F1F8F1] px-5 py-10 text-center text-[13px] text-[#66857A]">Nobody to contact in this round in your scope.</div>
       ) : groups.map(([label, rows]) => (
         <div key={label} className="mb-4">
           <div className="mb-1.5 text-[11.5px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">{label} · {rows.length}</div>
@@ -76,8 +76,8 @@ function OutreachRow({ m }: { m: PhaseOutreachMember }) {
         {m.recCommPlan && <span className="ml-1.5 text-[#757575]">{m.recCommPlan}</span>}
       </div>
       <div className="flex items-center gap-1.5">
-        {tel && <a href={tel} className="rounded-md bg-[#F3F8E6] px-2 py-1 text-[11px] font-semibold text-[#678722]">Call</a>}
-        {wa && <a href={wa} target="_blank" rel="noreferrer" className="rounded-md bg-[#F3F8E6] px-2 py-1 text-[11px] font-semibold text-[#0B8A3D]">WhatsApp</a>}
+        {tel && <a href={tel} className="rounded-md bg-[#F5F9EA] px-2 py-1 text-[11px] font-semibold text-[#7DA02E]">Call</a>}
+        {wa && <a href={wa} target="_blank" rel="noreferrer" className="rounded-md bg-[#F5F9EA] px-2 py-1 text-[11px] font-semibold text-[#0B8A3D]">WhatsApp</a>}
       </div>
     </div>
   );

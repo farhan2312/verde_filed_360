@@ -10,7 +10,7 @@ export function ClusterGlyph({ className, size = 28 }: P) {
       height={size}
       viewBox="0 0 28 28"
       fill="none"
-      stroke="#678722"
+      stroke="#7DA02E"
       strokeWidth="2"
       strokeLinecap="round"
       className={className}
@@ -36,7 +36,7 @@ export function PlusGlyph({ size = 13 }: P) {
 /** Filled circle-i info glyph (11×11, green). */
 export function InfoGlyph({ size = 11 }: P) {
   return (
-    <svg width={size} height={size} viewBox="0 0 11 11" fill="#678722">
+    <svg width={size} height={size} viewBox="0 0 11 11" fill="#7DA02E">
       <path d="M5.5 1a4.5 4.5 0 100 9 4.5 4.5 0 000-9zm.5 6.5h-1V5h1v2.5zm0-3.5h-1V3h1v1z" />
     </svg>
   );
@@ -45,7 +45,7 @@ export function InfoGlyph({ size = 11 }: P) {
 /** Single-person outline glyph for the count bar (14×14, green stroke). */
 export function PersonGlyph({ size = 14 }: P) {
   return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" stroke="#678722" strokeWidth="1.8">
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" stroke="#7DA02E" strokeWidth="1.8">
       <circle cx="7" cy="4.5" r="2.5" />
       <path d="M1 12.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" />
     </svg>

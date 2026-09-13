@@ -180,7 +180,7 @@ function MatrixRow({ member, crops, onChange }: { member: CampaignMemberVM; crop
         {err && <span className="text-[10.5px] font-semibold text-[#C62828]" title={err}>!</span>}
         <button type="button" onClick={save} disabled={pending || !o.dirty}
           className="rounded-[8px] px-3.5 py-1.5 text-[12px] font-bold text-white disabled:opacity-40"
-          style={{ background: unreachable ? "#C62828" : "#678722" }}>
+          style={{ background: unreachable ? "#C62828" : "#7DA02E" }}>
           {pending ? "…" : saved && !o.dirty ? "✓" : "Save"}
         </button>
       </div>

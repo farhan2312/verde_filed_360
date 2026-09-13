@@ -17,9 +17,9 @@ export function SettingsTabs({ tabs }: { tabs: SettingsTab[] }) {
           return (
             <button key={t.key} type="button" onClick={() => setActive(t.key)}
               className="relative px-4 py-2.5 text-[13px] font-semibold transition-colors"
-              style={{ color: on ? "#678722" : "#9E9E9E" }}>
+              style={{ color: on ? "#7DA02E" : "#9E9E9E" }}>
               {t.icon ? `${t.icon} ` : ""}{t.label}
-              {on && <span className="absolute inset-x-2 -bottom-px h-[2.5px] rounded-full bg-[#678722]" />}
+              {on && <span className="absolute inset-x-2 -bottom-px h-[2.5px] rounded-full bg-[#7DA02E]" />}
             </button>
           );
         })}

@@ -149,16 +149,16 @@ export function VisitDetailView({ data }: { data: VisitDetailData }) {
     <div className="motion-safe:animate-[fadeUp_0.4s_ease-out]">
       {/* Success banner (shown right after a submission) */}
       {data.justCreated && (
-        <div className="mb-5 flex flex-wrap items-center gap-2.5 rounded-[12px] border border-[#D3E4AB] bg-[#F3F8E6] px-4 py-3">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="#678722">
+        <div className="mb-5 flex flex-wrap items-center gap-2.5 rounded-[12px] border border-[#DBE9B4] bg-[#F5F9EA] px-4 py-3">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="#7DA02E">
             <path d="M10 1a9 9 0 100 18 9 9 0 000-18zm4.2 6.7l-5 5a.75.75 0 01-1.06 0l-2.3-2.3a.75.75 0 011.06-1.06l1.77 1.77 4.47-4.47a.75.75 0 011.06 1.06z" />
           </svg>
-          <span className="text-[13.5px] font-semibold text-[#678722]">
+          <span className="text-[13.5px] font-semibold text-[#7DA02E]">
             Visit logged successfully.
           </span>
           <Link
             href="/visits/new"
-            className="ml-auto rounded-[10px] bg-[#678722] px-3.5 py-1.5 text-[12px] font-semibold text-white hover:bg-[#516A1B]"
+            className="ml-auto rounded-[10px] bg-[#7DA02E] px-3.5 py-1.5 text-[12px] font-semibold text-white hover:bg-[#66852A]"
           >
             Log another visit
           </Link>
@@ -168,7 +168,7 @@ export function VisitDetailView({ data }: { data: VisitDetailData }) {
       {/* Back nav */}
       <Link
         href="/visits"
-        className="inline-flex items-center gap-[6px] text-[13px] text-[#757575] cursor-pointer mb-5 hover:text-[#678722]"
+        className="inline-flex items-center gap-[6px] text-[13px] text-[#757575] cursor-pointer mb-5 hover:text-[#7DA02E]"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M9 2L4 7l5 5" />
@@ -283,9 +283,9 @@ export function VisitDetailView({ data }: { data: VisitDetailData }) {
             {data.farmerId != null ? (
               <Link
                 href={`/farmers/${data.farmerId}`}
-                className="p-[10px] rounded-[10px] bg-[#F5F7F5] text-[#678722] text-[12.5px] font-semibold cursor-pointer text-center flex items-center justify-center gap-[6px] hover:bg-[#F3F8E6]"
+                className="p-[10px] rounded-[10px] bg-[#F5F7F5] text-[#7DA02E] text-[12.5px] font-semibold cursor-pointer text-center flex items-center justify-center gap-[6px] hover:bg-[#F5F9EA]"
               >
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#678722" strokeWidth="2" strokeLinecap="round">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#7DA02E" strokeWidth="2" strokeLinecap="round">
                   <circle cx="7" cy="4" r="3" />
                   <path d="M1 13c0-3 2.7-5 6-5s6 2 6 5" />
                 </svg>
@@ -304,13 +304,13 @@ export function VisitDetailView({ data }: { data: VisitDetailData }) {
           {/* Field Notes */}
           <div className={`${CARD} p-[22px]`}>
             <div className="flex items-center gap-2 mb-[14px] text-[15px] font-bold text-[#1A1C1A]">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#678722" strokeWidth="2" strokeLinecap="round">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#7DA02E" strokeWidth="2" strokeLinecap="round">
                 <rect x="2" y="2" width="12" height="12" rx="2" />
                 <path d="M5 6h6M5 9h4" />
               </svg>
               Field Notes
             </div>
-            <div className="text-[13.5px] text-[#424242] leading-[1.75] p-4 bg-[#FAFFF9] rounded-[10px] border-[1.5px] border-[#F3F8E6]">
+            <div className="text-[13.5px] text-[#424242] leading-[1.75] p-4 bg-[#FAFFF9] rounded-[10px] border-[1.5px] border-[#F5F9EA]">
               {data.notes || "No field notes recorded for this visit."}
             </div>
           </div>
@@ -343,15 +343,15 @@ export function VisitDetailView({ data }: { data: VisitDetailData }) {
           {/* GPS + Meta */}
           <div className={`${CARD} py-[18px] px-[22px] flex items-center justify-between`}>
             <div className="flex items-center gap-[10px]">
-              <div className="w-[34px] h-[34px] rounded-[8px] bg-[#F3F8E6] flex items-center justify-center shrink-0">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#678722" strokeWidth="2">
+              <div className="w-[34px] h-[34px] rounded-[8px] bg-[#F5F9EA] flex items-center justify-center shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#7DA02E" strokeWidth="2">
                   <circle cx="7" cy="6" r="2" />
                   <path d="M7 1C4.2 1 2 3.2 2 6c0 3.8 5 9 5 9s5-5.2 5-9c0-2.8-2.2-5-5-5z" />
                 </svg>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-[#9E9E9E] uppercase">GPS Location</div>
-                <div className="text-[12.5px] font-semibold text-[#678722] mt-[2px]">{data.gps}</div>
+                <div className="text-[12.5px] font-semibold text-[#7DA02E] mt-[2px]">{data.gps}</div>
               </div>
             </div>
             <div className="text-right">

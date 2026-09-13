@@ -12,10 +12,10 @@ const KPIS: KpiConfig[] = [
   {
     key: "total",
     label: "Total Visits",
-    tileBg: "#F3F8E6",
-    fill: "#678722",
+    tileBg: "#F5F9EA",
+    fill: "#7DA02E",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="#678722">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="#7DA02E">
         <rect x="2" y="2" width="14" height="3" rx="1" />
         <rect x="2" y="7" width="14" height="3" rx="1" opacity="0.7" />
         <rect x="2" y="12" width="9" height="3" rx="1" opacity="0.5" />

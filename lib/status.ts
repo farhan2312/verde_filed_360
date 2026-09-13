@@ -7,14 +7,14 @@ export interface ColorPair {
 
 /** Lead/visit status chips (stColors, design line 2778). */
 export const STATUS_COLORS: Record<string, ColorPair> = {
-  New: { bg: "#F3F8E6", c: "#678722" },
+  New: { bg: "#F5F9EA", c: "#7DA02E" },
   Contacted: { bg: "#E3F2FD", c: "#1565C0" },
   "Follow-up": { bg: "#FFF3E0", c: "#E65100" },
   Converted: { bg: "#F3E5F5", c: "#7B1FA2" },
   Recommendation: { bg: "#FEF6E9", c: "#D4881F" },
   Lost: { bg: "#FAFAFA", c: "#757575" },
   // also seen as farmer.status values:
-  "High Value": { bg: "#F3F8E6", c: "#678722" },
+  "High Value": { bg: "#F5F9EA", c: "#7DA02E" },
   Dormant: { bg: "#F5F5F5", c: "#9E9E9E" },
 };
 
@@ -24,7 +24,7 @@ export function statusColor(s?: string | null): ColorPair {
 
 /** User-Management role chips (roleMeta). */
 export const ROLE_META: Record<string, ColorPair> = {
-  "Regional Manager": { bg: "#F3F8E6", c: "#678722" },
+  "Regional Manager": { bg: "#F5F9EA", c: "#7DA02E" },
   "Agri Officer": { bg: "#E3F2FD", c: "#1565C0" },
   "Central Admin": { bg: "#F3E5F5", c: "#7B1FA2" },
   "System Admin": { bg: "#FFF3E0", c: "#E65100" },
@@ -32,13 +32,13 @@ export const ROLE_META: Record<string, ColorPair> = {
 
 /** User active/inactive chips (statusMeta). */
 export const USER_STATUS_META: Record<string, ColorPair> = {
-  Active: { bg: "#F3F8E6", c: "#678722" },
+  Active: { bg: "#F5F9EA", c: "#7DA02E" },
   Inactive: { bg: "#FFF3E0", c: "#E65100" },
 };
 
 /** Store status chips (Store Management tab). */
 export const STORE_STATUS_META: Record<string, ColorPair> = {
-  Active: { bg: "#F3F8E6", c: "#678722" },
+  Active: { bg: "#F5F9EA", c: "#7DA02E" },
   Closed: { bg: "#FFEBEE", c: "#C62828" },
   Vacant: { bg: "#F5F5F5", c: "#9E9E9E" },
   "H.O.": { bg: "#F3E5F5", c: "#7B1FA2" },
@@ -46,7 +46,7 @@ export const STORE_STATUS_META: Record<string, ColorPair> = {
 
 /** Audit-log action chips. */
 export const AUDIT_ACTION_META: Record<string, ColorPair> = {
-  CREATE: { bg: "#F3F8E6", c: "#678722" },
+  CREATE: { bg: "#F5F9EA", c: "#7DA02E" },
   UPDATE: { bg: "#E3F2FD", c: "#1565C0" },
   CONFIG: { bg: "#FFF3E0", c: "#E65100" },
   EXPORT: { bg: "#F3E5F5", c: "#7B1FA2" },
@@ -55,7 +55,7 @@ export const AUDIT_ACTION_META: Record<string, ColorPair> = {
 
 /** Project status chips (newProjectStatusMeta). */
 export const PROJECT_STATUS_META: Record<string, ColorPair & { label: string }> = {
-  active: { label: "Active", bg: "#F3F8E6", c: "#678722" },
+  active: { label: "Active", bg: "#F5F9EA", c: "#7DA02E" },
   planned: { label: "Planned", bg: "#FEF6E9", c: "#D4881F" },
   completed: { label: "Completed", bg: "#F3E5F5", c: "#7B1FA2" },
 };

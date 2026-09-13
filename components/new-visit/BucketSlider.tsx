@@ -32,9 +32,9 @@ export function BucketSlider({
       <div
         className="mb-3 inline-block rounded-[20px] border-[1.5px] px-4 py-[7px] text-[13px] font-semibold"
         style={{
-          background: isSet ? "#F3F8E6" : "#FFFFFF",
-          color: isSet ? "#678722" : "#9E9E9E",
-          borderColor: isSet ? "#678722" : "#E0E0E0",
+          background: isSet ? "#F5F9EA" : "#FFFFFF",
+          color: isSet ? "#7DA02E" : "#9E9E9E",
+          borderColor: isSet ? "#7DA02E" : "#E0E0E0",
         }}
       >
         {isSet ? value : "Drag to select"}
@@ -51,7 +51,7 @@ export function BucketSlider({
         aria-valuetext={isSet ? value : "Not set"}
         onChange={(e) => onChange(options[Number(e.target.value)])}
         style={{
-          background: `linear-gradient(90deg, #B3D170 ${pct}%, #E0E0E0 ${pct}%)`,
+          background: `linear-gradient(90deg, #BDD67F ${pct}%, #E0E0E0 ${pct}%)`,
         }}
       />
 

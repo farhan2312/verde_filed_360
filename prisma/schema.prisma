@@ -88,7 +88,7 @@ model Store {
 model StoreTag {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  color     String   @default("#678722") // chip color
+  color     String   @default("#7DA02E") // chip color
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 }

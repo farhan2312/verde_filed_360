@@ -35,7 +35,7 @@ export function OtherReveal({
       placeholder={placeholder}
       aria-label={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="mt-2 w-full rounded-[10px] border-[1.5px] border-[#D3E4AB] bg-[#F1F8F1] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]"
+      className="mt-2 w-full rounded-[10px] border-[1.5px] border-[#DBE9B4] bg-[#F1F8F1] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]"
     />
   );
 }

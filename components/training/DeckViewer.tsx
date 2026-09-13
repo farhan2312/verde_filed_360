@@ -32,12 +32,12 @@ export function DeckViewer({ deck, title }: { deck: TrainingDeck; title: string 
       {/* Actions */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setFull(true)}
-          className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B]">
+          className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A]">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>
           Open fullscreen
         </button>
         <a href={deck.file} download
-          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#678722] px-4 py-2 text-[12.5px] font-semibold text-[#678722] hover:bg-[#F3F8E6]">
+          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">
           {DL_ICON}{deck.fileLabel}
         </a>
       </div>

@@ -51,7 +51,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 const btn =
-  "flex items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#BDBDBD] px-4 py-3 text-[13px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]";
+  "flex items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#BDBDBD] px-4 py-3 text-[13px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]";
 
 export function PhotoCapture({
   photos,
@@ -265,14 +265,14 @@ export function PhotoCapture({
             <button
               type="button"
               onClick={closeCamera}
-              className="flex-1 rounded-[10px] border-[1.5px] border-[#E0E0E0] py-2.5 text-[13px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]"
+              className="flex-1 rounded-[10px] border-[1.5px] border-[#E0E0E0] py-2.5 text-[13px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={capture}
-              className="flex-1 rounded-[10px] bg-[#678722] py-2.5 text-[13px] font-semibold text-white hover:bg-[#516A1B]"
+              className="flex-1 rounded-[10px] bg-[#7DA02E] py-2.5 text-[13px] font-semibold text-white hover:bg-[#66852A]"
             >
               Capture
             </button>

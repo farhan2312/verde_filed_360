@@ -12,14 +12,14 @@ export function VisitReportsCard({
     <Card className="p-[22px]">
       <div className="flex justify-between items-center mb-3.5">
         <div className="text-[15px] font-bold text-[#1A1C1A]">Visit Reports</div>
-        <div className="text-[11px] text-[#678722] font-semibold">{count} visits</div>
+        <div className="text-[11px] text-[#7DA02E] font-semibold">{count} visits</div>
       </div>
       {visits.length > 0 ? (
         visits.map((vl) => (
           <div key={vl.id} className="py-3.5 border-b border-[#F5F5F5]">
             <div className="flex justify-between items-center mb-1.5">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#678722] shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-[#7DA02E] shrink-0" />
                 <span className="text-[12.5px] font-semibold text-[#1A1C1A]">
                   {vl.purpose}
                 </span>

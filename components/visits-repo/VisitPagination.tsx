@@ -20,7 +20,7 @@ export function VisitPagination({ page, pageCount, total, pageSize, shown }: {
   if (total === 0) return null;
   const from = (page - 1) * pageSize + 1;
   const to = (page - 1) * pageSize + shown;
-  const btn = "rounded-lg border-[1.5px] border-[#E0E0E0] px-3 py-1.5 text-xs font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[#E0E0E0] disabled:hover:text-[#616161]";
+  const btn = "rounded-lg border-[1.5px] border-[#E0E0E0] px-3 py-1.5 text-xs font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[#E0E0E0] disabled:hover:text-[#616161]";
 
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

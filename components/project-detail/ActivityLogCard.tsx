@@ -47,13 +47,13 @@ export function ActivityLogCard({
           onKeyDown={(e) => {
             if (e.key === "Enter") post();
           }}
-          className="box-border flex-1 rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]"
+          className="box-border flex-1 rounded-[10px] border-[1.5px] border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]"
         />
         <button
           type="button"
           onClick={post}
           disabled={pending || !value.trim()}
-          className="flex flex-none cursor-pointer items-center rounded-[10px] bg-[#678722] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#516A1B] disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#678722]"
+          className="flex flex-none cursor-pointer items-center rounded-[10px] bg-[#7DA02E] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#66852A] disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#7DA02E]"
         >
           Post
         </button>
@@ -69,7 +69,7 @@ export function ActivityLogCard({
             className="flex gap-3.5 border-b border-[#F5F5F5] py-4 last:border-b-0"
           >
             <div className="flex flex-none flex-col items-center">
-              <div className="h-2.5 w-2.5 flex-none rounded-full bg-[#678722]" />
+              <div className="h-2.5 w-2.5 flex-none rounded-full bg-[#7DA02E]" />
               {i < updates.length - 1 && (
                 <div className="mt-1 w-0.5 flex-1 bg-[#E0E0E0]" />
               )}

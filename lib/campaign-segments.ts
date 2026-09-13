@@ -15,7 +15,7 @@ export interface SegMeta {
 }
 
 export const SEGMENT_META: Record<string, SegMeta> = {
-  HNI:           { label: "HNI",           priority: 1, color: "#678722", bg: "#F3F8E6", medium: "1:1 or Call" },
+  HNI:           { label: "HNI",           priority: 1, color: "#7DA02E", bg: "#F5F9EA", medium: "1:1 or Call" },
   POTENTIAL_HNI: { label: "Potential HNI", priority: 2, color: "#1565C0", bg: "#E3F2FD", medium: "1:1 or Call" },
   REGULAR:       { label: "Regular",       priority: 3, color: "#00897B", bg: "#E0F2F1", medium: "Whatsapp" },
   RECENT:        { label: "Recent",        priority: 4, color: "#0277BD", bg: "#E1F5FE", medium: "Whatsapp" },

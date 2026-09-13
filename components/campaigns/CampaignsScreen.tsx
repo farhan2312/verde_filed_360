@@ -101,7 +101,7 @@ function CommPlanForm({ draft, setDraft }: { draft: CommTemplateVM; setDraft: (t
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <button type="button" onClick={() => setDraft({ ...draft, segments: [] })}
             className="rounded-full border px-3 py-1 text-[11.5px] font-semibold"
-            style={{ background: draft.segments.length === 0 ? "#F3F8E6" : "#fff", color: draft.segments.length === 0 ? "#678722" : "#616161", borderColor: draft.segments.length === 0 ? "#678722" : "#E0E0E0" }}>All</button>
+            style={{ background: draft.segments.length === 0 ? "#F5F9EA" : "#fff", color: draft.segments.length === 0 ? "#7DA02E" : "#616161", borderColor: draft.segments.length === 0 ? "#7DA02E" : "#E0E0E0" }}>All</button>
           <span className="mx-0.5 h-4 w-px bg-[#EEE]" />
           {[...VALUE_SEGMENTS, ...LIFECYCLE_SEGMENTS].map((s) => {
             const on = draft.segments.includes(s); const m = segMeta(s);
@@ -397,7 +397,7 @@ function CommPlanTab({ templates, templateVars }: { templates: CommTemplateVM[];
       <div className="flex flex-wrap items-center gap-2">
         <div className="text-[12.5px] text-[#757575]">Reusable message templates — campaigns are tagged with one or more of these by name. Slots like <b>[name]</b>, <b>[crop]</b>, <b>[Store]</b>, <b>[village]</b>, <b>[number]</b>, <b>[date]</b>, <b>[coupon]</b> fill per customer.</div>
         <button type="button" onClick={() => { setAdding(true); setEditing(null); setDraft({ ...EMPTY_PLAN }); setErr(null); }}
-          className="ml-auto rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white">+ New comm plan</button>
+          className="ml-auto rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white">+ New comm plan</button>
       </div>
 
       {/* Filters */}
@@ -406,7 +406,7 @@ function CommPlanTab({ templates, templateVars }: { templates: CommTemplateVM[];
         {MEDIUM_CHIPS.map((m) => (
           <button key={m} type="button" onClick={() => setFMedium(m)}
             className="rounded-full border-[1.5px] px-3 py-1 text-[11.5px] font-semibold"
-            style={{ background: fMedium === m ? "#678722" : "#fff", color: fMedium === m ? "#fff" : "#616161", borderColor: fMedium === m ? "#678722" : "#E0E0E0" }}>{m}</button>
+            style={{ background: fMedium === m ? "#7DA02E" : "#fff", color: fMedium === m ? "#fff" : "#616161", borderColor: fMedium === m ? "#7DA02E" : "#E0E0E0" }}>{m}</button>
         ))}
         <select value={fPromo} onChange={(e) => setFPromo(e.target.value)} className="rounded-lg border border-[#E0E0E0] bg-white px-2.5 py-1.5 text-[12px] text-[#424242]">
           <option value="">All promotions</option>
@@ -422,12 +422,12 @@ function CommPlanTab({ templates, templateVars }: { templates: CommTemplateVM[];
 
       {/* New plan */}
       {adding && draft && (
-        <div className={`${CARD} border-l-4 border-l-[#678722] p-[18px]`}>
+        <div className={`${CARD} border-l-4 border-l-[#7DA02E] p-[18px]`}>
           <div className="mb-2 text-[13px] font-bold text-[#1A1C1A]">New comm plan</div>
           <CommPlanForm draft={draft} setDraft={setDraft} />
           {err && <div className="mt-2 text-[12px] text-[#C62828]">{err}</div>}
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={save} disabled={saving || !draft.name.trim()} className="rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Create plan"}</button>
+            <button type="button" onClick={save} disabled={saving || !draft.name.trim()} className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Create plan"}</button>
             <button type="button" onClick={() => { setAdding(false); setDraft(null); }} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
           </div>
         </div>
@@ -453,7 +453,7 @@ function CommPlanTab({ templates, templateVars }: { templates: CommTemplateVM[];
               {/* WhatsApp plans: which approved Meta template is selected (created in Settings). */}
               {t.medium === "WhatsApp" && (
                 t.waTemplateName && approvedNames.has(t.waTemplateName)
-                  ? <span className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10px] font-bold text-[#678722]">✓ WA approved</span>
+                  ? <span className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10px] font-bold text-[#7DA02E]">✓ WA approved</span>
                   : t.waTemplateName
                     ? <span className="rounded-full bg-[#FEF6E9] px-2 py-0.5 text-[10px] font-bold text-[#8D6E00]">⏳ WA pending</span>
                     : <span className="rounded-full bg-[#FDECEA] px-2 py-0.5 text-[10px] font-bold text-[#C62828]">⚠ No template</span>
@@ -466,7 +466,7 @@ function CommPlanTab({ templates, templateVars }: { templates: CommTemplateVM[];
               )}
               <div className="ml-auto flex items-center gap-3">
                 <button type="button" onClick={() => { setEditing(isEditing ? null : t.id); setAdding(false); setDraft({ ...t }); setErr(null); }}
-                  className="text-[12px] font-semibold text-[#678722] hover:underline">{isEditing ? "Cancel" : "Edit"}</button>
+                  className="text-[12px] font-semibold text-[#7DA02E] hover:underline">{isEditing ? "Cancel" : "Edit"}</button>
                 <button type="button" onClick={() => askRemove(t)} disabled={saving} className="text-[12px] font-semibold text-[#C62828] hover:underline disabled:opacity-50">Delete</button>
               </div>
             </div>
@@ -474,13 +474,13 @@ function CommPlanTab({ templates, templateVars }: { templates: CommTemplateVM[];
               <>
                 <CommPlanForm draft={draft} setDraft={setDraft} />
                 {err && <div className="mt-2 text-[12px] text-[#C62828]">{err}</div>}
-                <button type="button" onClick={save} disabled={saving || !draft.name.trim()} className="mt-3 self-start rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+                <button type="button" onClick={save} disabled={saving || !draft.name.trim()} className="mt-3 self-start rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
               </>
             ) : (
               <>
                 <div className="text-[10px] font-bold uppercase text-[#9E9E9E]">Offer</div>
                 <div className="mb-2 text-[12.5px] text-[#424242]">{cur.offer}</div>
-                <div className="rounded-[10px] bg-[#FAFFF9] border border-[#F3F8E6] p-3 text-[12.5px] leading-[1.6] text-[#33691E]">{cur.template}</div>
+                <div className="rounded-[10px] bg-[#FAFFF9] border border-[#F5F9EA] p-3 text-[12.5px] leading-[1.6] text-[#33691E]">{cur.template}</div>
                 <div className="mt-2 text-[10px] font-bold uppercase text-[#9E9E9E]">Preview (sample customer)</div>
                 <div className="mt-1 rounded-[10px] bg-[#F5F7F5] p-3 text-[12.5px] italic leading-[1.6] text-[#424242]">{samplePreview(cur)}</div>
               </>
@@ -572,7 +572,7 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
             ? "Run a campaign on a project (all its clusters) or one cluster inside it. Farmers already in another campaign of the same project are skipped — no double-contact."
             : "Your campaigns — showing only the farmers enrolled from your store / district."}
         </div>
-        {canManage && <button type="button" onClick={() => setCreating((v) => !v)} disabled={projects.length === 0} className="rounded-[10px] bg-[#678722] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{creating ? "Close" : "+ New campaign"}</button>}
+        {canManage && <button type="button" onClick={() => setCreating((v) => !v)} disabled={projects.length === 0} className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{creating ? "Close" : "+ New campaign"}</button>}
       </div>
 
       {canManage && projects.length === 0 && (
@@ -616,23 +616,23 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
                   return (
                     <button key={p} type="button" onClick={() => toggleCommPlan(p)}
                       className="rounded-full border-[1.5px] px-3 py-1 text-[11.5px] font-semibold"
-                      style={{ background: on ? "#678722" : "#fff", color: on ? "#fff" : "#616161", borderColor: on ? "#678722" : "#E0E0E0" }}>
+                      style={{ background: on ? "#7DA02E" : "#fff", color: on ? "#fff" : "#616161", borderColor: on ? "#7DA02E" : "#E0E0E0" }}>
                       {on ? "✓ " : ""}{p}
                     </button>
                   );
                 })}
               </div>
             )}
-            {commPlans.length > 0 && <div className="mt-1 text-[11px] text-[#678722]">{commPlans.length} tagged</div>}
+            {commPlans.length > 0 && <div className="mt-1 text-[11px] text-[#7DA02E]">{commPlans.length} tagged</div>}
           </div>
           <div className="mt-3 flex items-center justify-between rounded-[10px] bg-[#F5F7F5] px-4 py-3">
             <div className="text-[12px] text-[#616161]">Audience {clusterId ? "(cluster)" : "(project, de-duplicated)"} · before cross-campaign de-dup</div>
-            <div className="text-[18px] font-bold text-[#678722]">{n(audience)}</div>
+            <div className="text-[18px] font-bold text-[#7DA02E]">{n(audience)}</div>
           </div>
-          <button type="button" onClick={submit} disabled={pending || !name.trim() || commPlans.length === 0} className="mt-4 rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{pending ? "Creating…" : "Create & enrol"}</button>
+          <button type="button" onClick={submit} disabled={pending || !name.trim() || commPlans.length === 0} className="mt-4 rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{pending ? "Creating…" : "Create & enrol"}</button>
         </div>
       )}
-      {msg && <div className="mb-3 rounded-[10px] border border-[#D3E4AB] bg-[#F3F8E6] px-3.5 py-2.5 text-[12.5px] font-medium text-[#678722]">{msg}</div>}
+      {msg && <div className="mb-3 rounded-[10px] border border-[#DBE9B4] bg-[#F5F9EA] px-3.5 py-2.5 text-[12.5px] font-medium text-[#7DA02E]">{msg}</div>}
 
       <div className={`${CARD} overflow-hidden`}>
         {list.length === 0 ? (
@@ -645,7 +645,7 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
               {c.commPlans.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {c.commPlans.map((p) => (
-                    <span key={p} className="rounded-full bg-[#F3F8E6] px-2 py-0.5 text-[10px] font-semibold text-[#678722]">💬 {p}</span>
+                    <span key={p} className="rounded-full bg-[#F5F9EA] px-2 py-0.5 text-[10px] font-semibold text-[#7DA02E]">💬 {p}</span>
                   ))}
                 </div>
               )}
@@ -655,10 +655,10 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
             <button type="button" onClick={() => openAnalytics(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#00838F] hover:bg-[#E0F7FA]">Analytics</button>
             <button type="button" onClick={() => setPhaseOutreachOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#1565C0] hover:bg-[#E3F2FD]">⏱ Round</button>
             {canManage && <button type="button" onClick={() => setPhasesOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#E65100] hover:bg-[#FFF3E0]">⚙ Round setup</button>}
-            {canManage && <button type="button" onClick={() => openTracker(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#678722] hover:bg-[#F3F8E6]">Campaign Tracker</button>}
+            {canManage && <button type="button" onClick={() => openTracker(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">Campaign Tracker</button>}
             {canManage && <button type="button" onClick={() => setEditOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#455A64] hover:bg-[#ECEFF1]">✎ Edit</button>}
             {canManage && <button type="button" onClick={() => setExtendOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#6A1B9A] hover:bg-[#F3E5F5]">Extend</button>}
-            {canManage && <button type="button" onClick={() => setHistoryOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F3F8E6]">📣 Broadcasts</button>}
+            {canManage && <button type="button" onClick={() => setHistoryOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA]">📣 Broadcasts</button>}
           </div>
         ))}
       </div>
@@ -734,7 +734,7 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
       <Modal open={trackerOf != null} onClose={() => setTrackerOf(null)} className="max-w-[840px]">
         {trackerOf && (
           <>
-            <ModalHeader eyebrow="Campaign Tracker" eyebrowColor="#678722" title={trackerOf.name} subtitle="Outreach reach · real attributed revenue · test vs control uplift" onClose={() => setTrackerOf(null)} />
+            <ModalHeader eyebrow="Campaign Tracker" eyebrowColor="#7DA02E" title={trackerOf.name} subtitle="Outreach reach · real attributed revenue · test vs control uplift" onClose={() => setTrackerOf(null)} />
             <div className="max-h-[72vh] overflow-y-auto px-5 py-4">
               {tracker == null ? <div className="py-8 text-center text-[13px] text-[#9E9E9E]">Loading…</div> : <TrackerBody t={tracker} />}
             </div>
@@ -845,18 +845,18 @@ function EditCommPlansModal({ campaign, commPlanNames, onClose }: { campaign: Ca
               return (
                 <button key={p} type="button" onClick={() => toggle(p)}
                   className="rounded-full border-[1.5px] px-3 py-1 text-[11.5px] font-semibold"
-                  style={{ background: on ? "#678722" : "#fff", color: on ? "#fff" : "#616161", borderColor: on ? "#678722" : "#E0E0E0" }}>
+                  style={{ background: on ? "#7DA02E" : "#fff", color: on ? "#fff" : "#616161", borderColor: on ? "#7DA02E" : "#E0E0E0" }}>
                   {on ? "✓ " : ""}{p}
                 </button>
               );
             })}
           </div>
         )}
-        <div className="mt-1 text-[11px] text-[#678722]">{selected.length} tagged</div>
+        <div className="mt-1 text-[11px] text-[#7DA02E]">{selected.length} tagged</div>
         {err && <div className="mt-2 text-[12px] text-[#C62828]">{err}</div>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
-          <button type="button" onClick={save} disabled={saving || selected.length === 0} className="rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save comm plans"}</button>
+          <button type="button" onClick={save} disabled={saving || selected.length === 0} className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save comm plans"}</button>
         </div>
 
         {/* Danger zone — delete the whole campaign (two-step confirm) */}
@@ -889,7 +889,7 @@ function EditCommPlansModal({ campaign, commPlanNames, onClose }: { campaign: Ca
    (exported pieces are shared with the full-page Matrix view, OutreachMatrix.tsx) */
 export const APPROACH_TILES: { key: string; label: string; color: string; bg: string }[] = [
   { key: "CALL", label: "Call", color: "#1565C0", bg: "#E3F2FD" },
-  { key: "WHATSAPP", label: "WhatsApp", color: "#516A1B", bg: "#F3F8E6" },
+  { key: "WHATSAPP", label: "WhatsApp", color: "#66852A", bg: "#F5F9EA" },
   { key: "SMS", label: "SMS", color: "#6A1B9A", bg: "#F3E5F5" },
   { key: "IN_PERSON", label: "In-person", color: "#E65100", bg: "#FFF3E0" },
 ];
@@ -929,7 +929,7 @@ export function StatusBadge({ member }: { member: CampaignMemberVM }) {
   const who = member.reachedBy ? ` · by ${member.reachedBy}` : "";
   const audit = member.reachedBy ? `Recorded by ${member.reachedBy}${member.reachedByCode ? ` (${member.reachedByCode})` : ""}${member.reachedAt ? ` on ${member.reachedAt}` : ""}` : undefined;
   if (s === "reached")
-    return <span title={audit} className="rounded-full bg-[#F3F8E6] px-2.5 py-0.5 text-[10px] font-semibold text-[#678722]">✓ Reached{mediumsLabel(member.mediums) ? ` · ${mediumsLabel(member.mediums)}` : ""}{member.reachedAt ? ` · ${member.reachedAt}` : ""}{who}</span>;
+    return <span title={audit} className="rounded-full bg-[#F5F9EA] px-2.5 py-0.5 text-[10px] font-semibold text-[#7DA02E]">✓ Reached{mediumsLabel(member.mediums) ? ` · ${mediumsLabel(member.mediums)}` : ""}{member.reachedAt ? ` · ${member.reachedAt}` : ""}{who}</span>;
   if (s === "unreachable")
     return <span title={audit} className="rounded-full bg-[#FDECEA] px-2.5 py-0.5 text-[10px] font-semibold text-[#C62828]">Unreachable{member.reachedAt ? ` · ${member.reachedAt}` : ""}{who}</span>;
   return null;
@@ -982,7 +982,7 @@ function ApproachPicker({ value, onToggle, disabled }: { value: string[]; onTogg
 
 /* ── Interest response: Interested · Not interested · Wants another crop (+ crop) ── */
 export const RESPONSE_TILES: { key: string; label: string; color: string; bg: string }[] = [
-  { key: "INTERESTED", label: "Interested", color: "#516A1B", bg: "#F3F8E6" },
+  { key: "INTERESTED", label: "Interested", color: "#66852A", bg: "#F5F9EA" },
   { key: "NOT_INTERESTED", label: "Not interested", color: "#C62828", bg: "#FDECEA" },
   { key: "OTHER_CROP", label: "Wants another crop", color: "#E65100", bg: "#FFF3E0" },
 ];
@@ -1042,10 +1042,10 @@ export function OutreachProgress({ members }: { members: CampaignMemberVM[] }) {
     <div>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[12.5px]">
         <span className="font-semibold text-[#1A1C1A]">{n(total)} to contact</span>
-        <span className="text-[#616161]"><b className="text-[#678722]">{n(reached)} reached</b>{unreachable ? <> · <b className="text-[#C62828]">{n(unreachable)} unreachable</b></> : null} · {n(left)} left{broadcast ? <> · <b className="text-[#6A1B9A]">📣 {n(broadcast)} broadcast</b></> : null}</span>
+        <span className="text-[#616161]"><b className="text-[#7DA02E]">{n(reached)} reached</b>{unreachable ? <> · <b className="text-[#C62828]">{n(unreachable)} unreachable</b></> : null} · {n(left)} left{broadcast ? <> · <b className="text-[#6A1B9A]">📣 {n(broadcast)} broadcast</b></> : null}</span>
       </div>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#EDEDED]">
-        <div style={{ width: `${pct(reached)}%`, background: "#678722" }} />
+        <div style={{ width: `${pct(reached)}%`, background: "#7DA02E" }} />
         <div style={{ width: `${pct(unreachable)}%`, background: "#C62828" }} />
       </div>
     </div>
@@ -1074,7 +1074,7 @@ export function ScriptText({ template, member }: { template: string; member?: Ca
         if (!/^\[.+\]$/.test(part)) return <span key={i}>{part}</span>;
         const val = fill[part.toLowerCase()];
         return val
-          ? <span key={i} className="rounded bg-[#F3F8E6] px-1 font-semibold text-[#516A1B]">{val}</span>
+          ? <span key={i} className="rounded bg-[#F5F9EA] px-1 font-semibold text-[#66852A]">{val}</span>
           : <span key={i} className="rounded bg-[#FFF3E0] px-1 font-semibold text-[#E65100]">{part}</span>;
       })}
     </span>
@@ -1131,7 +1131,7 @@ export function ScriptPanel({ scripts, member, className = "" }: { scripts: Comm
               style={{ borderColor: mine ? m.color : "#ECECEC", borderLeftWidth: 4, borderLeftColor: m.color }}>
               <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
                 <span className="text-[12.5px] font-bold text-[#1A1C1A]">{s.name || "(script)"}</span>
-                {mine && <span className="rounded-full bg-[#F3F8E6] px-1.5 py-0.5 text-[9px] font-bold text-[#678722]">★ THIS FARMER</span>}
+                {mine && <span className="rounded-full bg-[#F5F9EA] px-1.5 py-0.5 text-[9px] font-bold text-[#7DA02E]">★ THIS FARMER</span>}
               </div>
               <div className="mb-1.5 flex flex-wrap items-center gap-1">
                 <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold" style={{ background: m.bg, color: m.color }}>{m.label}</span>
@@ -1203,7 +1203,7 @@ function MemberRow({ member, crops, onChange, commPlans, templates, canSms }: { 
   };
 
   return (
-    <div className="rounded-[16px] border p-4" style={{ borderColor: st === "reached" ? "#C2D98D" : st === "unreachable" ? "#EF9A9A" : "#E8E8E8", background: st === "reached" ? "#F6FFF4" : st === "unreachable" ? "#FEF6F5" : "#fff" }}>
+    <div className="rounded-[16px] border p-4" style={{ borderColor: st === "reached" ? "#CCE09A" : st === "unreachable" ? "#EF9A9A" : "#E8E8E8", background: st === "reached" ? "#F6FFF4" : st === "unreachable" ? "#FEF6F5" : "#fff" }}>
       <div className="mb-2.5 flex flex-wrap items-center gap-2">
         <span className="text-[16px] font-bold text-[#1A1C1A]">{member.name}</span>
         <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ background: segMeta(member.segment).bg, color: segMeta(member.segment).color }}>{segMeta(member.segment).label}</span>
@@ -1220,7 +1220,7 @@ function MemberRow({ member, crops, onChange, commPlans, templates, canSms }: { 
           rows={2} className="w-full resize-y rounded-lg border border-[#E0E0E0] px-3 py-2 text-[13px]" />
         <div className="flex items-center gap-2">
           <button type="button" onClick={save} disabled={pending || !o.dirty}
-            className="rounded-[10px] bg-[#678722] px-5 py-2 text-[13px] font-bold text-white disabled:opacity-40">
+            className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-bold text-white disabled:opacity-40">
             {pending ? "Saving…" : saved && !o.dirty ? "Saved ✓" : "Save"}
           </button>
           {err && <span className="text-[12px] font-semibold text-[#C62828]">{err}</span>}
@@ -1249,10 +1249,10 @@ function FocusMode({ members, crops, onChange, onExit, onCurrent, commPlans, tem
       {member
         ? <FocusCard key={member.id} member={member} crops={crops} onChange={onChange} onHandled={handled} onSkip={skip} onBack={history.length ? back : undefined} remaining={queue.length} commPlans={commPlans} templates={templates} canSms={canSms} />
         : (
-          <div className="rounded-[18px] border-2 border-[#D3E4AB] bg-[#F6FFF4] p-10 text-center">
-            <div className="text-[20px] font-bold text-[#516A1B]">All done 🎉</div>
+          <div className="rounded-[18px] border-2 border-[#DBE9B4] bg-[#F6FFF4] p-10 text-center">
+            <div className="text-[20px] font-bold text-[#66852A]">All done 🎉</div>
             <div className="mt-1.5 text-[13px] text-[#616161]">You've worked through everyone in this list. Skipped farmers loop back until they're handled.</div>
-            <button type="button" onClick={onExit} className="mt-4 rounded-[10px] bg-[#678722] px-6 py-2.5 text-[13px] font-bold text-white">Back to list</button>
+            <button type="button" onClick={onExit} className="mt-4 rounded-[10px] bg-[#7DA02E] px-6 py-2.5 text-[13px] font-bold text-white">Back to list</button>
           </div>
         )}
     </div>
@@ -1303,7 +1303,7 @@ function FocusCard({ member, crops, onChange, onHandled, onSkip, onBack, remaini
         <button type="button" onClick={onSkip} disabled={pending} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2.5 text-[13px] font-semibold text-[#616161] disabled:opacity-40">Skip →</button>
         <button type="button" onClick={commit} disabled={pending || !canCommit}
           className="ml-auto rounded-[10px] px-6 py-2.5 text-[13.5px] font-bold text-white disabled:opacity-40"
-          style={{ background: unreachable ? "#C62828" : "#678722" }}>
+          style={{ background: unreachable ? "#C62828" : "#7DA02E" }}>
           {pending ? "Saving…" : unreachable ? "Mark unreachable & next" : "Save & next"}
         </button>
       </div>
@@ -1319,7 +1319,7 @@ function Kpi({ label, value, color }: { label: string; value: string; color?: st
 
 /* ── Campaign audience analytics: pie + treemap composition + Segment × Store matrix ── */
 
-const CHART_PALETTE = ["#1565C0", "#678722", "#E65100", "#6A1B9A", "#00838F", "#C62828", "#EDA942", "#5D4037", "#0277BD", "#558B2F", "#AD1457", "#4527A0"];
+const CHART_PALETTE = ["#1565C0", "#7DA02E", "#E65100", "#6A1B9A", "#00838F", "#C62828", "#EDA942", "#5D4037", "#0277BD", "#558B2F", "#AD1457", "#4527A0"];
 
 /** #RRGGBB → rgba() with the given alpha (for tinted matrix cells). */
 function hexToRgba(hex: string, a: number): string {
@@ -1579,7 +1579,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
         <div className="mb-2 text-[13px] font-bold text-[#1A1C1A]">Outreach</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Kpi label="Test farmers" value={n(t.reach.testTotal)} />
-          <Kpi label={`Reached (${reachPct}%)`} value={n(t.reach.reached)} color="#678722" />
+          <Kpi label={`Reached (${reachPct}%)`} value={n(t.reach.reached)} color="#7DA02E" />
           <Kpi label="Call·WA·SMS·Visit" value={`${n(t.reach.byApproach.CALL)}·${n(t.reach.byApproach.WHATSAPP)}·${n(t.reach.byApproach.SMS)}·${n(t.reach.byApproach.IN_PERSON)}`} />
           <Kpi label="Paying (contacted)" value={n(a.payingFarmers)} color="#1565C0" />
         </div>
@@ -1587,7 +1587,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
         {/* Interest response breakdown (of the reached farmers) */}
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#F0F0F0] pt-3">
           <span className="text-[11px] font-semibold uppercase text-[#757575]">Response</span>
-          <span className="rounded-full bg-[#F3F8E6] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#516A1B]">Interested {n(t.reach.byResponse.interested)}</span>
+          <span className="rounded-full bg-[#F5F9EA] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#66852A]">Interested {n(t.reach.byResponse.interested)}</span>
           <span className="rounded-full bg-[#FDECEA] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#C62828]">Not interested {n(t.reach.byResponse.notInterested)}</span>
           <span className="rounded-full bg-[#FFF3E0] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#E65100]">Wants another crop {n(t.reach.byResponse.otherCrop)}</span>
           {t.reach.byResponse.noResponse > 0 && <span className="rounded-full bg-[#F5F5F5] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#9E9E9E]">Not logged {n(t.reach.byResponse.noResponse)}</span>}
@@ -1614,7 +1614,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
                 <div key={s.store} className="flex items-center gap-2.5 text-[12px]">
                   <span className="w-[130px] shrink-0 truncate font-semibold text-[#424242]" title={s.store}>{s.store}</span>
                   <div className="relative h-[16px] flex-1 overflow-hidden rounded-[6px] bg-[#F0F0F0]">
-                    <div className="absolute inset-y-0 left-0 rounded-[6px] bg-[#678722]" style={{ width: `${pct}%` }} />
+                    <div className="absolute inset-y-0 left-0 rounded-[6px] bg-[#7DA02E]" style={{ width: `${pct}%` }} />
                   </div>
                   <span className="w-[74px] shrink-0 text-right tabular-nums text-[#616161]"><b className="text-[#1A1C1A]">{n(s.reached)}</b> / {n(s.total)}</span>
                   <span className="w-[64px] shrink-0 text-right text-[10.5px] text-[#6A1B9A]">{s.broadcast > 0 ? `📣 ${n(s.broadcast)}` : ""}</span>
@@ -1632,7 +1632,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
         </div>
         <div className="mb-2 text-[11.5px] text-[#616161]">Counts purchases by <b>contacted</b> farmers · matched on — <b>{a.basisLabel}</b></div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-[10px] bg-[#F3F8E6] px-4 py-3"><div className="text-[20px] font-bold text-[#516A1B]">{inr(a.matchedRevenue)}</div><div className="text-[11px] text-[#678722]">Campaign-matched revenue</div></div>
+          <div className="rounded-[10px] bg-[#F5F9EA] px-4 py-3"><div className="text-[20px] font-bold text-[#66852A]">{inr(a.matchedRevenue)}</div><div className="text-[11px] text-[#7DA02E]">Campaign-matched revenue</div></div>
           <div className="rounded-[10px] bg-[#F5F7F5] px-4 py-3"><div className="text-[20px] font-bold text-[#1A1C1A]">{inr(a.totalRevenue)}</div><div className="text-[11px] text-[#9E9E9E]">All purchases by contacted farmers</div></div>
         </div>
         {a.noCatalogMatch && (
@@ -1649,7 +1649,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
             {([["value", VALUE_TITLE], ["lifecycle", LIFECYCLE_TITLE]] as const).map(([k, label]) => (
               <button key={k} type="button" onClick={() => setUpliftBy(k)}
                 className="rounded-[6px] px-2.5 py-1 text-[11.5px] font-semibold transition-colors"
-                style={{ background: upliftBy === k ? "#fff" : "transparent", color: upliftBy === k ? "#678722" : "#9E9E9E", boxShadow: upliftBy === k ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
+                style={{ background: upliftBy === k ? "#fff" : "transparent", color: upliftBy === k ? "#7DA02E" : "#9E9E9E", boxShadow: upliftBy === k ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
                 {label}
               </button>
             ))}
@@ -1669,7 +1669,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
                   <td className="text-right">{n(u.test.reached)}</td>
                   <td className="text-right">{(testPct * 100).toFixed(0)}%</td>
                   <td className="text-right">{(ctrlPct * 100).toFixed(0)}%</td>
-                  <td className="text-right font-semibold" style={{ color: u.upliftPurchasePct >= 0 ? "#678722" : "#C62828" }}>{u.upliftPurchasePct > 0 ? "+" : ""}{u.upliftPurchasePct}pp</td>
+                  <td className="text-right font-semibold" style={{ color: u.upliftPurchasePct >= 0 ? "#7DA02E" : "#C62828" }}>{u.upliftPurchasePct > 0 ? "+" : ""}{u.upliftPurchasePct}pp</td>
                   <td className="text-right font-bold text-[#1A1C1A]">{inr(u.incremental)}</td>
                 </tr>
               ); })}</tbody>
@@ -1710,7 +1710,7 @@ export function CampaignsScreen({ templates, campaigns, stores: _stores, project
           {TABS.map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
               className="rounded-[8px] px-4 py-2 text-[12.5px] font-semibold transition-colors"
-              style={{ background: tab === k ? "#fff" : "transparent", color: tab === k ? "#678722" : "#9E9E9E", boxShadow: tab === k ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
+              style={{ background: tab === k ? "#fff" : "transparent", color: tab === k ? "#7DA02E" : "#9E9E9E", boxShadow: tab === k ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
               {label}
             </button>
           ))}

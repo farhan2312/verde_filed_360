@@ -11,10 +11,10 @@ export interface SystemEventVM {
 }
 
 const SYS_KPI_CARDS = [
-  { label: "Active Users", value: SYSADMIN_STATS.activeUsers, sub: "1 inactive user", subColor: "#678722", valueColor: "#1A1C1A" },
+  { label: "Active Users", value: SYSADMIN_STATS.activeUsers, sub: "1 inactive user", subColor: "#7DA02E", valueColor: "#1A1C1A" },
   { label: "Database Size", value: SYSADMIN_STATS.dbSize, sub: "68% of 3.5 GB limit", subColor: "#D4881F", valueColor: "#1A1C1A" },
-  { label: "API Calls (Today)", value: SYSADMIN_STATS.apiCalls, sub: "Normal range", subColor: "#678722", valueColor: "#1A1C1A" },
-  { label: "System Uptime", value: SYSADMIN_STATS.uptime, sub: "Last 30 days", subColor: "#9E9E9E", valueColor: "#678722" },
+  { label: "API Calls (Today)", value: SYSADMIN_STATS.apiCalls, sub: "Normal range", subColor: "#7DA02E", valueColor: "#1A1C1A" },
+  { label: "System Uptime", value: SYSADMIN_STATS.uptime, sub: "Last 30 days", subColor: "#9E9E9E", valueColor: "#7DA02E" },
 ];
 
 const QUICK_ACTIONS: { label: string; href?: string; icon: string }[] = [

@@ -9,7 +9,7 @@ import { DeckViewer } from "./DeckViewer";
 import { VideoPlayer } from "./VideoPlayer";
 
 const ROLE_COLORS: Record<TrainingRole, string> = {
-  officer: "#1565C0", regional: "#678722", central: "#7B1FA2", sysadmin: "#E65100", campaigner: "#00838F",
+  officer: "#1565C0", regional: "#7DA02E", central: "#7B1FA2", sysadmin: "#E65100", campaigner: "#00838F",
 };
 
 /** Screenshot with a graceful placeholder until the real image is added under /public/training. */
@@ -32,7 +32,7 @@ function StepImage({ file }: { file: string }) {
 
 function Callout({ kind, text }: { kind: "tip" | "warn"; text: string }) {
   const s = kind === "tip"
-    ? { bg: "#F3F8E6", bd: "#E4EFC9", c: "#516A1B", icon: "💡", label: "Tip" }
+    ? { bg: "#F5F9EA", bd: "#E9F2CF", c: "#66852A", icon: "💡", label: "Tip" }
     : { bg: "#FEF6E9", bd: "#F5CE8E", c: "#8D6E00", icon: "⚠️", label: "Heads up" };
   return (
     <div className="mt-2 rounded-[10px] border px-3 py-2 text-[12.5px] leading-snug" style={{ background: s.bg, borderColor: s.bd, color: s.c }}>
@@ -44,7 +44,7 @@ function Callout({ kind, text }: { kind: "tip" | "warn"; text: string }) {
 function Step({ n, step }: { n: number; step: TrainingStep }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#678722] text-[12px] font-bold text-white">{n}</div>
+      <div className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#7DA02E] text-[12px] font-bold text-white">{n}</div>
       <div className="min-w-0 flex-1 pb-4">
         <div className="text-[13.5px] leading-relaxed text-[#1A1C1A]">{step.text}</div>
         {step.tip && <Callout kind="tip" text={step.tip} />}
@@ -110,7 +110,7 @@ export function TrainingCenter({ role, topics }: { role: ViewerRole; topics: Tra
         {/* Left rail */}
         <div className="rounded-[14px] border border-black/[0.03] bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] lg:sticky lg:top-4 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search topics…"
-            className="mb-2 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-2 text-[12.5px] outline-none focus:border-[#678722]" />
+            className="mb-2 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-2 text-[12.5px] outline-none focus:border-[#7DA02E]" />
           {bySection.length === 0 ? (
             <div className="px-2 py-6 text-center text-[12px] text-[#9E9E9E]">No topics match.</div>
           ) : bySection.map(([section, ts]) => (
@@ -120,7 +120,7 @@ export function TrainingCenter({ role, topics }: { role: ViewerRole; topics: Tra
                 const on = open?.id === t.id;
                 return (
                   <button key={t.id} type="button" onClick={() => go(t.id)}
-                    className={`block w-full rounded-[8px] px-2.5 py-1.5 text-left text-[12.5px] transition-colors ${on ? "bg-[#F3F8E6] font-semibold text-[#516A1B]" : "text-[#424242] hover:bg-[#F5F7F5]"}`}>
+                    className={`block w-full rounded-[8px] px-2.5 py-1.5 text-left text-[12.5px] transition-colors ${on ? "bg-[#F5F9EA] font-semibold text-[#66852A]" : "text-[#424242] hover:bg-[#F5F7F5]"}`}>
                     {t.title}
                   </button>
                 );
@@ -152,9 +152,9 @@ export function TrainingCenter({ role, topics }: { role: ViewerRole; topics: Tra
               </div>
 
               {open.outcome && (
-                <div className="mt-2 rounded-[12px] border border-[#E4EFC9] bg-[#F1F8F1] px-4 py-3">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#678722]">What happens next</div>
-                  <div className="mt-1 text-[13px] leading-relaxed text-[#516A1B]">{open.outcome}</div>
+                <div className="mt-2 rounded-[12px] border border-[#E9F2CF] bg-[#F1F8F1] px-4 py-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#7DA02E]">What happens next</div>
+                  <div className="mt-1 text-[13px] leading-relaxed text-[#66852A]">{open.outcome}</div>
                 </div>
               )}
 
@@ -166,13 +166,13 @@ export function TrainingCenter({ role, topics }: { role: ViewerRole; topics: Tra
                       const back = topics.findIndex((t) => t.id === rid) < topics.findIndex((t) => t.id === open.id);
                       return (
                       <button key={rid} type="button" onClick={() => go(rid)}
-                        className="rounded-full border border-[#E0E0E0] bg-white px-3 py-1 text-[11.5px] font-semibold text-[#616161] hover:border-[#678722] hover:text-[#678722]">
+                        className="rounded-full border border-[#E0E0E0] bg-white px-3 py-1 text-[11.5px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E]">
                         {back ? `← ${rt.title}` : `${rt.title} →`}
                       </button>); })}
                   </div>
                   {idx >= 0 && idx < flatIds.length - 1 && (
                     <button type="button" onClick={() => go(flatIds[idx + 1])}
-                      className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B]">
+                      className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A]">
                       Next: {byId(flatIds[idx + 1])?.title} →
                     </button>
                   )}

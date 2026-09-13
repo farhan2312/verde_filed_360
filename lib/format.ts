@@ -22,7 +22,7 @@ export function grouped(n: number): string {
 
 /** Avatar palette (from the design `avColors`). */
 export const AVATAR_COLORS = [
-  "#678722", "#1565C0", "#E65100", "#7B1FA2",
+  "#7DA02E", "#1565C0", "#E65100", "#7B1FA2",
   "#D4881F", "#C62828", "#00695C", "#4527A0",
 ];
 

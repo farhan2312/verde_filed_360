@@ -44,7 +44,7 @@ type Lane = {
 };
 
 const LANES: Lane[] = [
-  { status: "active", label: "Active Projects", dot: "#678722", numColor: "#678722", showUpdates: true, showDue: true, dim: false },
+  { status: "active", label: "Active Projects", dot: "#7DA02E", numColor: "#7DA02E", showUpdates: true, showDue: true, dim: false },
   { status: "planned", label: "Planned", dot: "#D4881F", numColor: "#D4881F", showUpdates: false, showDue: true, dim: false },
   { status: "completed", label: "Completed", dot: "#7B1FA2", numColor: "#7B1FA2", showUpdates: true, showDue: false, dim: true },
 ];
@@ -103,7 +103,7 @@ export function ActionPlannerBoard({
         <button
           type="button"
           onClick={toggleNewProject}
-          className="cursor-pointer rounded-[10px] bg-[#678722] px-[22px] py-[9px] text-[13px] font-semibold text-white transition-colors hover:bg-[#516A1B] active:scale-[0.97]"
+          className="cursor-pointer rounded-[10px] bg-[#7DA02E] px-[22px] py-[9px] text-[13px] font-semibold text-white transition-colors hover:bg-[#66852A] active:scale-[0.97]"
         >
           + New Action
         </button>
@@ -137,7 +137,7 @@ export function ActionPlannerBoard({
 /* ─────────────────────────── New Project Form ─────────────────────────── */
 
 const inputCls =
-  "box-border w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#678722]";
+  "box-border w-full rounded-[10px] border-[1.5px] border-[#E0E0E0] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#7DA02E]";
 const labelCls = "mb-[5px] text-[11px] font-semibold text-[#757575]";
 
 function NewProjectForm({
@@ -156,7 +156,7 @@ function NewProjectForm({
   onCreate: () => void;
 }) {
   return (
-    <div className="mb-5 rounded-[14px] border-2 border-dashed border-[#678722] bg-white p-6 shadow-sm">
+    <div className="mb-5 rounded-[14px] border-2 border-dashed border-[#7DA02E] bg-white p-6 shadow-sm">
       <div className="mb-4 text-[15px] font-bold text-[#1A1C1A]">Create New Project / Action</div>
       <div className="mb-[14px] grid grid-cols-1 gap-[14px] lg:grid-cols-2">
         <div>
@@ -216,7 +216,7 @@ function NewProjectForm({
           type="button"
           onClick={onCreate}
           disabled={pending}
-          className="cursor-pointer rounded-[10px] bg-[#678722] px-6 py-[9px] text-[12px] font-semibold text-white transition-colors hover:bg-[#516A1B] disabled:opacity-60"
+          className="cursor-pointer rounded-[10px] bg-[#7DA02E] px-6 py-[9px] text-[12px] font-semibold text-white transition-colors hover:bg-[#66852A] disabled:opacity-60"
         >
           {pending ? "Creating…" : "Create Project"}
         </button>

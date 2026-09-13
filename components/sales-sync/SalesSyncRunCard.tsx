@@ -10,7 +10,7 @@ export interface SyncSettingsVM { lookbackDays: number; enabled: boolean }
 export interface LastRunVM { when: string; status: string; label: string; trigger: string | null; bills: number | null; newCustomers: number | null; apiRecords: number | null; error: string | null }
 
 const CARD = "rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
-const INPUT = "rounded-[9px] border border-[#E0E0E0] bg-white px-3 py-2 text-[13px] text-ink outline-none focus:border-[#678722]";
+const INPUT = "rounded-[9px] border border-[#E0E0E0] bg-white px-3 py-2 text-[13px] text-ink outline-none focus:border-[#7DA02E]";
 const n = (v: number | null | undefined) => (v ?? 0).toLocaleString("en-IN");
 
 /** Today / yesterday as YYYY-MM-DD in IST (the ERP's calendar). */

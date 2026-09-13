@@ -1,17 +1,17 @@
 import { Card } from "@/components/ui";
 
 const SCHEDULE = [
-  { name: "Ramesh Kumar — Follow-up", sub: "Chandpur · Wheat pest check", time: "9:00 AM", bg: "#F3F8E6", dot: "#678722" },
+  { name: "Ramesh Kumar — Follow-up", sub: "Chandpur · Wheat pest check", time: "9:00 AM", bg: "#F5F9EA", dot: "#7DA02E" },
   { name: "Anil Verma — New visit", sub: "Shamsabad · Seed demo", time: "11:30 AM", bg: "#F5F7F5", dot: "#D4881F" },
   { name: "Bharat Mishra — Product demo", sub: "Jaitpur · Large farmer outreach", time: "2:00 PM", bg: "#F5F7F5", dot: "#D4881F" },
   { name: "Rakesh Gupta — FPO follow-up", sub: "Etmadpur · Enrollment docs", time: "4:00 PM", bg: "#F5F7F5", dot: "#9E9E9E" },
 ];
 
 const TARGETS = [
-  { label: "Visits (Target: 100)", value: "94 / 100", pct: 94, color: "#678722" },
-  { label: "Conversions (Target: 60)", value: "63 / 60", pct: 100, color: "#678722" },
+  { label: "Visits (Target: 100)", value: "94 / 100", pct: 94, color: "#7DA02E" },
+  { label: "Conversions (Target: 60)", value: "63 / 60", pct: 100, color: "#7DA02E" },
   { label: "New Registrations (Target: 20)", value: "14 / 20", pct: 70, color: "#D4881F" },
-  { label: "Data Completeness", value: "92%", pct: 92, color: "#678722" },
+  { label: "Data Completeness", value: "92%", pct: 92, color: "#7DA02E" },
 ];
 
 const HERO_STATS = [

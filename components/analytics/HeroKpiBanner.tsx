@@ -15,7 +15,7 @@ const FALLBACK: KpiCell[] = [
 export function HeroKpiBanner({ cells }: { cells?: KpiCell[] }) {
   const list = cells && cells.length ? cells : FALLBACK;
   return (
-    <div className="rounded-[14px] px-5 py-[18px] mb-5 grid grid-cols-2 gap-5 text-white bg-[linear-gradient(135deg,#516A1B,#678722,#8CB337)] lg:px-7 lg:py-[22px] lg:grid-cols-4">
+    <div className="rounded-[14px] px-5 py-[18px] mb-5 grid grid-cols-2 gap-5 text-white bg-[linear-gradient(135deg,#66852A,#7DA02E,#93B93C)] lg:px-7 lg:py-[22px] lg:grid-cols-4">
       {list.map((c) => (
         <div key={c.label}>
           <div className="text-[10px] opacity-70 uppercase tracking-[0.8px] mb-1.5">

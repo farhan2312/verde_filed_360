@@ -2,7 +2,7 @@
 
 /**
  * Single / multi select chip row. Reproduces the design `mkSingle` / `mkMulti`:
- * selected → bg #F3F8E6, color #678722, border #678722; unselected → white /
+ * selected → bg #F5F9EA, color #7DA02E, border #7DA02E; unselected → white /
  * #616161 / #E0E0E0. `hover:opacity-85` matches the prototype style-hover.
  */
 
@@ -50,9 +50,9 @@ export function ChipGroup(props: SingleProps | MultiProps) {
             onClick={() => toggle(opt)}
             className={`rounded-[20px] font-medium border-[1.5px] cursor-pointer transition-opacity hover:opacity-85 ${pad}`}
             style={{
-              background: sel ? "#F3F8E6" : "#FFFFFF",
-              color: sel ? "#678722" : "#616161",
-              borderColor: sel ? "#678722" : "#E0E0E0",
+              background: sel ? "#F5F9EA" : "#FFFFFF",
+              color: sel ? "#7DA02E" : "#616161",
+              borderColor: sel ? "#7DA02E" : "#E0E0E0",
             }}
             aria-pressed={sel}
           >

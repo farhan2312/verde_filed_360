@@ -87,7 +87,7 @@ export function CreateClusterModal({ open, onClose, stores, farmers }: Props) {
     <Modal open={open} onClose={onClose}>
       <ModalHeader
         eyebrow="FARMER CLUSTERS · NEW"
-        eyebrowColor="#678722"
+        eyebrowColor="#7DA02E"
         title="Create New Cluster"
         subtitle="Pick a map layer, a filter, and a store to snapshot matching farmers."
         onClose={onClose}
@@ -173,7 +173,7 @@ export function CreateClusterModal({ open, onClose, stores, farmers }: Props) {
         </div>
 
         {/* Matched count */}
-        <div className="flex items-center gap-2 rounded-[10px] border border-[#E4EFC9] bg-[#F3F8E6] px-3.5 py-2.5">
+        <div className="flex items-center gap-2 rounded-[10px] border border-[#E9F2CF] bg-[#F5F9EA] px-3.5 py-2.5">
           <span className="text-[13px] font-bold text-brand-600">{matched.length}</span>
           <span className="text-[12px] font-semibold text-brand-600">
             matching farmer{matched.length === 1 ? "" : "s"} will be saved to this cluster

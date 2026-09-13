@@ -15,7 +15,7 @@ export function VideoPlayer({ video, title }: { video: TrainingVideo; title: str
   return (
     <div className="mb-6">
       <div className="mb-2.5 flex flex-wrap items-center gap-2">
-        <span className="text-[12px] font-bold text-[#678722]">▶ Watch the walkthrough</span>
+        <span className="text-[12px] font-bold text-[#7DA02E]">▶ Watch the walkthrough</span>
         <div className="ml-auto inline-flex rounded-[8px] border border-[#E0E0E0] bg-[#F5F7F5] p-0.5">
           {(["en", "hi"] as const).map((l) => (
             <button
@@ -25,7 +25,7 @@ export function VideoPlayer({ video, title }: { video: TrainingVideo; title: str
               className="rounded-[6px] px-3 py-1 text-[11.5px] font-semibold transition-colors"
               style={{
                 background: lang === l ? "#fff" : "transparent",
-                color: lang === l ? "#678722" : "#9E9E9E",
+                color: lang === l ? "#7DA02E" : "#9E9E9E",
                 boxShadow: lang === l ? "0 1px 2px rgba(0,0,0,0.12)" : "none",
               }}
             >

@@ -31,8 +31,8 @@ export function WaDeliveryStatus({ signal = 0 }: { signal?: number }) {
               const st = (l.status ?? (l.ok ? "SENT" : "FAILED")).toUpperCase();
               const failed = st.includes("FAIL") || !l.ok;
               const delivered = st === "DELIVERED" || st === "READ" || !!l.deliveredAt;
-              const color = failed ? "#C62828" : delivered ? "#678722" : "#E65100";
-              const bg = failed ? "#FDECEA" : delivered ? "#F3F8E6" : "#FFF3E0";
+              const color = failed ? "#C62828" : delivered ? "#7DA02E" : "#E65100";
+              const bg = failed ? "#FDECEA" : delivered ? "#F5F9EA" : "#FFF3E0";
               return (
                 <div key={l.id} className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[#EEE] px-2.5 py-1.5 text-[11.5px]">
                   <span className="font-mono text-[#616161]">{l.mobile}</span>

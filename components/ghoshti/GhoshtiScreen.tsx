@@ -21,7 +21,7 @@ const fmtDate = (iso: string) =>
 
 const STATUS_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
   PENDING: { bg: "#FFF3E0", fg: "#E65100", label: "Pending approval" },
-  APPROVED: { bg: "#F3F8E6", fg: "#678722", label: "Approved" },
+  APPROVED: { bg: "#F5F9EA", fg: "#7DA02E", label: "Approved" },
   REJECTED: { bg: "#FDECEA", fg: "#C62828", label: "Rejected" },
 };
 
@@ -80,7 +80,7 @@ export function GhoshtiScreen({
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Meetups" value={counts.total} />
         <Kpi label="Pending" value={counts.pending} color="#E65100" />
-        <Kpi label="Approved" value={counts.approved} color="#678722" />
+        <Kpi label="Approved" value={counts.approved} color="#7DA02E" />
         <Kpi label="Attendees" value={counts.attendees} color="#1565C0" />
       </div>
 
@@ -90,16 +90,16 @@ export function GhoshtiScreen({
           {TABS.map(({ key, label }) => (
             <button key={key} type="button" onClick={() => setTab(key)}
               className="rounded-[8px] px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors"
-              style={{ background: tab === key ? "#fff" : "transparent", color: tab === key ? "#678722" : "#9E9E9E", boxShadow: tab === key ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
+              style={{ background: tab === key ? "#fff" : "transparent", color: tab === key ? "#7DA02E" : "#9E9E9E", boxShadow: tab === key ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
               {label}
             </button>
           ))}
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search store / topic / organiser…"
-          className="min-w-[200px] flex-1 rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-[7px] text-[12.5px] outline-none focus:border-[#678722]" />
+          className="min-w-[200px] flex-1 rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-[7px] text-[12.5px] outline-none focus:border-[#7DA02E]" />
         {canCreate && (
           <button type="button" onClick={() => setAdding(true)}
-            className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B]">
+            className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A]">
             + New Ghoshti
           </button>
         )}
@@ -134,7 +134,7 @@ export function GhoshtiScreen({
                     <td className="px-4 py-3 text-[#616161]">{g.topic || "—"}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="font-bold text-[#1A1C1A]">{g.attendees}</span>
-                      {g.existingCount > 0 && <span className="ml-1 text-[10.5px] text-[#678722]">({g.existingCount} existing)</span>}
+                      {g.existingCount > 0 && <span className="ml-1 text-[10.5px] text-[#7DA02E]">({g.existingCount} existing)</span>}
                     </td>
                     <td className="px-4 py-3 text-[#9E9E9E]">{g.createdBy}</td>
                     <td className="px-4 py-3">
@@ -194,21 +194,21 @@ function NewGhoshtiModal({
 
   return (
     <Modal open onClose={onClose} className="max-w-[520px]">
-      <ModalHeader eyebrow="Ghoshti" eyebrowColor="#678722" title="New farmer meetup" onClose={onClose} />
+      <ModalHeader eyebrow="Ghoshti" eyebrowColor="#7DA02E" title="New farmer meetup" onClose={onClose} />
       <div className="max-h-[76vh] overflow-y-auto px-5 py-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Date <span className="text-[#C62828]">*</span></label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+              className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
           </div>
           <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Host store <span className="text-[#C62828]">*</span></label>
             {only ? (
-              <div className="mt-1 rounded-[10px] border border-[#E4EFC9] bg-[#F1F8F1] px-3.5 py-2.5 text-[13px] font-semibold text-[#516A1B]">{only.name}</div>
+              <div className="mt-1 rounded-[10px] border border-[#E9F2CF] bg-[#F1F8F1] px-3.5 py-2.5 text-[13px] font-semibold text-[#66852A]">{only.name}</div>
             ) : (
               <select value={storeId} onChange={(e) => setStoreId(e.target.value ? Number(e.target.value) : "")}
-                className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]">
+                className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]">
                 <option value="">Select a store…</option>
                 {storeOptions.stores.map((s) => <option key={s.id} value={s.id}>{s.name}{s.zone ? ` · ${s.zone}` : ""}</option>)}
               </select>
@@ -219,17 +219,17 @@ function NewGhoshtiModal({
         <div className="mt-4">
           <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Topic (optional)</label>
           <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Kharif crop advisory"
-            className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+            className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
         </div>
         <div className="mt-4">
           <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Location / venue (optional)</label>
           <input value={locationNote} onChange={(e) => setLocationNote(e.target.value)} placeholder="e.g. Village panchayat hall"
-            className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+            className="mt-1 w-full rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
         </div>
         <div className="mt-4">
           <label className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Notes (optional)</label>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-            className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+            className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
         </div>
 
         <div className="mt-3 rounded-[8px] bg-[#F5F7F5] px-3 py-2 text-[11.5px] text-[#66857A]">
@@ -241,7 +241,7 @@ function NewGhoshtiModal({
         <div className="mt-4 flex items-center justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[12.5px] font-semibold text-[#616161] hover:bg-[#F5F5F5]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving}
-            className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50">
+            className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50">
             {saving ? "Creating…" : "Create Ghoshti"}
           </button>
         </div>

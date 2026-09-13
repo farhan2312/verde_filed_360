@@ -15,11 +15,11 @@ const COLUMNS: { key: string; label: string; color: string; hint: string }[] = [
   { key: "OPEN", label: "Open", color: "#1565C0", hint: "Not yet started" },
   { key: "IN_PROGRESS", label: "In Progress", color: "#E65100", hint: "Being worked on" },
   { key: "TESTING", label: "Testing", color: "#7B1FA2", hint: "Verifying the fix" },
-  { key: "FIXED", label: "Fixed", color: "#678722", hint: "Resolved" },
+  { key: "FIXED", label: "Fixed", color: "#7DA02E", hint: "Resolved" },
   { key: "CLOSED", label: "Closed", color: "#616161", hint: "Done & archived" },
 ];
 const SEV: Record<string, { bg: string; c: string }> = {
-  LOW: { bg: "#F3F8E6", c: "#678722" }, MEDIUM: { bg: "#FEF6E9", c: "#EDA942" },
+  LOW: { bg: "#F5F9EA", c: "#7DA02E" }, MEDIUM: { bg: "#FEF6E9", c: "#EDA942" },
   HIGH: { bg: "#FFF3E0", c: "#E65100" }, CRITICAL: { bg: "#FDECEA", c: "#C62828" },
 };
 const SEV_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
@@ -146,7 +146,7 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
         <Kpi label="Total Bugs" value={kpis.total} />
         <Kpi label="Open" value={kpis.open} sub="Not yet fixed" color="#1565C0" />
         <Kpi label="In Progress" value={kpis.inProgress} sub="Working + testing" color="#E65100" />
-        <Kpi label="Fixed" value={kpis.fixed} sub="Resolved & closed" color="#678722" />
+        <Kpi label="Fixed" value={kpis.fixed} sub="Resolved & closed" color="#7DA02E" />
         <Kpi label="Avg Turnaround" value={kpis.turnaround} sub="Reported → fixed" />
       </div>
 
@@ -154,12 +154,12 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#9E9E9E]">Filter</span>
         <select value={sev} onChange={(e) => setSev(e.target.value)}
-          className="rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#678722]">
+          className="rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#7DA02E]">
           <option value="">Severity</option>
           {BUG_SEVERITIES.map((s) => <option key={s} value={s}>{s[0] + s.slice(1).toLowerCase()}</option>)}
         </select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title / reporter…"
-          className="min-w-[220px] rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-[7px] text-[12.5px] outline-none focus:border-[#678722]" />
+          className="min-w-[220px] rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-[7px] text-[12.5px] outline-none focus:border-[#7DA02E]" />
       </div>
 
       {bugs.length === 0 ? (
@@ -177,7 +177,7 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
                 onDragOver={(e) => { e.preventDefault(); setOverCol(col.key); }}
                 onDragLeave={() => setOverCol((c) => (c === col.key ? null : c))}
                 onDrop={(e) => { e.preventDefault(); const id = Number(e.dataTransfer.getData("text/plain")); if (id) move(id, col.key); setOverCol(null); setDragId(null); }}
-                className={`rounded-[14px] border p-2 transition-colors ${overCol === col.key ? "border-[#678722] bg-[#F1F8F1]" : "border-[#EEE] bg-[#FAFAFA]"}`}
+                className={`rounded-[14px] border p-2 transition-colors ${overCol === col.key ? "border-[#7DA02E] bg-[#F1F8F1]" : "border-[#EEE] bg-[#FAFAFA]"}`}
               >
                 <div className="mb-2 flex items-center justify-between px-1.5 pt-1">
                   <span className="flex items-center gap-1.5 text-[12px] font-bold" style={{ color: col.color }}>
@@ -195,7 +195,7 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
                     >
                       <button type="button" onClick={() => openBug(b)} className="block w-full text-left" title="Open bug">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="text-[12.5px] font-semibold leading-snug text-[#1A1C1A] hover:text-[#678722]">{b.title}</div>
+                          <div className="text-[12.5px] font-semibold leading-snug text-[#1A1C1A] hover:text-[#7DA02E]">{b.title}</div>
                           <span className="flex-none rounded-full px-1.5 py-0.5 text-[9px] font-bold" style={{ background: SEV[b.severity]?.bg ?? "#EEE", color: SEV[b.severity]?.c ?? "#616161" }}>
                             {b.severity[0] + b.severity.slice(1).toLowerCase()}
                           </span>
@@ -302,21 +302,21 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
                   <div className="flex items-center gap-2">
                     <span className="text-[10.5px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Status</span>
                     <select value={open.status} onChange={(e) => setStatusIn(e.target.value)}
-                      className="rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1.5 text-[12px] text-[#424242] outline-none focus:border-[#678722]">
+                      className="rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1.5 text-[12px] text-[#424242] outline-none focus:border-[#7DA02E]">
                       {COLUMNS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
                   </div>
                   <div className="mt-3 text-[10.5px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Resolution notes</div>
                   <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
                     placeholder="What was the fix / decision? (saved with the bug)"
-                    className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#678722]" />
+                    className="mt-1 w-full resize-y rounded-[10px] border border-[#E0E0E0] bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-[#7DA02E]" />
                   <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                     <button type="button" onClick={() => saveRes(false)} disabled={saving}
-                      className="rounded-[10px] border border-[#678722] px-4 py-2 text-[12.5px] font-semibold text-[#678722] hover:bg-[#F3F8E6] disabled:opacity-50">
+                      className="rounded-[10px] border border-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA] disabled:opacity-50">
                       {saving ? "Saving…" : "Save notes"}
                     </button>
                     <button type="button" onClick={() => saveRes(true)} disabled={saving || open.status === "CLOSED"}
-                      className="rounded-[10px] bg-[#678722] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#516A1B] disabled:opacity-50">
+                      className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#66852A] disabled:opacity-50">
                       {open.status === "CLOSED" ? "Closed" : "Save & mark as closed"}
                     </button>
                   </div>

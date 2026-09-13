@@ -13,10 +13,10 @@ function rankColor(rank: number) {
   return rank <= 3 ? "#EDA942" : "#BDBDBD";
 }
 function scoreColor(score: number) {
-  return score >= 80 ? "#678722" : score >= 70 ? "#D4881F" : "#E65100";
+  return score >= 80 ? "#7DA02E" : score >= 70 ? "#D4881F" : "#E65100";
 }
 function barColor(score: number) {
-  return score >= 80 ? "#678722" : score >= 70 ? "#EDA942" : "#FF8F00";
+  return score >= 80 ? "#7DA02E" : score >= 70 ? "#EDA942" : "#FF8F00";
 }
 
 /** ASR Performance card (lines 488–505). */

@@ -70,7 +70,7 @@ export function PerformanceBoard({ kind, storeTags }: { kind: PerfKind; storeTag
         {PRESETS.map(([p, label]) => (
           <button key={p} type="button" onClick={() => setPreset(p)}
             className="rounded-[20px] px-3.5 py-[6px] text-[12px] font-semibold transition-colors"
-            style={{ background: preset === p ? "#262250" : "white", color: preset === p ? "white" : "#616161", border: `1.5px solid ${preset === p ? "#262250" : "#E0E0E0"}` }}>
+            style={{ background: preset === p ? "#5C7D22" : "white", color: preset === p ? "white" : "#616161", border: `1.5px solid ${preset === p ? "#5C7D22" : "#E0E0E0"}` }}>
             {label}
           </button>
         ))}
@@ -132,7 +132,7 @@ function Stat({ label, value, sub, subColor, accent, delta, deltaGood }: { label
       <div className="mt-1 flex items-baseline gap-1.5">
         <span className="text-[19px] font-bold text-[#1A1C1A]">{value}</span>
         {delta != null && (
-          <span className="text-[11.5px] font-bold" style={{ color: good ? "#678722" : "#C62828" }}>{pct(delta)}</span>
+          <span className="text-[11.5px] font-bold" style={{ color: good ? "#7DA02E" : "#C62828" }}>{pct(delta)}</span>
         )}
       </div>
       {sub && <div className="mt-0.5 text-[11px]" style={{ color: subColor ?? "#9E9E9E" }}>{sub}</div>}
@@ -238,14 +238,14 @@ function RankTable({ kind, rows, showSales, hasComparison, sel, onToggle }: {
                   {showSales && (
                     <td className={td}>
                       {r.salesGrowthPct == null ? <span className="text-[#DDD]">—</span>
-                        : <span className="font-semibold" style={{ color: r.salesGrowthPct >= 0 ? "#678722" : "#C62828" }}>{pct(r.salesGrowthPct)}</span>}
+                        : <span className="font-semibold" style={{ color: r.salesGrowthPct >= 0 ? "#7DA02E" : "#C62828" }}>{pct(r.salesGrowthPct)}</span>}
                     </td>
                   )}
                   <td className={`${td} ${showSales ? "border-l border-[#F4F4F4]" : ""}`}>{n(r.visits)}</td>
                   <td className={td}>
                     {r.visits === 0 ? <span className="text-[#DDD]">—</span> : (
                       <span title={`${n(r.visitsReviewed)} of ${n(r.visits)} ${officerAxis ? "signed off by their RM" : "reviewed"}`}>
-                        <span className="font-semibold" style={{ color: reviewedPct >= 67 ? "#678722" : reviewedPct >= 34 ? "#EF6C00" : "#C62828" }}>{reviewedPct}%</span>
+                        <span className="font-semibold" style={{ color: reviewedPct >= 67 ? "#7DA02E" : reviewedPct >= 34 ? "#EF6C00" : "#C62828" }}>{reviewedPct}%</span>
                       </span>
                     )}
                   </td>
@@ -253,7 +253,7 @@ function RankTable({ kind, rows, showSales, hasComparison, sel, onToggle }: {
                   <td className={td}>{r.actionsOverdue ? <span className="font-semibold text-[#C62828]">{n(r.actionsOverdue)}</span> : <span className="text-[#DDD]">0</span>}</td>
                   <td className={td}>{n(r.actionsDone)}</td>
                   <td className={td}>{(() => { const p = donePct(r); return p == null ? <span className="text-[#DDD]">—</span>
-                    : <span className="font-semibold" style={{ color: p >= 67 ? "#678722" : p >= 34 ? "#EF6C00" : "#C62828" }} title={`${n(r.actionsDone)} done of ${n(r.actionsDone + r.actionsOpen)} on the plate`}>{p}%</span>; })()}</td>
+                    : <span className="font-semibold" style={{ color: p >= 67 ? "#7DA02E" : p >= 34 ? "#EF6C00" : "#C62828" }} title={`${n(r.actionsDone)} done of ${n(r.actionsDone + r.actionsOpen)} on the plate`}>{p}%</span>; })()}</td>
                   {showSales && <td className={`${td} border-l border-[#F4F4F4]`}>{r.leadsConverted ? <span className="font-semibold text-[#37474F]">{n(r.leadsConverted)}</span> : <span className="text-[#DDD]">0</span>}</td>}
                   {showSales && <td className={td}>{n(r.farmers)}</td>}
                 </tr>
@@ -280,7 +280,7 @@ function ComparePanel({ kind, rows, showSales, onClear }: { kind: PerfKind; rows
     ["Actions done %", (r) => { const p = donePct(r); return p == null ? "—" : `${p}%`; }, (r) => donePct(r) ?? 0],
     ...(showSales ? [["Leads converted", (r: PerfEntity) => n(r.leadsConverted), (r: PerfEntity) => r.leadsConverted]] as [string, (r: PerfEntity) => string, (r: PerfEntity) => number][] : []),
   ];
-  const PALETTE = ["#1565C0", "#678722", "#EF6C00", "#6A1B9A"];
+  const PALETTE = ["#1565C0", "#7DA02E", "#EF6C00", "#6A1B9A"];
   return (
     <div className={`${CARD} p-4`} style={{ borderLeft: `4px solid ${ACCENT}` }}>
       <div className="mb-3 flex items-center justify-between">

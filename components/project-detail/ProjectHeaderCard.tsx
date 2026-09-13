@@ -53,7 +53,7 @@ export function ProjectHeaderCard({ project }: { project: ProjectHeader }) {
           type="button"
           onClick={() => change("ACTIVE")}
           disabled={pending || project.status === "ACTIVE"}
-          className="flex-1 cursor-pointer rounded-lg bg-[#F3F8E6] px-4 py-[7px] text-center text-[11px] font-semibold text-[#678722] transition-colors hover:bg-[#E4EFC9] disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#F3F8E6]"
+          className="flex-1 cursor-pointer rounded-lg bg-[#F5F9EA] px-4 py-[7px] text-center text-[11px] font-semibold text-[#7DA02E] transition-colors hover:bg-[#E9F2CF] disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#F5F9EA]"
         >
           Set Active
         </button>

@@ -66,7 +66,7 @@ export function OverallDashboard() {
           return (
             <button key={w} type="button" onClick={() => setParams({ window: w })}
               className="rounded-full border px-3 py-1 text-[11.5px] font-semibold transition-colors"
-              style={{ borderColor: on ? "#678722" : "#E0E0E0", color: on ? "#678722" : "#616161", background: on ? "#F3F8E6" : "#fff" }}>{label}</button>
+              style={{ borderColor: on ? "#7DA02E" : "#E0E0E0", color: on ? "#7DA02E" : "#616161", background: on ? "#F5F9EA" : "#fff" }}>{label}</button>
           );
         })}
         <div className="ml-auto flex items-center gap-2">
@@ -92,7 +92,7 @@ export function OverallDashboard() {
 
       {/* Single drill-down modal for every tile */}
       <Modal open={!!drill} onClose={() => setDrill(null)} className="max-w-[820px]">
-        <ModalHeader eyebrow="Drill-down" eyebrowColor="#678722" title={drill?.result?.title ?? "Loading…"} onClose={() => setDrill(null)} />
+        <ModalHeader eyebrow="Drill-down" eyebrowColor="#7DA02E" title={drill?.result?.title ?? "Loading…"} onClose={() => setDrill(null)} />
         <div className="max-h-[74vh] overflow-y-auto px-5 py-4">
           {!drill || drill.loading ? (
             <div className="py-12 text-center text-[13px] text-ink-muted">Loading list…</div>

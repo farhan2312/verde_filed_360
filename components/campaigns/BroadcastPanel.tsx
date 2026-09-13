@@ -118,7 +118,7 @@ export function BroadcastPanel({ campaignId, campaignName, commPlans, templates,
               <div className={cell}><div className="text-[10px] font-bold uppercase text-[#9E9E9E]">Test group</div><div className="text-[16px] font-bold text-[#1A1C1A]">{aud ? n(aud.total) : "…"}</div></div>
               <div className={cell}><div className="text-[10px] font-bold uppercase text-[#9E9E9E]">Valid mobile</div><div className="text-[16px] font-bold text-[#1A1C1A]">{aud ? n(aud.withMobile) : "…"}</div></div>
               <div className={cell}><div className="text-[10px] font-bold uppercase text-[#9E9E9E]">Opted-in</div><div className="text-[16px] font-bold text-[#0B8A3D]">{aud ? n(aud.optedIn) : "…"}</div></div>
-              <div className={cell} style={{ background: "#F3F8E6" }}><div className="text-[10px] font-bold uppercase text-[#678722]">Will send</div><div className="text-[16px] font-bold text-[#678722]">{aud ? n(Math.max(0, eligible)) : "…"}</div></div>
+              <div className={cell} style={{ background: "#F5F9EA" }}><div className="text-[10px] font-bold uppercase text-[#7DA02E]">Will send</div><div className="text-[16px] font-bold text-[#7DA02E]">{aud ? n(Math.max(0, eligible)) : "…"}</div></div>
             </div>
 
             {/* Skipped — invalid or missing number (never sent) */}
@@ -134,7 +134,7 @@ export function BroadcastPanel({ campaignId, campaignName, commPlans, templates,
             </label>
 
             {channel === "WHATSAPP" && (
-              <div className="mt-3 rounded-[8px] bg-[#F3F8E6] px-3 py-2 text-[11.5px] text-[#678722]">WhatsApp sends only to <b>opted-in</b> farmers with an <b>approved</b> template — this protects your number's quality rating.</div>
+              <div className="mt-3 rounded-[8px] bg-[#F5F9EA] px-3 py-2 text-[11.5px] text-[#7DA02E]">WhatsApp sends only to <b>opted-in</b> farmers with an <b>approved</b> template — this protects your number's quality rating.</div>
             )}
             {channel === "SMS" && bal && (
               // Credit-count accounts: 1 credit ≈ 1 SMS, so we can warn on shortfall. Rupee-wallet accounts
@@ -195,7 +195,7 @@ export function BroadcastPanel({ campaignId, campaignName, commPlans, templates,
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-[#EEE]"><div className="h-3 rounded-full transition-all" style={{ width: `${pct}%`, background: accent }} /></div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-[12px]">
-              <div className={cell}><div className="text-[10px] font-bold uppercase text-[#678722]">Sent</div><div className="text-[16px] font-bold text-[#678722]">{n(prog.sent)}</div></div>
+              <div className={cell}><div className="text-[10px] font-bold uppercase text-[#7DA02E]">Sent</div><div className="text-[16px] font-bold text-[#7DA02E]">{n(prog.sent)}</div></div>
               <div className={cell}><div className="text-[10px] font-bold uppercase text-[#C62828]">Failed</div><div className="text-[16px] font-bold text-[#C62828]">{n(prog.failed)}</div></div>
               <div className={cell}><div className="text-[10px] font-bold uppercase text-[#9E9E9E]">Remaining</div><div className="text-[16px] font-bold text-[#1A1C1A]">{n(prog.remaining)}</div></div>
             </div>

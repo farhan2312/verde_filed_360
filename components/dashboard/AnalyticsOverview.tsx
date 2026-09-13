@@ -88,7 +88,7 @@ function VisitActivityChart() {
               className="w-full rounded-t-lg rounded-b-[2px]"
               style={{
                 height: `${Math.round((b.c / max) * 140)}px`,
-                background: i === peak ? "#678722" : "#C2D98D",
+                background: i === peak ? "#7DA02E" : "#CCE09A",
               }}
             />
             <div className="mt-2 text-[10.5px] font-medium text-[#BDBDBD]">
@@ -163,7 +163,7 @@ function RecentVisits({ recent }: { recent: RecentVisitVM[] }) {
             </div>
             <div className="flex-none text-right">
               <div className="text-[11px] text-[#BDBDBD]">{v.date}</div>
-              <div className="mt-[3px] text-[10px] font-semibold text-[#678722]">
+              <div className="mt-[3px] text-[10px] font-semibold text-[#7DA02E]">
                 View →
               </div>
             </div>

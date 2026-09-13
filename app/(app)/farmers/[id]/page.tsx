@@ -230,7 +230,7 @@ export default async function FarmerDetailPage({
         <KpiMini
           label="Lifetime Value (base)"
           value={detail.ltv}
-          valueColor="#678722"
+          valueColor="#7DA02E"
           sub={`${detail.saleCount} invoices`}
         />
         <KpiMini

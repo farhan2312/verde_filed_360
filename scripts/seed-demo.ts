@@ -97,10 +97,10 @@ const DEMO_PROJECTS = [
 ];
 
 const DEMO_USERS = [
-  { init: "RV", name: "Rajesh Verma", email: "rajesh@verdeagrotech.com", roleLabel: "Regional Manager", role: "REGIONAL", territory: "Agra Region", lastActive: "2 min ago", visitsMtd: "284", status: "Active", gradA: "#8CB337", gradB: "#EDA942" },
+  { init: "RV", name: "Rajesh Verma", email: "rajesh@verdeagrotech.com", roleLabel: "Regional Manager", role: "REGIONAL", territory: "Agra Region", lastActive: "2 min ago", visitsMtd: "284", status: "Active", gradA: "#93B93C", gradB: "#EDA942" },
   { init: "RK", name: "Raj Kumar", email: "raj.kumar@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Agra — Chandpur, Khandauli", lastActive: "15 min ago", visitsMtd: "94", status: "Active", gradA: "#1565C0", gradB: "#42A5F5" },
-  { init: "AY", name: "Amit Yadav", email: "amit.yadav@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Firozabad — Barauli, Tundla", lastActive: "1 hr ago", visitsMtd: "87", status: "Active", gradA: "#678722", gradB: "#B3D170" },
-  { init: "VS", name: "Vikram Singh", email: "vikram.singh@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Mainpuri — Sikandra, Jaitpur", lastActive: "3 hrs ago", visitsMtd: "82", status: "Active", gradA: "#8CB337", gradB: "#C2D98D" },
+  { init: "AY", name: "Amit Yadav", email: "amit.yadav@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Firozabad — Barauli, Tundla", lastActive: "1 hr ago", visitsMtd: "87", status: "Active", gradA: "#7DA02E", gradB: "#BDD67F" },
+  { init: "VS", name: "Vikram Singh", email: "vikram.singh@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Mainpuri — Sikandra, Jaitpur", lastActive: "3 hrs ago", visitsMtd: "82", status: "Active", gradA: "#93B93C", gradB: "#CCE09A" },
   { init: "DV", name: "Deepak Verma", email: "deepak.verma@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Etah — Kasganj", lastActive: "Today", visitsMtd: "76", status: "Active", gradA: "#4527A0", gradB: "#9575CD" },
   { init: "VM", name: "Vikash Mehta", email: "vikash@verdeagrotech.com", roleLabel: "System Admin", role: "SYSADMIN", territory: "All Regions", lastActive: "Yesterday", visitsMtd: "—", status: "Active", gradA: "#E65100", gradB: "#FF8F00" },
   { init: "SG", name: "Sunil Gupta", email: "sunil.gupta@verdeagrotech.com", roleLabel: "Agri Officer", role: "ASR", territory: "Mathura", lastActive: "5 days ago", visitsMtd: "71", status: "Inactive", gradA: "#9E9E9E", gradB: "#BDBDBD" },

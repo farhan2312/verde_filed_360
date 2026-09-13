@@ -14,6 +14,11 @@ import { SettingsTabs } from "@/components/settings/SettingsTabs";
 import { StoreTagsCard } from "@/components/settings/StoreTagsCard";
 import { listStoreTags, type StoreTagVM } from "@/app/actions/store-tags";
 import { countVars } from "@/lib/wa-template-presets";
+import { salesApiConfig } from "@/lib/sales-api";
+import { getSyncSettings } from "@/lib/sales-sync";
+import { getActiveSalesSync } from "@/app/actions/sales-sync";
+import { getRole } from "@/lib/session";
+import { SalesSyncRunCard, type LastRunVM } from "@/components/sales-sync/SalesSyncRunCard";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +99,19 @@ export default async function SettingsPage() {
   let storeTags: StoreTagVM[] = [];
   try { storeTags = await listStoreTags(); } catch { /* DB unavailable */ }
 
+  // ERP sales sync (sysadmin): schedule controls + run-now card.
+  const isSysadmin = (await getRole()) === "sysadmin";
+  let sync: { settings: { lookbackDays: number; enabled: boolean }; active: Awaited<ReturnType<typeof getActiveSalesSync>>; lastRun: LastRunVM | null } = { settings: { lookbackDays: 1, enabled: true }, active: null, lastRun: null };
+  if (isSysadmin) {
+    try {
+      const [settings, active, last] = await Promise.all([getSyncSettings(), getActiveSalesSync(), prisma.salesImport.findFirst({ where: { status: { not: "RUNNING" } }, orderBy: { createdAt: "desc" } })]);
+      sync = {
+        settings, active,
+        lastRun: last ? { when: last.createdAt.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }), status: last.status, label: last.filename, trigger: last.trigger, bills: last.salesInserted, newCustomers: last.newCustomers, apiRecords: last.apiRecords, error: last.error } : null,
+      };
+    } catch { /* DB unavailable */ }
+  }
+
   // WhatsApp template manager (create/submit/track approval via the Business Management API).
   let tplInit: { ready: boolean; missing: string[]; templates: WaTemplate[] } = { ready: false, missing: [], templates: [] };
   try {
@@ -117,6 +135,19 @@ export default async function SettingsPage() {
             </div>
           ),
         },
+        ...(isSysadmin ? [{
+          key: "sync",
+          label: "Sales Sync",
+          icon: "⟳",
+          content: (
+            <div className="mx-auto flex max-w-3xl flex-col gap-[18px]">
+              <SalesSyncRunCard apiReady={salesApiConfig().ready} settings={sync.settings} initialActive={sync.active} lastRun={sync.lastRun} compact />
+              <div className="rounded-[14px] border border-black/[0.03] bg-white p-5 text-[12.5px] text-ink-500 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                Run history, per-day activity and bill-date coverage live on the <a href="/sales-sync" className="font-semibold text-brand-700 hover:underline">Sales Sync</a> page.
+              </div>
+            </div>
+          ),
+        }] : []),
         {
           key: "sms",
           label: "SMS",

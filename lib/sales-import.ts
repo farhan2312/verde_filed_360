@@ -1,7 +1,8 @@
 /**
- * Shared monthly-sales importer (used by the admin Sales Import page and the CLI).
+ * Shared sales importer — fed by the ERP sales-API sync (lib/sales-sync.ts), which maps API records
+ * onto the same column names the retired monthly Excel upload used.
  *
- * Takes a parsed row matrix (from CSV or xlsx), aggregates line-items into bills,
+ * Takes a row matrix (header + line-items), aggregates line-items into bills,
  * creates Farmer records for new customer mobiles, and appends the sales —
  * idempotent by invoice (Order No), so re-uploading a file replaces exactly its
  * own bills and never touches unrelated history.
@@ -83,8 +84,21 @@ interface Bill {
   dateIso: string | null; dateStr: string; mobile: string | null;
   store: string; name: string; village: string; fy: string;
   // Per-line detail — drives the SaleLine rows so line-based analytics (crop trend) sees this upload.
-  lines: { code: string; item: string; total: number; crop: string | null }[];
+  lines: { code: string; item: string; total: number; crop: string | null; detail: LineDetail }[];
 }
+
+/** Optional per-line columns (present in the API feed; older lean files omit them). */
+interface LineDetail {
+  qty: number | null; returnQty: number | null; uom: string | null; unitPrice: number | null; basic: number | null;
+  cgstRate: number | null; sgstRate: number | null; cgst: number | null; sgst: number | null;
+  discount: number | null; batchNo: string | null; subCategory: string | null;
+}
+const numOrNull = (v: unknown): number | null => {
+  const s = String(v ?? "").replace(/[^0-9.\-]/g, "");
+  if (!s) return null;
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+};
 
 const q = (s: string) => `'${String(s).replace(/'/g, "''")}'`;
 const pgArr = (a: string[]) => (a.length ? `ARRAY[${a.map(q).join(",")}]::text[]` : "ARRAY[]::text[]");
@@ -107,6 +121,12 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
     iStore = col("Retailer Name"), iName = col("Cus Name"), iVillage = col("Cus Village"),
     iFy = col("Financial Year"), iCode = col("Item Code"), // Item Code → crop/pest auto-mapping
     iCrops = col("Crops"); // AE column — per-line crop; wins over the catalogue when present
+  // Optional line detail (API feed / full exports).
+  const iQty = col("Qty"), iRet = col("Return Qty"), iUom = col("UOM"), iRate = col("Rate"), iTaxable = col("Taxable Value"),
+    iCgstR = col("CGST Rate"), iSgstR = col("SGST Rate"), iCgstV = col("CGST Value"), iSgstV = col("SGST Value"),
+    iDisc = col("DiscountAmount"), iBatch = col("Batch No"), iSub = col("SubCategory");
+  const cell = (row: string[], i: number) => (i >= 0 ? String(row[i] ?? "").trim() || null : null);
+  const ncell = (row: string[], i: number) => (i >= 0 ? numOrNull(row[i]) : null);
 
   const missing = [
     ["Order No", iOrder], ["Total", iTotal], ["BillDate", iDate], ["Cus Mobile", iMobile],
@@ -141,7 +161,11 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
     if (code) b.itemCodes.push(code);
     // Per-line crop: AE "Crops" cell (cleaned to a canonical key, null if blank/0/junk).
     const crop = iCrops >= 0 ? cleanCrop(String(row[iCrops] ?? "")) : null;
-    b.lines.push({ code, item, total: lineTotal, crop });
+    b.lines.push({ code, item, total: lineTotal, crop, detail: {
+      qty: ncell(row, iQty), returnQty: ncell(row, iRet), uom: cell(row, iUom), unitPrice: ncell(row, iRate), basic: ncell(row, iTaxable),
+      cgstRate: ncell(row, iCgstR), sgstRate: ncell(row, iSgstR), cgst: ncell(row, iCgstV), sgst: ncell(row, iSgstV),
+      discount: ncell(row, iDisc), batchNo: cell(row, iBatch), subCategory: cell(row, iSub),
+    } });
   }
   const billArr = [...bills.values()];
   if (!billArr.length) throw new Error("No invoice rows found (is the 'Order No' column populated?).");
@@ -288,12 +312,15 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
       for (const l of b.lines) {
         const productId = (l.code && prodByCode.get(l.code)) || (l.item ? prodByName.get(l.item) : undefined);
         if (!productId) continue; // unresolvable line — the bill is still recorded, just no line detail
+        const d = l.detail;
         lineData.push({
           orderNo: b.order, productId, itemRaw: l.item || l.code,
           store: b.store || null, storeId, farmerId,
-          totalPrice: l.total, basic: l.total,
+          qty: d.qty ?? 0, returnQty: d.returnQty ?? 0, uom: d.uom, unitPrice: d.unitPrice,
+          totalPrice: l.total, basic: d.basic ?? l.total,
+          cgstRate: d.cgstRate, sgstRate: d.sgstRate, cgst: d.cgst, sgst: d.sgst, discount: d.discount, batchNo: d.batchNo,
           soldAt, financialYear: fyLabel(b.fy),
-          mainCategory: b.category, custName: b.name || null, custPhone: b.mobile,
+          mainCategory: b.category, subCategory: d.subCategory, custName: b.name || null, custPhone: b.mobile,
           cropTag: l.crop, source: "REAL" as const,
         });
       }

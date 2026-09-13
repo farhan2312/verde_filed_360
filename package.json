@@ -14,7 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:import": "tsx scripts/import-data.ts",
-    "db:import-sales": "tsx scripts/import-sales.ts",
+    "sales:sync": "tsx scripts/sales-sync.ts",
     "db:seed": "tsx scripts/seed-demo.ts",
     "db:accounts": "tsx scripts/create-accounts.ts",
     "db:reset": "prisma migrate reset --force",

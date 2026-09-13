@@ -99,8 +99,8 @@ export const NavIcons: Record<NavId, (p: P) => JSX.Element> = {
   ),
   salesImport: ({ className }) => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M3 12v3a1 1 0 001 1h10a1 1 0 001-1v-3" />
-      <path d="M9 12V2.5M5.5 6L9 2.5 12.5 6" />
+      <path d="M15 9a6 6 0 01-10.4 4.1M3 9a6 6 0 0110.4-4.1" />
+      <path d="M13.5 2v3h-3M4.5 16v-3h3" />
     </svg>
   ),
   settings: ({ className }) => (

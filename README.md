@@ -31,8 +31,8 @@ npm run db:accounts
 npm run dev   # http://localhost:3000
 ```
 
-Master data (stores, farmers, employees, field options) is imported from Excel with the
-`db:import*` scripts once the Verde spreadsheets are available — see `scripts/`.
+Master data (stores, BDMs, users) came from the ERP CSV exports via `scripts/import-verde-masters.ts`
+(see `docs/verde-data-mapping.md`). Farmers and sales come from the ERP sales API — see below.
 
 ## Environment variables
 
@@ -44,8 +44,30 @@ See `.env.example`. Required:
 | `DIRECT_URL`   | Non-pooled connection for Prisma migrate (same value ok)      |
 | `AUTH_SECRET`  | Long random secret for signing session JWTs (required for login) |
 
+| `SALES_API_TOKEN` | Bearer token for the Verde ERP sales API (company id 2)          |
+| `CRON_SECRET`  | Bearer secret the scheduler sends to `/api/cron/sales-sync`     |
+
 Optional (WhatsApp Cloud API integration): `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`,
 `WHATSAPP_WABA_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_API_VERSION`.
+
+## Sales sync (ERP API)
+
+Sales are pulled from the ERP, not uploaded. `lib/sales-api.ts` calls the API for a bill-date window
+(one call covers all stores); `lib/sales-sync.ts` feeds the records through the shared importer
+(`lib/sales-import.ts`) — farmers are created by mobile, products resolve by item name, segments
+recompute, and re-runs replace bills by invoice number so nothing duplicates. Every run is a
+`SalesImport` row (`kind = API`) that can be rolled back from the Sales Sync page.
+
+- **Daily**: `vercel.json` schedules `GET /api/cron/sales-sync` at 20:30 UTC (02:00 IST). It fetches
+  the previous `sync.lookbackDays` days (default 1 = yesterday). Pause / lookback are in Settings → Sales Sync.
+- **On demand**: Settings → Sales Sync, or the Sales Sync page — pick a window, "Run sync now", watch progress.
+- **CLI**: `npm run sales:sync -- --from 2023-04-01 --to 2026-09-12` (backfill, month by month) or
+  `npm run sales:sync` for the scheduled window.
+- **Analytics**: `/sales-sync` — runs / bills / new customers over 30 days, per-day activity, bill-date
+  coverage (gaps to re-fetch), and the run log.
+
+Bills whose customer mobile is a placeholder (e.g. `1234567890`) are counted as *skipped* — there is
+no farmer to attach them to.
 
 ## Authentication
 
@@ -72,6 +94,7 @@ Generate `AUTH_SECRET`: `node -e "console.log(require('crypto').randomBytes(48).
 3. Add `DATABASE_URL`, `DIRECT_URL` and `AUTH_SECRET` in Project Settings → Environment Variables.
 4. Build command is `npm run build` (runs `prisma generate` first). Deploy.
 5. Run `npm run db:push && npm run db:accounts` once against the Azure DB (locally is fine).
+6. Add `SALES_API_TOKEN` and `CRON_SECRET`; Vercel Cron picks up `vercel.json` on deploy.
 
 ## Branding
 

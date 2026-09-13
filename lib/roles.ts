@@ -124,7 +124,7 @@ export const NAV_VISIBILITY: Record<string, (r: RoleKey) => boolean> = {
   movement: (r) => r === "regional" || r === "central" || r === "sysadmin",
   users: (r) => r === "central" || r === "sysadmin",
   whatsappInbox: (r) => r === "sysadmin", // WhatsApp inbox — system admins only
-  salesImport: (r) => r === "sysadmin",
+  salesImport: (r) => r === "sysadmin" || r === "central",
   settings: (r) => r === "sysadmin",
   bugs: (r) => r === "sysadmin",
   audit: (r) => r === "sysadmin",
@@ -195,7 +195,7 @@ export function viewTitle(
     case "users":
       return ["User Management", "4 active users · Role-based access"];
     case "salesImport":
-      return ["Sales Import", "Upload monthly invoice data"];
+      return ["Sales Sync", "ERP sales feed — daily schedule, on-demand runs & history"];
     case "settings":
       return ["System Settings", "Configuration & master data"];
     case "audit":

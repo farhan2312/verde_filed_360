@@ -34,7 +34,7 @@ const SHORT: Record<NavId, string> = {
   movement: "Stock",
   users: "Users",
   whatsappInbox: "WhatsApp",
-  salesImport: "Import",
+  salesImport: "Sync",
   settings: "Settings",
   audit: "Audit",
   bugs: "Bugs",

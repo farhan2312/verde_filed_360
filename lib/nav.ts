@@ -38,7 +38,7 @@ export const SALES_NAV: NavItem[] = [
 export const ADMIN_NAV: NavItem[] = [
   { id: "whatsappInbox", label: "WhatsApp Inbox", href: "/whatsapp" },
   { id: "users", label: "Users", href: "/users" },
-  { id: "salesImport", label: "Sales Import", href: "/imports" },
+  { id: "salesImport", label: "Sales Sync", href: "/sales-sync" },
   { id: "settings", label: "Settings", href: "/settings" },
   { id: "audit", label: "Audit Log", href: "/audit" },
   { id: "bugs", label: "Bug Tracker", href: "/bugs" },
@@ -90,7 +90,7 @@ export function routeToView(pathname: string): ViewId {
   if (pathname.startsWith("/map")) return "mapView";
   if (pathname.startsWith("/clusters")) return "farmerCluster";
   if (pathname.startsWith("/analytics")) return "analytics";
-  if (pathname.startsWith("/imports")) return "salesImport";
+  if (pathname.startsWith("/sales-sync")) return "salesImport";
   if (pathname.startsWith("/users")) return "users";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/audit")) return "audit";

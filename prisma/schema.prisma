@@ -356,25 +356,38 @@ model SaleLine {
   @@index([saleId]) // FK lookup — needed so deleting a Sale (onDelete: SetNull) doesn't seq-scan
 }
 
-/// Log of monthly sales-invoice uploads (admin Sales Import page).
+/// One sales-ingestion batch. Rows are written by the ERP sales-API sync (scheduled daily, or run on
+/// demand from Settings / Sales Sync); older rows came from the retired monthly Excel upload
+/// (`kind = FILE`). Sale + new-Farmer rows carry `importId` so a batch can be rolled back exactly.
 model SalesImport {
   id            Int      @id @default(autoincrement())
-  filename      String
-  fileType      String? // csv | xlsx
+  filename      String // label — e.g. "ERP API · 12 Sep 2026" (legacy: the uploaded file name)
+  kind          String   @default("FILE") // FILE | API
+  trigger       String? // MANUAL | SCHEDULED | BACKFILL (API runs)
+  fileType      String? // csv | xlsx | api
   fileSizeKb    Int?
   uploadedBy    String?
-  status        String   @default("SUCCESS") // SUCCESS | FAILED
+  status        String   @default("SUCCESS") // RUNNING | SUCCESS | FAILED
+  fromDate      String? // requested window (YYYY-MM-DD, inclusive) — API runs
+  toDate        String?
+  apiRecords    Int? // raw line records returned by the API
+  storesSeen    Int? // distinct retailers in the payload
   lineItems     Int?
   bills         Int?
   newCustomers  Int?
   salesInserted Int?
+  linesInserted Int?
   skipped       Int?
-  rangeStart    String?
+  rangeStart    String? // actual bill-date span found (display)
   rangeEnd      String?
+  durationMs    Int?
+  progress      String? // JSON {step,total,message,...} — live while RUNNING
   error         String?
   createdAt     DateTime @default(now())
+  finishedAt    DateTime?
 
   @@index([createdAt])
+  @@index([kind, status])
 }
 
 // ─────────────────────────── CRM Pilot (segmentation campaigns) ───────────────────────────

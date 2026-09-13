@@ -81,9 +81,16 @@ export async function deleteImportData(impId: number): Promise<ImportDeletionRes
 
   const scope = await resolveImportScope(imp);
 
-  // 1. Sales (SaleLine.saleId is now indexed, so the FK SetNull on delete is cheap).
+  // 1. Sales — and their line-items first (by invoice number), so nothing is left orphaned and the
+  //    farmer check below sees a clean slate.
   let sales = 0;
-  if (scope.saleWhere) sales = (await prisma.sale.deleteMany({ where: scope.saleWhere })).count;
+  if (scope.saleWhere) {
+    const invoices = (await prisma.sale.findMany({ where: scope.saleWhere, select: { invoice: true } })).map((s) => s.invoice).filter((x): x is string => !!x);
+    for (let i = 0; i < invoices.length; i += 5_000) {
+      await prisma.saleLine.deleteMany({ where: { source: "REAL", orderNo: { in: invoices.slice(i, i + 5_000) } } });
+    }
+    sales = (await prisma.sale.deleteMany({ where: scope.saleWhere })).count;
+  }
 
   // 2. Orphaned new-customer farmers (recomputed AFTER the sales are gone).
   let farmers = 0;
@@ -96,7 +103,7 @@ export async function deleteImportData(impId: number): Promise<ImportDeletionRes
 
   // 3. The import record + its own IMPORT audit entry.
   await prisma.salesImport.delete({ where: { id: imp.id } }).catch(() => {});
-  if (imp.filename) await prisma.auditLog.deleteMany({ where: { action: "IMPORT", detail: { contains: imp.filename } } }).catch(() => {});
+  if (imp.filename) await prisma.auditLog.deleteMany({ where: { action: { in: ["IMPORT", "SYNC"] }, detail: { contains: imp.filename } } }).catch(() => {});
 
   return { ok: true, sales, farmers, mode: scope.mode };
 }

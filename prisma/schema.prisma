@@ -1,0 +1,961 @@
+// Verde Field Intel — Prisma schema
+// Backend: Azure Database for PostgreSQL (Flexible Server)
+// Run: npm run db:push  (schema only) then npm run db:accounts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────── Enums ───────────────────────────
+
+enum Role {
+  ASR // Agricultural Specialist Sales Rep / field officer
+  STORE_MANAGER
+  REGIONAL
+  CENTRAL
+  SYSADMIN
+  CAMPAIGNER // temp/part-time call team — campaigns page only, call-only, scoped to assigned campaigns
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum Segment {
+  HIGH_VALUE
+  MEDIUM_VALUE
+  NEW_LOW
+  DORMANT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  FOLLOWUP
+  CONVERTED
+  DORMANT
+}
+
+enum DataSource {
+  REAL // imported from the master-data spreadsheet
+  DEMO // curated showcase records from the original design
+}
+
+enum ApprovalStatus {
+  PENDING // registered, awaiting admin approval
+  APPROVED // approved by admin — can sign in
+  REJECTED // denied
+}
+
+// ─────────────────────────── Master data ───────────────────────────
+
+model Store {
+  id              Int        @id @default(autoincrement())
+  code            String     @unique // e.g. AGRO0012
+  name            String
+  status          String     @default("Active")
+  zone            String? // district / zone
+  address         String?
+  empCode         String?
+  regionalManager String?
+  lat             Float?
+  lng             Float?
+  tagIds          Int[]      @default([]) // StoreTag ids assigned to this store (RM/admin managed) — many-to-many
+  source          DataSource @default(REAL)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  farmers   Farmer[]
+  employees Employee[]
+  visits    Visit[]
+  saleLines SaleLine[]
+  actions   Action[]
+
+  @@index([zone])
+  @@index([tagIds], type: Gin)
+}
+
+/// A tag a store can be labelled with (e.g. "Priority", "Border"). Catalog edited by sysadmin in
+/// Settings; assigned to stores by RM/central/sysadmin. Many-to-many via Store.tagIds.
+model StoreTag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  color     String   @default("#678722") // chip color
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Employee {
+  id          Int        @id @default(autoincrement())
+  storeId     Int?
+  store       Store?     @relation(fields: [storeId], references: [id])
+  storeCode   String?
+  name        String
+  mobile      String?
+  email       String?
+  designation String? // AGC, CI, BDM, ...
+  post        String? // Agriculture Officer, Store Manager, ...
+  source      DataSource @default(REAL)
+  createdAt   DateTime   @default(now())
+
+  @@index([storeCode])
+}
+
+model User {
+  id             Int            @id @default(autoincrement())
+  name           String
+  role           Role
+  roleLabel      String? // display label e.g. "Agri Officer"
+  initials       String?
+  gradA          String?
+  gradB          String?
+  email          String?        @unique
+  workEmail      String? // employee's work email from the master data (non-unique; for notifications later)
+  employeeCode   String?        @unique // login identifier (e.g. "VERDE999")
+  passwordHash   String? // bcrypt hash (null for legacy/demo display rows)
+  mustChangePassword Boolean    @default(false) // force a reset on first login
+  approvalStatus ApprovalStatus @default(PENDING)
+  mobile         String?
+  storeId        Int?
+  zone           String?
+  territory      String?
+  lastActive     String? // LEGACY seeded label (unused for display; superseded by lastLoginAt + last visit)
+  lastLoginAt    DateTime? // real last sign-in timestamp (stamped by loginAction)
+  lastSeenAt     DateTime? // real last-activity heartbeat (bumped while the user has the app open)
+  visitsMtd      String?
+  active         Boolean        @default(true)
+  source         DataSource     @default(DEMO)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt @default(now())
+
+  @@index([approvalStatus])
+}
+
+/** Editable app settings / KPIs / feature flags (key → JSON-ish string value). */
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Farmer {
+  id         Int         @id @default(autoincrement())
+  code       String      @unique // FARM001
+  name       String
+  mobile     String?
+  village    String?
+  district   String?
+  zone       String?
+  storeId    Int?
+  store      Store?      @relation(fields: [storeId], references: [id])
+  storeCode  String?
+  // Enrichment (present for demo farmers; null for bulk-imported real farmers)
+  crop       String?
+  land       Float?
+  segment    Segment?
+  leadStatus LeadStatus?
+  status     String?
+  concerns   String?
+  issues     String[]    @default([])
+  lat        Float?
+  lng        Float?
+  source     DataSource  @default(REAL)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  // ── CRM segmentation (precomputed by scripts/compute-segments.ts, monthly) ──
+  segmentTags       String[]  @default([]) // regular, loyal, at_risk, lapsed, new, hni, potential_hni
+  campaignSegment   String? // LEGACY exclusive collapse: HNI|POTENTIAL_HNI|REGULAR|AT_RISK|NEW|LAPSED|OTHER (kept for back-compat)
+  valueSegment      String? // value tier (by base-price LTV): HNI(≥12k) | POTENTIAL_HNI(8–12k) | REGULAR(else)
+  lifecycleSegment  String? // recency (months since last purchase): NEW | RECENT | AT_RISK | LAPSED
+  lastPurchaseAt    DateTime? // most recent Sale.soldAt (drives lifecycleSegment)
+  cropTags          String[]  @default([]) // union of sales + visit crops (used by crop filters)
+  salesCropTags     String[]  @default([]) // crops from the monthly sales upload (Crops column + item-code Target Crops)
+  visitCropTags     String[]  @default([]) // crops recorded during field visits
+  pestTags          String[]  @default([]) // union of sales + visit pests (used by pest filters)
+  salesPestTags     String[]  @default([]) // pests from sales (currently item-code Target Pests; reserved for a future sales pest column)
+  visitPestTags     String[]  @default([]) // Pests/Diseases/Weeds recorded during field visits
+  whatsappOptIn     Boolean   @default(false) // opted in to WhatsApp marketing (messaged us / scanned the QR)
+  whatsappOptInAt   DateTime? // when they first opted in
+  attendedGhoshti   Boolean   @default(false) // ever attended a Ghoshti (farmer meetup) — the only link from the Ghoshti module
+  attendedGhoshtiAt DateTime? // most recent Ghoshti attendance
+  p12mSpend         Int? // ₹ base-price spend in past 12 months
+  lifetimeSpend     Int? // ₹ all-time base-price spend (LTV) — drives the value tier + the "all spend" filter
+  hniGap            Int? // ₹ to reach HNI (for Potential HNI)
+  lastMaizeItem     String?
+  lastMaizeAt       DateTime?
+  lastPotatoItem    String?
+  lastPotatoAt      DateTime?
+  segmentComputedAt DateTime?
+  // Lead→customer conversion: sticky flag set the first time a farmer who was a LEAD (no purchase)
+  // records a purchase. Powers the "leads converted" analytics stat. Once true, never unset.
+  wasLead           Boolean   @default(false)
+  leadConvertedAt   DateTime? // when they first crossed from lead → customer (their first purchase date)
+  importId          Int? // set when this farmer was created as a new customer by a SalesImport (enables clean rollback)
+
+  sales     Sale[]
+  saleLines SaleLine[]
+  visits    Visit[]
+  actions   Action[]
+
+  @@index([storeCode])
+  @@index([storeId])
+  @@index([segment])
+  @@index([leadStatus])
+  @@index([mobile]) // exact-match lookup during New Visit intake/edit
+  @@index([source]) // DEMO/REAL filters (clusters, users, map)
+  @@index([campaignSegment])
+  @@index([valueSegment])
+  @@index([lifecycleSegment])
+  @@index([wasLead])
+  @@index([lifetimeSpend])
+  @@index([cropTags], type: Gin)
+  @@index([salesCropTags], type: Gin)
+  @@index([visitCropTags], type: Gin)
+  @@index([pestTags], type: Gin)
+  @@index([salesPestTags], type: Gin)
+  @@index([visitPestTags], type: Gin)
+  @@index([segmentTags], type: Gin)
+}
+
+model Sale {
+  id            Int        @id @default(autoincrement())
+  farmerId      Int
+  farmer        Farmer     @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  invoice       String? // Order No / bill number
+  date          String? // display string e.g. "01 Apr 2025"
+  soldAt        DateTime? // real bill date for sorting
+  items         String? // item summary (e.g. "Urea 45kg, DAP · +2 more")
+  itemCount     Int? // number of line items on the bill
+  itemCodes     String[]  @default([]) // master Item Codes on this bill — source for crop/pest auto-mapping
+  category      String? // dominant product category
+  amount        String? // display string e.g. "₹11,200"
+  amountNum     Int? // numeric total (rupees) for analytics/LTV
+  store         String? // retailer / store name
+  financialYear String? // e.g. "FY 24-25"
+  importId      Int? // the SalesImport batch that created this row — enables exact per-import deletion
+  source        DataSource @default(REAL)
+  createdAt     DateTime   @default(now())
+
+  lines SaleLine[]
+
+  @@index([farmerId])
+  @@index([source])
+  @@index([soldAt]) // date-sorted analytics/history
+  @@index([invoice]) // Order No lookup during master backfill / line linking
+  @@index([importId]) // delete-an-import
+}
+
+// ─────────────────────────── Product catalog + line-item transactions ───────────────────────────
+
+/// Catalog product — auto-built from the master sales file (distinct Item), admin-editable.
+model Product {
+  id           Int      @id @default(autoincrement())
+  rawName      String   @unique // exact Item string from the source file (import key)
+  name         String // canonical/editable display name (defaults to rawName)
+  mainCategory String?
+  subCategory  String?
+  uom          String? // normalized canonical unit
+  taxRate      Float? // CGST+SGST total %, e.g. 5 / 12 / 18 (from the master's "GST %")
+  cropTag      String? // derived crop for seeds (wheat/paddy/mustard/maize/potato…)
+  isSeed       Boolean  @default(false)
+  // ── Inventory master (Inventory Master_with Crop Mapping) — keyed by itemCode ──
+  itemCode            String?  @unique // master Item Code — the code new sales uploads map on
+  brand               String? // Canonical Brand
+  packSize            String? // Pack Size
+  hsnCode             String? // HSN Code
+  technicalName       String? // Standardized Technical Name
+  activeIngredients   String? // Active Ingredient(s)
+  targetCrops         String[] @default([]) // Target Crops (cleaned, multi) — enriches farmer crop tags
+  targetPests         String[] @default([]) // Target Pests / Diseases / Weeds (cleaned, multi) — farmer pest tags
+  targetCropsRaw      String? // original semicolon string (display)
+  targetPestsRaw      String? // original semicolon string (display)
+  alternativeProducts String? // Alternative Products (same formulation)
+  mappingConfidence   String? // High / Medium / Low
+  qualityFlag         String? // Quality Flag
+  statusFlag          String? // master Status (Active/Inactive) — distinct from the `active` toggle below
+  originalItemName    String? // Original Item Name
+  originalBrand       String? // Original Brand
+  originalDescription String? // Original Description
+  // Rollups (maintained by importer / recompute)
+  lastPrice    Float? // latest unit price seen
+  avgPrice     Float?
+  totalQty     Float    @default(0)
+  totalRevenue Float    @default(0)
+  lineCount    Int      @default(0)
+  firstSoldAt  DateTime?
+  lastSoldAt   DateTime?
+  active       Boolean  @default(true) // admin can deactivate
+  mergedIntoId Int? // admin variant-merge: this product folds into another
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lines SaleLine[]
+
+  @@index([mainCategory])
+  @@index([subCategory])
+  @@index([cropTag])
+  @@index([active])
+  @@index([targetCrops], type: Gin)
+  @@index([targetPests], type: Gin)
+}
+
+/// One product line on a sales bill (from the master file). Sales OUT to farmers.
+model SaleLine {
+  id            Int       @id @default(autoincrement())
+  orderNo       String // bill / invoice number
+  productId     Int
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  itemRaw       String // raw Item text (denormalized safety copy)
+  store         String? // Retailer ID (store name from file)
+  storeId       Int? // resolved to Store
+  storeRef      Store?    @relation(fields: [storeId], references: [id])
+  farmerId      Int? // resolved by normalized phone (retained lines always have one)
+  farmer        Farmer?   @relation(fields: [farmerId], references: [id], onDelete: SetNull)
+  saleId        Int? // bill-level Sale this line rolls up into
+  sale          Sale?     @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  qty           Float     @default(0)
+  returnQty     Float     @default(0)
+  uom           String?
+  unitPrice     Float? // totalPrice / qty
+  totalPrice    Float     @default(0) // line total incl GST
+  basic         Float? // pre-tax
+  cgstRate      Float?
+  sgstRate      Float?
+  cgst          Float?
+  sgst          Float?
+  discount      Float?
+  batchNo       String?
+  soldAt        DateTime? // parsed Added Date
+  financialYear String?
+  mainCategory  String?
+  subCategory   String?
+  custName      String?
+  custPhone     String? // normalized
+  b2b           Boolean   @default(false)
+  cropTag       String? // crop this sale was for — cleaned per-line from the master file's Crops column (campaign attribution)
+  source        DataSource @default(REAL)
+  createdAt     DateTime  @default(now())
+
+  @@index([productId])
+  @@index([farmerId])
+  @@index([orderNo])
+  @@index([soldAt])
+  @@index([storeId, soldAt])
+  @@index([productId, soldAt])
+  @@index([cropTag])
+  @@index([source])
+  @@index([saleId]) // FK lookup — needed so deleting a Sale (onDelete: SetNull) doesn't seq-scan
+}
+
+/// Log of monthly sales-invoice uploads (admin Sales Import page).
+model SalesImport {
+  id            Int      @id @default(autoincrement())
+  filename      String
+  fileType      String? // csv | xlsx
+  fileSizeKb    Int?
+  uploadedBy    String?
+  status        String   @default("SUCCESS") // SUCCESS | FAILED
+  lineItems     Int?
+  bills         Int?
+  newCustomers  Int?
+  salesInserted Int?
+  skipped       Int?
+  rangeStart    String?
+  rangeEnd      String?
+  error         String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ─────────────────────────── CRM Pilot (segmentation campaigns) ───────────────────────────
+
+/// A targeted outreach campaign over a set of campaign segments + crops.
+model Campaign {
+  id             Int              @id @default(autoincrement())
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  targetSegments String[]         @default([]) // campaign segments included
+  targetCrops    String[]         @default([]) // maize / potato (empty = all)
+  testPct        Int              @default(75)
+  commPlans      String[]         @default([]) // comm-plan names this campaign is tagged with (1+)
+  status         String           @default("DRAFT") // DRAFT | ACTIVE | CLOSED
+  projectId      Int? // Step 3: campaign runs on a project (all its clusters)…
+  clusterId      Int? // …or one specific cluster within it
+  // Rounds status mapping (which product-catalogue categories count as fertiliser vs combo — combo is
+  // campaign-specific). Used by the status engine to auto-derive member purchase flags.
+  fertiliserCategories String[]    @default([])
+  comboCategories      String[]    @default([])
+  currentRound   Int              @default(1) // the round the WHOLE campaign is currently in (rounds are one unit — no per-store state)
+  createdAt      DateTime         @default(now())
+  members        CampaignMember[]
+  phases         CampaignPhase[]
+  phaseAdvances  CampaignPhaseAdvance[]
+  callers        CampaignCaller[]
+}
+
+/// Assigns a Campaigner (part-time call-team user) to a campaign. A campaigner only sees + calls the
+/// campaigns assigned to them here. Managed by the System Admin from the Users screen.
+model CampaignCaller {
+  id             Int      @id @default(autoincrement())
+  campaignId     Int
+  userId         Int // the Campaigner user
+  assignedByName String?
+  assignedByCode String?
+  createdAt      DateTime @default(now())
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([userId])
+  @@index([campaignId])
+}
+
+/// A farmer enrolled in a campaign (test/control split + outreach log).
+model CampaignMember {
+  id         Int       @id @default(autoincrement())
+  campaignId Int
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  farmerId   Int
+  segment    String // legacy collapsed segment snapshot at enrolment (kept for back-compat)
+  valueSegment     String? // value tier snapshot: HNI | POTENTIAL_HNI | REGULAR
+  lifecycleSegment String? // lifecycle snapshot: NEW | AT_RISK | LAPSED
+  crop       String?
+  group      String // TEST | CONTROL
+  storeId    Int? // snapshot of the farmer's store (for officer-scoped visibility)
+  zone       String? // snapshot of the farmer's zone (for regional-scoped visibility)
+  reached       Boolean   @default(false)
+  reachedAt     DateTime? // when the outcome (reach OR unreachable) was recorded
+  mediums       String[]  @default([]) // outcome set: any of CALL|WHATSAPP|SMS|IN_PERSON (multi-select), or the single value UNREACHABLE
+  reachedBy     String? // audit: ACTUAL logged-in user's name who recorded the outcome
+  reachedByCode String? // audit: their User.employeeCode (e.g. "VERDE123")
+  // Broadcast (mass send) track — kept SEPARATE from `reached`/`mediums` (which are deliberate 1-on-1
+  // contacts). Set ONLY when a mass-send message is confirmed DELIVERED (SMS DLR / WA webhook), never
+  // on submit. A farmer here still stays "pending" for individual outreach — this is just a marker.
+  broadcastMediums String[]  @default([]) // channels DELIVERED via mass send: SMS | WHATSAPP
+  broadcastAt      DateTime? // first broadcast delivery timestamp
+  comment       String? // optional free-text note from the officer/RM about the contact
+  response      String? // interest outcome: INTERESTED | NOT_INTERESTED | OTHER_CROP (null = not asked). Any of these ⇒ reached.
+  responseCrop  String? // crop key when response = OTHER_CROP (from the global crop list)
+
+  // Phased-campaign purchase status (hybrid: SALES-derived, OFFICER can override). Each flag records
+  // its source so a sales recompute never clobbers an officer override. Drives the phase cohort routing.
+  booked            Boolean   @default(false)
+  boughtFertiliser  Boolean   @default(false)
+  boughtCombo       Boolean   @default(false)
+  bookedSource      String? // SALES | OFFICER (null = never set)
+  fertiliserSource  String? // SALES | OFFICER
+  comboSource       String? // SALES | OFFICER
+  bookedAt          DateTime?
+  fertiliserAt      DateTime?
+  comboAt           DateTime?
+
+  @@unique([campaignId, farmerId])
+  @@index([campaignId])
+  @@index([campaignId, storeId])
+  @@index([campaignId, zone])
+}
+
+// ─────────────────────────── Campaign rounds ───────────────────────────
+// A campaign runs in ordered ROUNDS (Advance Booking → Fertiliser → Combo). Each round is ONE unit for
+// the whole campaign — a single date window, a behaviour-driven cohort (from `type`), coupons, and a
+// per-cohort × value-band messaging map. There is no per-store variation (store-level differences are
+// handled by scoping clusters/campaigns). The whole campaign advances round together, gated by an admin
+// attestation that the round's sales data has been uploaded.
+model CampaignPhase {
+  id           Int      @id @default(autoincrement())
+  campaignId   Int
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  ordinal      Int // 1,2,3… order within the campaign
+  name         String // "Advance Booking", "Fertiliser Purchase", "Combo Only"
+  type         String   @default("CUSTOM") // BOOKING | FERTILISER | COMBO | CUSTOM (drives cohort logic)
+  defaultStart DateTime
+  defaultEnd   DateTime
+  coupons      Json?    // [{ label, code, minSpend }] — offers active in this round
+  commConfig   Json?    // { "<subCohort>": { HNI: {commPlan, channel}, OTHERS: {commPlan, channel} } }
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+
+  @@unique([campaignId, ordinal])
+  @@index([campaignId])
+}
+
+/// Audit + attestation log of a campaign-wide round advance (records the "round N sales uploaded" tick).
+model CampaignPhaseAdvance {
+  id              Int      @id @default(autoincrement())
+  campaignId      Int
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  fromOrdinal     Int
+  toOrdinal       Int
+  attestationNote String?
+  byName          String?
+  byCode          String?
+  createdAt       DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+/// Editable communication plan template (WF3) — many per segment, per language & promotion type.
+model CommTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String   @default("") // display name — campaigns tag comm plans by this
+  language    String   @default("hi") // "hi" | "en"
+  promoType   String   @default("General") // Discount | Festival | New launch | Scheme/Credit | Reminder | General
+  segment     String // legacy single segment (kept in sync = segments[0]); superseded by `segments`
+  segments    String[] @default([]) // target segments (value + lifecycle); EMPTY = All segments
+  priority    Int
+  medium      String // WhatsApp | Call | SMS (or combos)
+  offer       String
+  timingLabel String
+  template    String   @db.Text // message with [Naam] [gap] [last item] [Store] [number] [date] slots
+  dltTemplateId String? // ZapSMS/DLT approved Template ID for this message (required for real delivery)
+  waTemplateName String? // WhatsApp Cloud API approved template name (for template-mode WhatsApp sends)
+  waLanguage     String? // WhatsApp template language code, e.g. "en" | "en_US" | "hi"
+  waVariables    String[] @default([]) // ordered token keys filling the WA template's {{1}},{{2}}… (name|crop|store|…)
+  smsVariables   String[] @default([]) // ordered token keys filling a DLT template's {#var#} positions (SMS)
+  active      Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+
+  @@index([segment])
+}
+
+/// One SMS send attempt (via the ZapSMS gateway) — the outreach audit log.
+model SmsLog {
+  id            Int      @id @default(autoincrement())
+  farmerId      Int?
+  campaignId    Int?
+  memberId      Int?
+  broadcastId   Int? // set when this send came from a mass send (durable marker for the broadcast track)
+  mobile        String
+  senderId      String?
+  dltTemplateId String?
+  message       String   @db.Text
+  ok            Boolean  @default(false)
+  providerId    String? // gateway message id, when returned
+  status        String? // gateway submit-time status / short result
+  deliveryStatus String? // DLR from the gateway (DELIVERED | FAILED | SENT | PENDING…), refreshed on demand
+  deliveredAt   DateTime? // set when the DLR reports delivered
+  error         String?
+  sentByName    String?
+  sentByCode    String?
+  createdAt     DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([farmerId])
+  @@index([createdAt])
+  @@index([providerId])
+}
+
+/// One WhatsApp send attempt (via the Meta Cloud API) — the WhatsApp outreach audit log.
+model WhatsAppLog {
+  id           Int      @id @default(autoincrement())
+  farmerId     Int?
+  campaignId   Int?
+  memberId     Int?
+  broadcastId  Int? // set when this send came from a mass send (durable marker for the broadcast track)
+  mobile       String
+  kind         String   @default("text") // "text" | "template"
+  templateName String? // WhatsApp template name, when sent as a template
+  message      String   @db.Text // text body (or a summary of the template)
+  ok           Boolean  @default(false)
+  providerId   String? // wamid.* message id returned by Meta
+  status       String? // short status / result (updated by the delivery-status webhook: SENT/DELIVERED/READ/FAILED)
+  error        String?
+  deliveredAt  DateTime? // set when Meta's status webhook reports "delivered"
+  readAt       DateTime? // set when Meta's status webhook reports "read"
+  sentByName   String?
+  sentByCode   String?
+  createdAt    DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([farmerId])
+  @@index([createdAt])
+  @@index([providerId]) // delivery-status webhook matches on wamid
+}
+
+/// A mass send (SMS or WhatsApp) run against a campaign's TEST group — the broadcast job + audit.
+model Broadcast {
+  id             Int      @id @default(autoincrement())
+  campaignId     Int
+  channel        String // SMS | WHATSAPP
+  commTemplateId Int?
+  templateLabel  String? // display name (comm plan / WA template)
+  status         String   @default("running") // running | done | canceled
+  total          Int      @default(0)
+  sent           Int      @default(0)
+  failed         Int      @default(0)
+  createdByName  String?
+  createdByCode  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt @default(now())
+
+  recipients BroadcastRecipient[]
+
+  @@index([campaignId])
+  @@index([status])
+}
+
+/// One recipient of a Broadcast — snapshotted at creation so a 1k–10k run can batch + resume idempotently.
+model BroadcastRecipient {
+  id          Int       @id @default(autoincrement())
+  broadcastId Int
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  memberId    Int?
+  farmerId    Int?
+  mobile      String
+  status      String    @default("pending") // pending | sent | failed | skipped
+  providerId  String?
+  error       String?
+  sentAt      DateTime?
+
+  @@index([broadcastId, status])
+}
+
+// ─────────────────────────── Ghoshti (Farmer Meetup) ───────────────────────────
+// A Ghoshti is a farmer meetup event. Phase 1 keeps it DECOUPLED from farmer data: attendees are
+// stored as their own rows (mobile + name), classified against existing farmers only by a loose
+// matchedFarmerId (no FK relation). The single write-back into farmer data is Farmer.attendedGhoshti.
+// Every Ghoshti needs approval before it counts: officer-created → RM(same zone)/central/sysadmin;
+// RM-created → central/sysadmin only. Nothing auto-approves (status starts PENDING).
+model Ghoshti {
+  id            Int      @id @default(autoincrement())
+  date          DateTime // when the meetup happened / is scheduled
+  storeId       Int? // host store (loose — no relation, mirrors the rest of the decoupled module)
+  storeName     String? // snapshot of the store name at creation time
+  zone          String? // snapshot of the host zone (drives RM approval scoping)
+  locationNote  String? // free-text venue / location detail
+  topic         String? // what the meetup was about
+  notes         String? // organiser notes
+  status        String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdById   Int? // User.id of the real logged-in creator
+  createdByName String?
+  createdByCode String?
+  createdByRole String? // roleKey at creation (officer | regional) — drives who may approve
+  approvedByName String?
+  approvedByCode String?
+  approvedAt    DateTime?
+  rejectionNote String? // why it was rejected (shown back to the creator)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
+
+  attendees GhoshtiAttendee[]
+
+  @@index([storeId])
+  @@index([status])
+  @@index([zone])
+  @@index([date])
+}
+
+/// One attendee row on a Ghoshti. Captured by mobile; classified against existing farmers by a loose
+/// matchedFarmerId (no FK). `isExisting` marks a mobile that matched a Farmer at capture time.
+model GhoshtiAttendee {
+  id             Int      @id @default(autoincrement())
+  ghoshtiId      Int
+  ghoshti        Ghoshti  @relation(fields: [ghoshtiId], references: [id], onDelete: Cascade)
+  mobile         String // normalized 10-digit
+  name           String?
+  isExisting     Boolean  @default(false) // matched an existing farmer at capture
+  matchedFarmerId Int? // loose link to Farmer.id (no FK) when isExisting
+  attended       Boolean  @default(true) // present flag (Phase 1: everyone recorded attended)
+  remarks        String?
+  recordedByName String?
+  recordedByCode String?
+  createdAt      DateTime @default(now())
+
+  @@index([ghoshtiId])
+  @@index([mobile])
+}
+
+/// A WhatsApp opt-in — someone who messaged our business number (scanned the QR / click-to-chat).
+/// Captured by the inbound webhook. Keyed by mobile; the matched farmer (if any) is flagged too.
+model WhatsAppOptIn {
+  id           Int      @id @default(autoincrement())
+  mobile       String   @unique // normalized 10-digit
+  waId         String? // full wa_id (country code + number) as Meta reports it
+  name         String? // WhatsApp profile name, when provided
+  firstMessage String? // the first inbound message text (usually the opt-in line)
+  lastMessage  String? // most recent message text (either direction)
+  messageCount Int      @default(0)
+  farmerId     Int? // matched existing farmer, if any
+  optInAt      DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+  // Inbox thread header (Phase 1 conversation record):
+  unreadCount   Int     @default(0) // inbound messages not yet read in the inbox
+  lastInboundAt DateTime? // last time THEY messaged us — drives the 24h reply window
+  lastDirection String? // IN | OUT — direction of the most recent message
+
+  @@index([optInAt])
+  @@index([farmerId])
+  @@index([lastMessageAt])
+}
+
+/// A canned "quick reply" for the WhatsApp Inbox (Phase 2). Sysadmin-managed; one-click insert.
+model WhatsAppQuickReply {
+  id        Int      @id @default(autoincrement())
+  label     String // short button label
+  text      String   @db.Text // the message body inserted into the reply box
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+/// One WhatsApp message (inbound or outbound) — the full per-message conversation record behind the
+/// Sysadmin Inbox. Keyed by `mobile` (the thread). Inbound rows are written by the webhook.
+model WhatsAppMessage {
+  id          Int      @id @default(autoincrement())
+  mobile      String // normalized 10-digit — the conversation thread key
+  waId        String? // full wa_id
+  direction   String // IN | OUT
+  type        String   @default("text") // text|image|audio|video|document|button|interactive|template|…
+  text        String?  @db.Text
+  mediaId     String? // Meta media id (fetch/render later)
+  mediaMime   String?
+  waMessageId String? // wamid.* — for status matching + dedup
+  status      String? // OUT: SENT|DELIVERED|READ|FAILED
+  errorText   String?
+  farmerId    Int? // matched farmer, if any
+  contactName String?
+  sentByName  String? // OUT manual reply — actual admin who sent
+  sentByCode  String?
+  waTimestamp DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([mobile, createdAt])
+  @@index([waMessageId])
+}
+
+/// Friendly names for a Meta template's positional variables. Meta only stores {{1}},{{2}}… — this
+/// local table remembers what each slot means ("Farmer name", "Coupon code") so the send UIs can label
+/// the inputs instead of showing {{1}}. Keyed by (name, language). Absent rows fall back to preset guesses.
+model WaTemplateVar {
+  id        Int      @id @default(autoincrement())
+  name      String // Meta template name
+  language  String   @default("en")
+  labels    String[] @default([]) // ordered friendly labels for {{1}},{{2}}…
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, language])
+}
+
+// A Visit doubles as the per-farmer visit log entry and the Visit Repository record.
+model Visit {
+  id          Int         @id @default(autoincrement())
+  farmerId    Int?
+  farmer      Farmer?     @relation(fields: [farmerId], references: [id])
+  storeId     Int?
+  store       Store?      @relation(fields: [storeId], references: [id])
+  officerName String?
+  date        String? // display string
+  visitedAt   DateTime?
+  followUpDate String? // next-visit date the officer set on the form (ISO "YYYY-MM-DD")
+  followUpReason String? // why the next follow-up is needed (drives the Action registry)
+  followUpComment String? // officer's note for the follow-up (mandatory when a date is set)
+  purpose     String?
+  notes       String?
+  type        String? // visit type / reason
+  segment     Segment?
+  leadStatus  LeadStatus?
+
+  // New-Visit wizard captured fields
+  // Audit: the ACTUAL logged-in user who filled the form (not the impersonated persona).
+  recordedBy     String? // User.name
+  recordedByCode String? // User.employeeCode (e.g. "VERDE123"); createdAt is the fill timestamp
+
+  visitMode       String? // "field" (GPS recorded) | "store" (no farmer location)
+  gpsLat          Float?
+  gpsLng          Float?
+  soilType        String?
+  soilTesting     String?
+  waterSource     String[] @default([])
+  mainCrop        String?
+  crops           String[] @default([])
+  otherCrops      String?
+  pests           String[] @default([]) // Pests/Diseases/Weeds seen on the visit (→ Farmer.visitPestTags)
+  season          String?
+  cropInsured     Boolean  @default(false)
+  landHoldingUnit String?
+  products        String[] @default([])
+  productRequired String[] @default([])
+  currentProblem  String[] @default([])
+  cropRisk        String[] @default([])
+  dangerZone      String[] @default([])
+  annualExpense   String?
+  purchaseFreq    String?
+  otherShops      String?
+  fpoMember       Boolean  @default(false)
+  contractFarming Boolean  @default(false)
+  dairyServices   Boolean  @default(false)
+  whatsappAvail   Boolean  @default(false)
+  // Service & membership detail (captured when the matching toggle is on)
+  fpoName         String?
+  contractDetail  String?
+  dairyDetail     String?
+  whatsappNumber  String?
+  photos          String[] @default([])
+  voiceNotes      String[] @default([])
+
+  // Optional review / sign-off layer. A visit is "reviewed" when reviewedAt is set. Officer visits are
+  // signed off by their managing RM (or the officer themselves / an admin); RM visits by themselves / admins.
+  reviewedAt     DateTime?
+  reviewNote     String?  @db.Text
+  reviewedByName String?
+  reviewedByCode String?
+  reviewedByRole String? // roleKey of the reviewer at sign-off
+
+  source    DataSource @default(DEMO)
+  createdAt DateTime   @default(now())
+  actions   Action[]
+
+  @@index([farmerId])
+  @@index([storeId])
+  @@index([visitedAt]) // recent-visit sorts (dashboard, visit repository)
+  @@index([officerName]) // per-officer dashboard + repository filters
+  @@index([reviewedAt]) // reviewed/unreviewed filter + pending-review counts
+}
+
+// ─────────────────── Action Registry (follow-ups) ───────────────────
+// A follow-up task assigned to a store, tagged to a farmer, with a due date. Auto-created from a
+// visit's Next Follow-up Date, or added manually on the registry. Scoped like the rest (store/region).
+model Action {
+  id             Int       @id @default(autoincrement())
+  farmerId       Int?
+  farmer         Farmer?   @relation(fields: [farmerId], references: [id])
+  storeId        Int? // assigned store (the filling officer's store)
+  store          Store?    @relation(fields: [storeId], references: [id])
+  visitId        Int? // source visit (null for a manually-added action)
+  visit          Visit?    @relation(fields: [visitId], references: [id])
+  reason         String? // follow-up reason (from the visit form dropdown / manual)
+  note           String?
+  workingComment String? // latest working comment (progress note); full history in ActionComment
+  dueDate        DateTime // the Next Follow-up Date
+  status         String    @default("OPEN") // OPEN | DONE
+  createdByName  String?
+  createdByCode  String?
+  completedByName String?
+  completedByCode String?
+  completedAt    DateTime?
+  completionNote String? // closing summary — mandatory when marking done
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt @default(now())
+  comments       ActionComment[]
+
+  @@index([storeId, status])
+  @@index([status, dueDate])
+  @@index([farmerId])
+}
+
+/// Audit log of an action's working comments — every edit is a row (who + when + text).
+model ActionComment {
+  id         Int      @id @default(autoincrement())
+  actionId   Int
+  action     Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  text       String   @db.Text
+  authorName String?
+  authorCode String?
+  createdAt  DateTime @default(now())
+
+  @@index([actionId])
+}
+
+// ─────────────────────────── Action Planner ───────────────────────────
+
+model Project {
+  id          Int             @id @default(autoincrement())
+  title       String
+  status      ProjectStatus   @default(PLANNED)
+  owner       String?
+  due         String? // display date (legacy)
+  startDate   DateTime? // project duration start — campaigns must fall within
+  endDate     DateTime? // project duration end — campaigns cannot extend past this
+  groupName   String? // target group description
+  farmerIds   Int[]           @default([])
+  farmerNames String[]        @default([])
+  source      DataSource      @default(DEMO)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  clusters Cluster[] // Step 2: a project bundles 1+ reusable clusters (many-to-many)
+  updates  ProjectUpdate[]
+}
+
+model ProjectUpdate {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  text      String
+  by        String?
+  date      String?
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────── Clusters ───────────────────────────
+
+model Cluster {
+  id          Int        @id @default(autoincrement())
+  name        String
+  layerFilter String? // legacy: segment | crop | leadStatus | all
+  criteria    String? // JSON ClusterCriteria (the filter rule) — see lib/cluster-rules.ts
+  description String? // auto-generated human summary of the rule
+  origin      String? // map | segment | analytics (which builder created it)
+  mode        String     @default("static") // dynamic (resolve rule live) | static (frozen farmerIds)
+  farmerIds   Int[]      @default([]) // snapshot (static clusters + legacy)
+  farmerNames String[]   @default([])
+  createdBy   String? // name of the user who created the cluster (real user, not an impersonated persona)
+  createdByCode String? // their employee code (audit)
+  source      DataSource @default(DEMO)
+  createdAt   DateTime   @default(now())
+
+  projects Project[] // reusable across projects (many-to-many)
+}
+
+// ─────────────────────────── Reference / admin ───────────────────────────
+
+model FieldOption {
+  id        Int      @id @default(autoincrement())
+  fieldName String   @unique
+  inputType String? // dropdown | multiselect | toggle | freetext | slider
+  options   String[] @default([])
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  actor     String?
+  action    String // CREATE | UPDATE | CONFIG | EXPORT | DELETE
+  entity    String? // affected entity name (optional)
+  detail    String?
+  ip        String?
+  displayTs String? // pixel-faithful timestamp label e.g. "Jun 22, 10:42"
+  createdAt DateTime @default(now())
+
+  @@index([createdAt]) // recent-first ordering (audit log, dashboard events)
+}
+
+/** A bug/issue reported from the portal ("Report a Bug"), worked through a kanban by the admin. */
+model Bug {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String?
+  kind         String    @default("BUG") // BUG | FEATURE
+  severity     String    @default("MEDIUM") // LOW | MEDIUM | HIGH | CRITICAL
+  status       String    @default("OPEN") // OPEN | IN_PROGRESS | TESTING | FIXED | CLOSED
+  page         String? // where it was reported
+  reporter     String? // reporter's name
+  reporterCode String? // reporter's employee code
+  screenshot   String? // optional screenshot as a (downscaled) data URL
+  resolution   String? // admin's resolution / fix notes, added when closing
+  resolvedAt   DateTime? // set when moved to FIXED/CLOSED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}

@@ -1,0 +1,946 @@
+{
+  "_meta": {
+    "source": "webapp/docs/original-design.dc.html",
+    "scriptRegionLines": "2559..3808",
+    "extractedBy": "global:data task",
+    "notes": "All values copied verbatim from the SCRIPT region (class Component extends DCLogic). 'projects', 'form' and 'kpiData' live in state (lines 2586..2648). All other arrays are locals inside renderVals(). The audit log is NOT a script array — it is hardcoded markup in the template at lines 2336..2391 and is captured here under auditLog."
+  },
+
+  "state": {
+    "_lines": "2586..2648",
+    "view": "dashboard",
+    "step": 0,
+    "search": "",
+    "period": "30d",
+    "ready": true,
+    "selectedFarmer": null,
+    "role": "regional",
+    "_roleComment": "regional | officer | central | sysadmin",
+    "showRolePicker": false,
+    "mapLayer": "segment",
+    "farmerClusters": [],
+    "showClusterModal": false,
+    "clusterDraftName": "",
+    "clusterModalLayerFilter": "all",
+    "selectedClusterDetail": null,
+    "clusterSource": null,
+    "visitRepoFilter": { "officer": "all", "store": "all", "type": "all", "period": "month" },
+    "selectedVisit": null,
+    "selectedMapFarmer": null,
+    "mapStoreFilter": null,
+    "showStorePins": true,
+    "adminSubTab": "users",
+    "showMasterData": false,
+    "masterDataTab": "stores",
+    "storeEdits": {},
+    "farmerEdits": {},
+    "userEdits": {},
+    "editModal": null,
+    "editDraft": {},
+    "kpiData": { "visits": "1,024", "farmers": "22,210", "convRate": "38.7%", "followups": "34" },
+    "selectedProject": null,
+    "showNewProject": false,
+    "newProject": { "title": "", "owner": "", "due": "", "group": "" },
+    "newUpdate": "",
+    "form": {
+      "_lines": "2636..2647",
+      "name": "",
+      "father": "",
+      "mobile": "",
+      "village": "Ram Nagar",
+      "district": "Barabanki",
+      "visitPurpose": "",
+      "landHolding": "",
+      "soil": "",
+      "soilTesting": "",
+      "waterSource": [],
+      "mainCrop": "",
+      "crop": [],
+      "otherCrops": "",
+      "season": "Rabi",
+      "cropInsured": false,
+      "product": [],
+      "productRequired": [],
+      "currentProblem": [],
+      "cropRisk": [],
+      "dangerZone": [],
+      "annualExpense": "",
+      "purchaseFreq": "",
+      "otherShops": "",
+      "fpoMember": false,
+      "contractFarming": false,
+      "dairyServices": false,
+      "whatsappAvail": false,
+      "leadStatus": "New",
+      "_resetFormOnSubmit": {
+        "_line": 3619,
+        "_comment": "submitVisit() resets form to these values — note village/district differ from initial state (Chandpur/Agra vs Ram Nagar/Barabanki)",
+        "name": "", "father": "", "mobile": "", "village": "Chandpur", "district": "Agra",
+        "visitPurpose": "", "landHolding": "", "soil": "", "soilTesting": "", "waterSource": [],
+        "mainCrop": "", "crop": [], "otherCrops": "", "season": "Rabi", "cropInsured": false,
+        "product": [], "productRequired": [], "currentProblem": [], "cropRisk": [], "dangerZone": [],
+        "annualExpense": "", "purchaseFreq": "", "otherShops": "",
+        "fpoMember": false, "contractFarming": false, "dairyServices": false, "whatsappAvail": false,
+        "leadStatus": "New"
+      },
+      "_extraSettersReferenced": {
+        "_comment": "renderVals() exposes setters for these form keys that are NOT in the initial form object (form.totalLand / form.irrigatedLand). They start undefined and are written by setLand/setIrr. See lines 3622-3627.",
+        "totalLand": null,
+        "irrigatedLand": null
+      }
+    }
+  },
+
+  "projects": {
+    "_lines": "2613..2631",
+    "_note": "Action Planner demo data. NOTE: id values are duplicated in source (two id:2 and the array is not de-duped). farmerIds reference the farmers array ids. 'farmers' is a denormalised name list. Order is verbatim from source.",
+    "items": [
+      {
+        "id": 2,
+        "title": "Issues & Concerns — June 2026 — Field Action",
+        "status": "planned",
+        "owner": "Amit Yadav",
+        "due": "2026-06-30",
+        "group": "Farmers with active issues",
+        "farmerIds": [2, 5, 8],
+        "farmers": ["Suresh Yadav", "Mahesh Patel", "Arun Sharma"],
+        "updates": [
+          { "text": "Identified 3 farmers in Fatehabad store territory with active pest and irrigation issues. Coordinating soil and water advisory.", "by": "Amit Yadav", "date": "Jun 22" },
+          { "text": "Scheduled group visit for Jun 25. Soil test kits arranged from Fatehabad store.", "by": "Rajesh Verma", "date": "Jun 23" }
+        ]
+      },
+      {
+        "id": 1,
+        "title": "Kharif Pest Control Drive — Agra",
+        "status": "active",
+        "owner": "Raj Kumar",
+        "due": "2026-07-15",
+        "group": "Pest-affected wheat farmers (Agra)",
+        "farmerIds": [1, 3, 6, 10],
+        "farmers": ["Ramesh Kumar", "Pradeep Singh", "Anil Verma", "Bharat Mishra"],
+        "updates": [
+          { "text": "Identified 28 farmers with active pest reports in Agra block. Prioritizing wheat growers with >5 acre holdings.", "by": "Rajesh Verma", "date": "Jun 20" },
+          { "text": "Raj Kumar assigned as field lead. First batch of spray kits dispatched to Chandpur store.", "by": "Rajesh Verma", "date": "Jun 18" }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Sugarcane Yield Improvement — Firozabad",
+        "status": "active",
+        "owner": "Amit Yadav",
+        "due": "2026-08-30",
+        "group": "Sugarcane growers (Firozabad, Mainpuri)",
+        "farmerIds": [2, 11],
+        "farmers": ["Suresh Yadav", "Govind Pal"],
+        "updates": [
+          { "text": "Soil testing completed for 12 farmers. 8 show nutrient deficiency — recommending micronutrient supplementation.", "by": "Amit Yadav", "date": "Jun 19" }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Potato Cold Storage Awareness — Mainpuri",
+        "status": "planned",
+        "owner": "Vikram Singh",
+        "due": "2026-07-30",
+        "group": "Potato farmers (Mainpuri)",
+        "farmerIds": [5, 12],
+        "farmers": ["Mahesh Patel", "Harish Rawat"],
+        "updates": []
+      },
+      {
+        "id": 4,
+        "title": "FPO Enrollment Campaign",
+        "status": "completed",
+        "owner": "Deepak Verma",
+        "due": "2026-06-10",
+        "group": "Non-FPO farmers with >10 Bigha",
+        "farmerIds": [1, 5, 8, 10],
+        "farmers": ["Ramesh Kumar", "Mahesh Patel", "Rakesh Gupta", "Bharat Mishra"],
+        "updates": [
+          { "text": "Campaign completed. 14 out of 22 targeted farmers enrolled in local FPO. Remaining 8 need follow-up.", "by": "Deepak Verma", "date": "Jun 10" },
+          { "text": "Enrollment forms distributed. Community meeting held at Jaitpur village hall.", "by": "Deepak Verma", "date": "Jun 5" },
+          { "text": "Project kickoff — identified 22 eligible farmers across Etah and Mainpuri.", "by": "Rajesh Verma", "date": "May 28" }
+        ]
+      }
+    ],
+    "newProjectStatusMeta": {
+      "_lines": "3729..3731",
+      "active": { "label": "Active", "bg": "#E8F5E9", "color": "#2E7D32" },
+      "planned": { "label": "Planned", "bg": "#FFF8E1", "color": "#F57F17" },
+      "completed": { "label": "Completed", "bg": "#F3E5F5", "color": "#7B1FA2" }
+    },
+    "addUpdateAuthor": { "_line": 3738, "by": "Rajesh Verma", "date": "Jun 22" }
+  },
+
+  "farmers": {
+    "_lines": "2727..2776",
+    "_note": "Sample farmers (12 records). Each record verbatim. Fields referenced by renderVals that do NOT exist on these records (so resolve undefined): lastVisit, ltv, totalPurchase, visits, season, soil. These appear in bindings (e.g. mlLastVisit, selLtv, segCards revenue) but are not present in the data — treated as undefined/0.",
+    "items": [
+      {
+        "id": 1, "code": "FARM003", "name": "A K Shukla", "mobile": "9454299988", "village": "Pipari", "district": "Barabanki", "zone": "Barabanki", "crop": "Wheat", "land": 8, "status": "Contacted", "segment": "Medium Value", "storeCode": "AGRO0012", "lat": 27.09, "lng": 81.41,
+        "sales": [
+          { "inv": "INV-3001", "date": "Jun 10", "items": "DAP 2 bags, Urea 3 bags", "amt": "₹11,200", "store": "Ram Nagar" },
+          { "inv": "INV-2880", "date": "May 22", "items": "Wheat Seed 40kg", "amt": "₹4,800", "store": "Ram Nagar" }
+        ],
+        "visitLog": [
+          { "date": "Jun 18", "purpose": "Crop inspection", "notes": "Wheat crop healthy. Recommended DAP top-up. Pest minimal." },
+          { "date": "May 28", "purpose": "Follow-up", "notes": "Seed delivery confirmed. Field visit done." }
+        ],
+        "issues": ["Moisture stress"], "concerns": "Needs irrigation support before Kharif sowing", "leadStatus": "Contacted"
+      },
+      {
+        "id": 2, "code": "FARM004", "name": "A K Singh", "mobile": "9415111825", "village": "Umri", "district": "Barabanki", "zone": "Barabanki", "crop": "Sugarcane", "land": 12, "status": "High Value", "segment": "High Value", "storeCode": "AGRO0012", "lat": 27.07, "lng": 81.39,
+        "sales": [
+          { "inv": "INV-3012", "date": "Jun 14", "items": "Bio Fertilizer 10kg, PGR 2L", "amt": "₹8,600", "store": "Ram Nagar" },
+          { "inv": "INV-2990", "date": "Jun 1", "items": "Sugarcane Sets 200kg, NPK", "amt": "₹22,400", "store": "Ram Nagar" }
+        ],
+        "visitLog": [
+          { "date": "Jun 15", "purpose": "Season review", "notes": "Kharif sugarcane excellent stand. Discussed contract farming." },
+          { "date": "Jun 5", "purpose": "Crop advisory", "notes": "Germination 88%. Micronutrient advisory given." }
+        ],
+        "issues": [], "concerns": "Interested in FPO enrollment", "leadStatus": "Follow-up"
+      },
+      {
+        "id": 3, "code": "FARM015", "name": "A P Singh", "mobile": "9792494095", "village": "Bashant Pur", "district": "Barabanki", "zone": "Barabanki", "crop": "Rice", "land": 10, "status": "Follow-up", "segment": "Medium Value", "storeCode": "AGRO0015", "lat": 26.60, "lng": 81.37,
+        "sales": [
+          { "inv": "INV-3020", "date": "Jun 12", "items": "Paddy Seed 30kg, Zinc Sulphate", "amt": "₹9,200", "store": "Haidergarh" }
+        ],
+        "visitLog": [
+          { "date": "Jun 16", "purpose": "Crop monitoring", "notes": "Rice transplanting complete. Weed management advisory given." }
+        ],
+        "issues": ["Weed pressure"], "concerns": "Canal water supply irregular", "leadStatus": "Follow-up"
+      },
+      {
+        "id": 4, "code": "FARM024", "name": "Aadarsh Dwivedi", "mobile": "9956174005", "village": "Rai Pur", "district": "Barabanki", "zone": "Barabanki", "crop": "Mustard", "land": 6, "status": "New", "segment": "New/Low", "storeCode": "AGRO0015", "lat": 26.61, "lng": 81.38,
+        "sales": [],
+        "visitLog": [
+          { "date": "Jun 19", "purpose": "First visit", "notes": "New farmer registration. 6 acres sandy soil. Interested in mustard advisory and insurance." }
+        ],
+        "issues": ["Soil fertility low"], "concerns": "First-time buyer — needs onboarding", "leadStatus": "New"
+      },
+      {
+        "id": 5, "code": "FARM009", "name": "A B Singh", "mobile": "9919062846", "village": "Tiloi", "district": "Amethi", "zone": "Amethi", "crop": "Wheat", "land": 15, "status": "High Value", "segment": "High Value", "storeCode": "AGRO0018", "lat": 26.39, "lng": 81.47,
+        "sales": [
+          { "inv": "INV-3031", "date": "Jun 8", "items": "DAP 4 bags, Fungicide 1L", "amt": "₹16,800", "store": "Tiloi" },
+          { "inv": "INV-2950", "date": "May 18", "items": "Wheat Seed 60kg", "amt": "₹7,200", "store": "Tiloi" }
+        ],
+        "visitLog": [
+          { "date": "Jun 11", "purpose": "Field audit", "notes": "15-acre wheat field excellent. Recommended pre-Kharif soil test." },
+          { "date": "May 20", "purpose": "Seed delivery", "notes": "Confirmed delivery and sowing schedule." }
+        ],
+        "issues": [], "concerns": "Wants Kharif crop planning session", "leadStatus": "Converted"
+      },
+      {
+        "id": 6, "code": "FARM018", "name": "Aadam Sher", "mobile": "9455348497", "village": "Pure Shiv Singh", "district": "Amethi", "zone": "Amethi", "crop": "Potato", "land": 5, "status": "Dormant", "segment": "Dormant", "storeCode": "AGRO0018", "lat": 26.41, "lng": 81.46,
+        "sales": [
+          { "inv": "INV-2601", "date": "Feb 10", "items": "Potato Seed 150kg", "amt": "₹9,000", "store": "Tiloi" }
+        ],
+        "visitLog": [
+          { "date": "Feb 12", "purpose": "Planting advisory", "notes": "Potato planting done. Last contact — re-engagement needed." }
+        ],
+        "issues": ["Buying from competitor"], "concerns": "Price sensitivity — lost to local dealer", "leadStatus": "Dormant"
+      },
+      {
+        "id": 7, "code": "FARM034", "name": "Aadesh Kumar", "mobile": "6388309668", "village": "Pipri", "district": "Raebareli", "zone": "Raibareilly", "crop": "Rice", "land": 7, "status": "Contacted", "segment": "Medium Value", "storeCode": "AGRO0019", "lat": 26.35, "lng": 82.29,
+        "sales": [
+          { "inv": "INV-3040", "date": "Jun 13", "items": "Paddy Seed 25kg, Herbicide 1L", "amt": "₹7,400", "store": "Shivgarh" }
+        ],
+        "visitLog": [
+          { "date": "Jun 17", "purpose": "Follow-up", "notes": "Irrigation issue — canal delayed. Bore well financing discussed." }
+        ],
+        "issues": ["Irrigation deficit"], "concerns": "Needs bore well financing guidance", "leadStatus": "Contacted"
+      },
+      {
+        "id": 8, "code": "FARM1000", "name": "Adesh Kumar Srivastav", "mobile": "6306675288", "village": "Daulat Kheda", "district": "Raebareli", "zone": "Raibareilly", "crop": "Sugarcane", "land": 11, "status": "Follow-up", "segment": "High Value", "storeCode": "AGRO0019", "lat": 26.36, "lng": 82.28,
+        "sales": [
+          { "inv": "INV-3050", "date": "Jun 9", "items": "Bio Fertilizer 8kg, PGR 2L", "amt": "₹7,200", "store": "Shivgarh" },
+          { "inv": "INV-2970", "date": "May 25", "items": "Sugarcane Sets 300kg", "amt": "₹18,000", "store": "Shivgarh" }
+        ],
+        "visitLog": [
+          { "date": "Jun 14", "purpose": "Crop advisory", "notes": "Sugarcane germination 82%. Soil nutrients adequate. Discussed contract farming." },
+          { "date": "May 28", "purpose": "Planting visit", "notes": "Sowing confirmed. Good crop stand." }
+        ],
+        "issues": [], "concerns": "Contract farming interest — follow up with procurement team", "leadStatus": "Follow-up"
+      },
+      {
+        "id": 9, "code": "FARM1009", "name": "Adil Khan", "mobile": "9216907147", "village": "Hajrata Pur", "district": "Lakhimpur Kheri", "zone": "Lakhimpur Khiri", "crop": "Wheat", "land": 9, "status": "Contacted", "segment": "Medium Value", "storeCode": "AGRO0028", "lat": 28.02, "lng": 80.80,
+        "sales": [
+          { "inv": "INV-3060", "date": "Jun 11", "items": "Urea 4 bags, Fungicide 500ml", "amt": "₹8,400", "store": "Sanda Farm" }
+        ],
+        "visitLog": [
+          { "date": "Jun 15", "purpose": "Crop inspection", "notes": "Wheat standing crop. Fungal symptoms on leaves — fungicide applied." }
+        ],
+        "issues": ["Fungal disease"], "concerns": "Spray equipment access needed", "leadStatus": "Contacted"
+      },
+      {
+        "id": 10, "code": "FARM10111", "name": "Ashutosh Verma", "mobile": "9040107431", "village": "Sanda Farm", "district": "Lakhimpur Kheri", "zone": "Lakhimpur Khiri", "crop": "Sugarcane", "land": 18, "status": "High Value", "segment": "High Value", "storeCode": "AGRO0028", "lat": 28.03, "lng": 80.79,
+        "sales": [
+          { "inv": "INV-3071", "date": "Jun 6", "items": "NPK 10 bags, PGR 3L", "amt": "₹28,600", "store": "Sanda Farm" },
+          { "inv": "INV-2980", "date": "May 15", "items": "Sugarcane Sets 400kg", "amt": "₹24,000", "store": "Sanda Farm" }
+        ],
+        "visitLog": [
+          { "date": "Jun 10", "purpose": "Field review", "notes": "18 acres excellent stand. High-value account. Discussed Kharif expansion." },
+          { "date": "May 18", "purpose": "Planting advisory", "notes": "Sowing schedule set. All inputs delivered on time." }
+        ],
+        "issues": [], "concerns": "Expansion plan — 5 more acres next season", "leadStatus": "Converted"
+      },
+      {
+        "id": 11, "code": "FARM027", "name": "Aadarsh Verma", "mobile": "9452506526", "village": "Sariya", "district": "Lakhimpur Kheri", "zone": "Lakhimpur Khiri", "crop": "Rice", "land": 8, "status": "Follow-up", "segment": "Medium Value", "storeCode": "AGRO0031", "lat": 28.11, "lng": 80.59,
+        "sales": [
+          { "inv": "INV-3080", "date": "Jun 13", "items": "Paddy Seed 30kg, Zinc 2kg", "amt": "₹8,200", "store": "Aliganj" }
+        ],
+        "visitLog": [
+          { "date": "Jun 17", "purpose": "Crop monitoring", "notes": "Rice transplanting in progress. Water logging risk discussed." }
+        ],
+        "issues": ["Water logging risk"], "concerns": "Needs drainage advisory", "leadStatus": "Follow-up"
+      },
+      {
+        "id": 12, "code": "FARM093", "name": "Aaminudeen", "mobile": "9554718092", "village": "Tajpur", "district": "Lakhimpur Kheri", "zone": "Lakhimpur Khiri", "crop": "Wheat", "land": 5, "status": "New", "segment": "New/Low", "storeCode": "AGRO0031", "lat": 28.10, "lng": 80.60,
+        "sales": [],
+        "visitLog": [
+          { "date": "Jun 19", "purpose": "First visit", "notes": "New registration. 5 acres. Interested in wheat variety advisory and soil testing." }
+        ],
+        "issues": ["Soil pH high"], "concerns": "New farmer — needs soil test and crop planning", "leadStatus": "New"
+      }
+    ],
+    "statusColors": {
+      "_lines": "2778",
+      "New": { "bg": "#E8F5E9", "c": "#2E7D32" },
+      "Contacted": { "bg": "#E3F2FD", "c": "#1565C0" },
+      "Follow-up": { "bg": "#FFF3E0", "c": "#E65100" },
+      "Converted": { "bg": "#F3E5F5", "c": "#7B1FA2" },
+      "Recommendation": { "bg": "#FFF8E1", "c": "#F57F17" },
+      "Lost": { "bg": "#FAFAFA", "c": "#757575" }
+    },
+    "avatarColors": {
+      "_line": 2779,
+      "values": ["#2E7D32", "#1565C0", "#E65100", "#7B1FA2", "#F57F17", "#C62828", "#00695C", "#4527A0"]
+    }
+  },
+
+  "visitRepo": {
+    "_lines": "3050..3134",
+    "_note": "Visit Repository is NOT a standalone array — it is DERIVED at runtime by flattening every farmer's visitLog[] into allVisitsRaw (lines 3052..3081). Each generated visit row has the shape below. The 'officer' field is taken from visitLog entry's 'by' — but the farmer visitLog entries DO NOT contain a 'by' key, so officer is undefined at runtime (data gap). visId starts at 2401 then is pre-incremented so first vid = 'VIS-2402'.",
+    "derivedRowShape": {
+      "id": "visId++ (starts 2401)",
+      "vid": "'VIS-' + visId (post-increment so starts VIS-2402)",
+      "farmerId": "f.id",
+      "farmerName": "f.name",
+      "farmerMobile": "f.mobile",
+      "village": "f.village",
+      "district": "f.district",
+      "crop": "f.crop",
+      "segment": "f.segment",
+      "land": "f.land",
+      "officer": "v.by (UNDEFINED — visitLog has no 'by' field)",
+      "date": "v.date",
+      "purpose": "v.purpose",
+      "notes": "v.notes",
+      "storeName": "first word of store name via farmerStoreMap",
+      "storeColor": "store.color",
+      "typeColor": "visitTypes[purpose] || '#757575'",
+      "followup": "'Needed' if purpose in [Follow-up, Crop inspection, Re-engagement] else 'None'",
+      "followupBg": "#FFF3E0 (Needed) / #E8F5E9 (None)",
+      "followupColor": "#E65100 (Needed) / #2E7D32 (None)"
+    },
+    "visitTypes": {
+      "_line": 3051,
+      "Crop inspection": "#2E7D32",
+      "Crop monitoring": "#2E7D32",
+      "Product demo": "#1565C0",
+      "Product delivery": "#1565C0",
+      "Follow-up": "#E65100",
+      "First visit": "#F57F17",
+      "Sowing advisory": "#00695C",
+      "Harvest planning": "#7B1FA2",
+      "Re-engagement": "#AD1457",
+      "Season review": "#4527A0",
+      "Soil advisory": "#6D4C41",
+      "Pest check": "#C62828"
+    },
+    "dateRank": {
+      "_line": 3083,
+      "Jun 22": 0, "Jun 21": 1, "Jun 20": 2, "Jun 19": 3, "Jun 18": 4, "Jun 17": 5, "Jun 16": 6,
+      "Jun 15": 7, "Jun 14": 8, "Jun 13": 9, "Jun 12": 10, "Jun 11": 11, "Jun 10": 12, "Jun 9": 13,
+      "Jun 8": 14, "Jun 6": 16, "Jun 5": 17, "Jun 3": 18, "Jun 1": 20, "May 28": 24, "May 18": 26,
+      "May 16": 27, "May 14": 28, "May 12": 30, "May 1": 42, "Apr 22": 62, "Apr 20": 64, "Mar 20": 93
+    },
+    "periodRankLimit": { "_line": 3106, "today": 1, "week": 8, "month": 32, "all": 999 },
+    "filterPeriodPills": [
+      { "label": "Today", "key": "today" },
+      { "label": "This Week", "key": "week" },
+      { "label": "This Month", "key": "month" },
+      { "label": "All Time", "key": "all" }
+    ],
+    "allOfficersFilterOptions": { "_line": 3133, "values": ["all", "Raj Kumar", "Amit Yadav", "Vikram Singh", "Deepak Verma"] },
+    "visitRecommendations": {
+      "_lines": "3137..3151",
+      "_note": "visitRecMap — keyed by visit purpose; each is an array of 3 recommendation cards {c:color, t:text}. Default fallback at line 3151 used when purpose has no map entry.",
+      "Crop inspection": [
+        { "c": "#2E7D32", "t": "Schedule follow-up spray advisory if pest activity confirmed. Coordinate with store for pesticide inventory." },
+        { "c": "#1565C0", "t": "Update crop health status in farmer profile. Flag for priority visit if severity is high." },
+        { "c": "#F57F17", "t": "Cross-check soil test report and recommend corrective fertiliser application for current crop stage." }
+      ],
+      "Crop monitoring": [
+        { "c": "#2E7D32", "t": "Document crop growth stage and compare against expected calendar for the variety." },
+        { "c": "#1565C0", "t": "If weed or pest pressure observed, schedule product demo within 7 days." },
+        { "c": "#F57F17", "t": "Share monitoring report with Regional Manager for territory-level crop health tracking." }
+      ],
+      "Product demo": [
+        { "c": "#2E7D32", "t": "Log farmer feedback and interest level. Raise a lead if purchase intent is high." },
+        { "c": "#1565C0", "t": "Ensure demo product batch details are recorded. Coordinate dispatch from store for trial order." },
+        { "c": "#9C27B0", "t": "Follow up within 10 days to assess trial results and close conversion opportunity." }
+      ],
+      "Product delivery": [
+        { "c": "#2E7D32", "t": "Confirm product receipt and application plan with the farmer. Note any usage queries." },
+        { "c": "#1565C0", "t": "Schedule a crop response check-in visit 2–3 weeks after application." },
+        { "c": "#F57F17", "t": "Update invoice record in farmer profile. Link to purchase history for LTV tracking." }
+      ],
+      "Follow-up": [
+        { "c": "#E65100", "t": "Resolve the outstanding action item from the previous visit before closing this follow-up." },
+        { "c": "#1565C0", "t": "Reassess the lead status based on engagement level. Update in Farmer 360." },
+        { "c": "#2E7D32", "t": "Confirm next visit date and specific objective before leaving the field." }
+      ],
+      "First visit": [
+        { "c": "#2E7D32", "t": "Complete full farmer profile registration. Capture land, crop, soil, and commercial data." },
+        { "c": "#F57F17", "t": "Assess lead potential and assign segment (High/Medium/New) based on land size and purchase history." },
+        { "c": "#1565C0", "t": "Share UA product catalogue and introduce store point of contact. Offer soil testing service." }
+      ],
+      "Sowing advisory": [
+        { "c": "#2E7D32", "t": "Confirm seed variety recommended matches soil type and season. Document in farmer notes." },
+        { "c": "#F57F17", "t": "Coordinate with store for seed availability and timely delivery before sowing window closes." },
+        { "c": "#1565C0", "t": "Schedule a 4-week post-sowing visit to assess germination and nutrient requirement." }
+      ],
+      "Harvest planning": [
+        { "c": "#7B1FA2", "t": "Estimate yield and connect farmer with procurement or FPO channel if applicable." },
+        { "c": "#2E7D32", "t": "Discuss next season crop plan and pre-book inputs. Create advance order from store." },
+        { "c": "#E65100", "t": "Capture harvest outcome data for analytics and territory performance reporting." }
+      ],
+      "Re-engagement": [
+        { "c": "#AD1457", "t": "Understand reason for disengagement. Document competitive products being used." },
+        { "c": "#2E7D32", "t": "Offer loyalty benefit or personalised input recommendation to rebuild trust." },
+        { "c": "#F57F17", "t": "Set 30-day re-engagement milestone. Escalate to Regional Manager if farmer remains unresponsive." }
+      ],
+      "Season review": [
+        { "c": "#4527A0", "t": "Document season summary: yield estimate, input usage, issues faced, and satisfaction score." },
+        { "c": "#2E7D32", "t": "Plan next-season input requirement and create advance order. Lock pricing where possible." },
+        { "c": "#1565C0", "t": "Flag high-performing farmers for FPO enrollment or contract farming discussion." }
+      ],
+      "Soil advisory": [
+        { "c": "#6D4C41", "t": "Share soil test results in simplified form. Recommend specific amendments or fertiliser plan." },
+        { "c": "#2E7D32", "t": "Coordinate organic/bio compost availability from store. Offer application demo if needed." },
+        { "c": "#F57F17", "t": "Re-test soil after 60 days to validate improvement. Document corrective action taken." }
+      ],
+      "Pest check": [
+        { "c": "#C62828", "t": "Identify pest/disease accurately. Apply first-aid treatment if on-hand and advise immediate action." },
+        { "c": "#E65100", "t": "Coordinate with store for targeted pesticide. Ensure correct dosage and safety protocol." },
+        { "c": "#2E7D32", "t": "Re-visit within 7 days to assess treatment efficacy and prevent crop loss escalation." }
+      ],
+      "_default": [
+        { "c": "#2E7D32", "t": "Schedule a follow-up visit within 14 days to assess outcomes from this visit." },
+        { "c": "#1565C0", "t": "Update farmer profile with visit outcome and any changes to lead status." },
+        { "c": "#F57F17", "t": "Coordinate any product or input requirements with the assigned store for timely dispatch." }
+      ]
+    },
+    "recentVisitsCount": { "_lines": "3090", "_note": "Dashboard 'Recent visits' = first 5 of allVisitsRaw (role-filtered for officer)." }
+  },
+
+  "users": {
+    "_personas": {
+      "_lines": "2661..2666",
+      "_note": "Current-user personas keyed by role. Drives header avatar + role picker.",
+      "regional": { "name": "Rajesh Verma", "role": "Regional Manager", "init": "RV", "color": "linear-gradient(135deg,#43A047,#F9A825)" },
+      "officer": { "name": "Raj Kumar", "role": "Agricultural Officer", "init": "RK", "color": "linear-gradient(135deg,#1565C0,#42A5F5)" },
+      "central": { "name": "Dr. Anita Sharma", "role": "Central Admin", "init": "AS", "color": "linear-gradient(135deg,#7B1FA2,#CE93D8)" },
+      "sysadmin": { "name": "Vikash Mehta", "role": "System Admin", "init": "VM", "color": "linear-gradient(135deg,#E65100,#FF8F00)" }
+    },
+    "_baseUsers": {
+      "_lines": "3406..3414",
+      "_note": "User Management table data (baseUsers). 7 records.",
+      "items": [
+        { "id": 1, "init": "RV", "name": "Rajesh Verma", "email": "rajesh@uaagro.com", "role": "Regional Manager", "territory": "Agra Region", "lastActive": "2 min ago", "visitsMtd": "284", "status": "Active", "gradA": "#43A047", "gradB": "#F9A825" },
+        { "id": 2, "init": "RK", "name": "Raj Kumar", "email": "raj.kumar@uaagro.com", "role": "Agri Officer", "territory": "Agra — Chandpur, Khandauli", "lastActive": "15 min ago", "visitsMtd": "94", "status": "Active", "gradA": "#1565C0", "gradB": "#42A5F5" },
+        { "id": 3, "init": "AY", "name": "Amit Yadav", "email": "amit.yadav@uaagro.com", "role": "Agri Officer", "territory": "Firozabad — Barauli, Tundla", "lastActive": "1 hr ago", "visitsMtd": "87", "status": "Active", "gradA": "#2E7D32", "gradB": "#66BB6A" },
+        { "id": 4, "init": "VS", "name": "Vikram Singh", "email": "vikram.singh@uaagro.com", "role": "Agri Officer", "territory": "Mainpuri — Sikandra, Jaitpur", "lastActive": "3 hrs ago", "visitsMtd": "82", "status": "Active", "gradA": "#43A047", "gradB": "#81C784" },
+        { "id": 5, "init": "DV", "name": "Deepak Verma", "email": "deepak.verma@uaagro.com", "role": "Agri Officer", "territory": "Etah — Kasganj", "lastActive": "Today", "visitsMtd": "76", "status": "Active", "gradA": "#4527A0", "gradB": "#9575CD" },
+        { "id": 6, "init": "VM", "name": "Vikash Mehta", "email": "vikash@uaagro.com", "role": "System Admin", "territory": "All Regions", "lastActive": "Yesterday", "visitsMtd": "—", "status": "Active", "gradA": "#E65100", "gradB": "#FF8F00" },
+        { "id": 7, "init": "SG", "name": "Sunil Gupta", "email": "sunil.gupta@uaagro.com", "role": "Agri Officer", "territory": "Mathura", "lastActive": "5 days ago", "visitsMtd": "71", "status": "Inactive", "gradA": "#9E9E9E", "gradB": "#BDBDBD" }
+      ]
+    },
+    "roleMeta": {
+      "_lines": "3415..3420",
+      "Regional Manager": { "bg": "#E8F5E9", "color": "#2E7D32" },
+      "Agri Officer": { "bg": "#E3F2FD", "color": "#1565C0" },
+      "Central Admin": { "bg": "#F3E5F5", "color": "#7B1FA2" },
+      "System Admin": { "bg": "#FFF3E0", "color": "#E65100" }
+    },
+    "statusMeta": {
+      "_lines": "3421..3424",
+      "Active": { "bg": "#E8F5E9", "color": "#2E7D32" },
+      "Inactive": { "bg": "#FFF3E0", "color": "#E65100" }
+    },
+    "officerNamesByStoreId": {
+      "_line": 2847,
+      "1": "Durgesh Mishra", "2": "Dev Prakash Narayan", "3": "Aviral Pal",
+      "4": "Aniket Srivastava", "5": "Ajay Pal Yadav", "6": "Ajay Kumar Verma"
+    }
+  },
+
+  "auditLog": {
+    "_lines": "2336..2391 (TEMPLATE markup, not script)",
+    "_note": "Audit Log entries are hardcoded as repeated <div> rows in the template, NOT a script data array. Captured verbatim. Action color chips: CREATE=#E8F5E9/#2E7D32, UPDATE=#E3F2FD/#1565C0, CONFIG=#FFF3E0/#E65100, EXPORT=#F3E5F5/#7B1FA2, DELETE=#FFEBEE/#C62828.",
+    "columns": ["Timestamp", "User", "Action", "Details", "IP"],
+    "entries": [
+      { "timestamp": "Jun 22, 10:42", "user": "Raj Kumar", "action": "CREATE", "details": "New visit entry — Farmer: Sanjay Tiwari, Village: Achhnera", "ip": "192.168.1.45" },
+      { "timestamp": "Jun 22, 09:15", "user": "Rajesh Verma", "action": "UPDATE", "details": "Action project status changed: Kharif Pest Control → Active", "ip": "192.168.1.20" },
+      { "timestamp": "Jun 22, 08:30", "user": "Amit Yadav", "action": "CREATE", "details": "New farmer registered — Harish Rawat, Tundla, Firozabad", "ip": "10.0.0.88" },
+      { "timestamp": "Jun 21, 18:45", "user": "Vikash Mehta", "action": "CONFIG", "details": "System setting changed: GPS Mandatory → Enabled", "ip": "192.168.1.10" },
+      { "timestamp": "Jun 21, 16:20", "user": "Dr. Anita Sharma", "action": "EXPORT", "details": "Data export: All farmer records — Agra Region (CSV, 1,284 rows)", "ip": "10.0.0.12" },
+      { "timestamp": "Jun 21, 14:10", "user": "Vikram Singh", "action": "CREATE", "details": "New visit entry — Farmer: Mahesh Patel, Village: Sikandra", "ip": "10.0.0.55" },
+      { "timestamp": "Jun 21, 11:00", "user": "Vikash Mehta", "action": "DELETE", "details": "Removed inactive user: Ravi Sharma (Agri Officer, Hathras)", "ip": "192.168.1.10" },
+      { "timestamp": "Jun 20, 17:30", "user": "Deepak Verma", "action": "UPDATE", "details": "Lead status changed: Govind Pal → Converted", "ip": "10.0.0.88" }
+    ]
+  },
+
+  "analytics": {
+    "_note": "All analytics figures/series defined inside renderVals().",
+    "periods": {
+      "_lines": "2909..2914",
+      "_note": "Period selector pills. label map: 7d→'7 Days', 30d→'30 Days', 90d→'90 Days', ytd→'Year'. Default state.period='30d'.",
+      "keys": ["7d", "30d", "90d", "ytd"]
+    },
+    "activityBars": {
+      "_lines": "2877..2879",
+      "_note": "Dashboard 'Visit Activity' bar chart. h = round(c/max*140). Friday (index 4) is highlighted #2E7D32, others #81C784.",
+      "raw": [
+        { "l": "Mon", "c": 42 }, { "l": "Tue", "c": 38 }, { "l": "Wed", "c": 55 },
+        { "l": "Thu", "c": 47 }, { "l": "Fri", "c": 61 }, { "l": "Sat", "c": 33 }, { "l": "Sun", "c": 12 }
+      ]
+    },
+    "funnel": {
+      "_lines": "2882..2889",
+      "_note": "Lead funnel. funnelDetail adds step (i+1), bg=color, barH = 32 - i*2.",
+      "items": [
+        { "label": "New Leads", "count": 847, "pct": 100, "color": "#2E7D32" },
+        { "label": "Contacted", "count": 612, "pct": 72, "color": "#43A047" },
+        { "label": "Recommendation", "count": 458, "pct": 54, "color": "#66BB6A" },
+        { "label": "Follow-up", "count": 312, "pct": 37, "color": "#F9A825" },
+        { "label": "Converted", "count": 198, "pct": 23, "color": "#FF8F00" }
+      ]
+    },
+    "crops": {
+      "_lines": "2892..2898",
+      "_note": "Crop distribution donut. donutGrad is a conic-gradient built from cumulative pct.",
+      "items": [
+        { "name": "Wheat", "pct": 37, "color": "#F9A825" },
+        { "name": "Rice", "pct": 23, "color": "#66BB6A" },
+        { "name": "Sugarcane", "pct": 17, "color": "#2E7D32" },
+        { "name": "Potato", "pct": 12, "color": "#8D6E63" },
+        { "name": "Mustard", "pct": 8, "color": "#FF8F00" },
+        { "name": "Other", "pct": 3, "color": "#BDBDBD" }
+      ]
+    },
+    "insights": {
+      "_lines": "2901..2906",
+      "items": [
+        { "title": "Pest Alert", "text": "Wheat pest reports in Agra are 34% above seasonal avg. Prioritize spray recommendations.", "accent": "#C62828" },
+        { "title": "Top Performer", "text": "ASR Raj Kumar achieved 94% conversion in Firozabad — highest across all stores.", "accent": "#2E7D32" },
+        { "title": "Coverage Gap", "text": "15 villages in Mathura block have zero visits this quarter. Reassign territory.", "accent": "#F57F17" },
+        { "title": "Kharif Trend", "text": "Early sugarcane adoption up 18% in Mainpuri. Season visits on track to exceed target.", "accent": "#1565C0" }
+      ]
+    },
+    "heatmap": {
+      "_lines": "2917..2930",
+      "_note": "Crop × Problem heatmap. hmData rows align with hmCrops, columns align with hmProbs. Cell bg/text colour computed from intensity t = v/85.",
+      "problems": ["Pest", "Disease", "Nutrient", "Water", "Weather"],
+      "crops": ["Wheat", "Rice", "Sugarcane", "Potato", "Mustard"],
+      "data": [
+        [85, 42, 28, 15, 32],
+        [38, 65, 45, 72, 18],
+        [22, 35, 55, 28, 12],
+        [48, 28, 38, 18, 42],
+        [32, 52, 22, 25, 28]
+      ]
+    },
+    "asrs": {
+      "_lines": "2933..2940",
+      "_note": "ASR/officer performance leaderboard. Computed extras: rank=i+1, rankColor (top3 #F9A825 else #BDBDBD), scoreColor & barColor by score thresholds (>=80 green, >=70 amber, else orange).",
+      "items": [
+        { "name": "Raj Kumar", "store": "Firozabad", "visits": 94, "score": 96 },
+        { "name": "Amit Yadav", "store": "Agra Main", "visits": 87, "score": 88 },
+        { "name": "Vikram Singh", "store": "Mainpuri", "visits": 82, "score": 84 },
+        { "name": "Deepak Verma", "store": "Etah", "visits": 76, "score": 78 },
+        { "name": "Sunil Gupta", "store": "Mathura", "visits": 71, "score": 74 },
+        { "name": "Ravi Sharma", "store": "Hathras", "visits": 68, "score": 69 }
+      ]
+    },
+    "regions": {
+      "_lines": "2943..2950",
+      "_note": "Regional performance. visitPct used for bar width.",
+      "items": [
+        { "name": "Agra", "visits": 245, "conv": 45, "visitPct": 100 },
+        { "name": "Firozabad", "visits": 198, "conv": 52, "visitPct": 81 },
+        { "name": "Mainpuri", "visits": 156, "conv": 38, "visitPct": 64 },
+        { "name": "Etah", "visits": 112, "conv": 35, "visitPct": 46 },
+        { "name": "Mathura", "visits": 89, "conv": 31, "visitPct": 36 },
+        { "name": "Hathras", "visits": 47, "conv": 28, "visitPct": 19 }
+      ]
+    },
+    "landSegments": {
+      "_lines": "2953..2959",
+      "_note": "Analytics 'segments' array — land-holding size buckets (distinct from farmer value segments). Variable name in source is `segments`.",
+      "items": [
+        { "label": "Marginal (< 2 ac)", "count": 312, "pct": 24, "color": "#A5D6A7" },
+        { "label": "Small (2–5 ac)", "count": 428, "pct": 33, "color": "#66BB6A" },
+        { "label": "Medium (5–10 ac)", "count": 298, "pct": 23, "color": "#43A047" },
+        { "label": "Large (10–25 ac)", "count": 178, "pct": 14, "color": "#2E7D32" },
+        { "label": "Very Large (25+ ac)", "count": 68, "pct": 5, "color": "#1B5E20" }
+      ]
+    },
+    "dataQuality": {
+      "_lines": "2962..2969",
+      "items": [
+        { "label": "Farmer Info", "pct": 98, "color": "#2E7D32" },
+        { "label": "Location Data", "pct": 94, "color": "#43A047" },
+        { "label": "Crop Details", "pct": 87, "color": "#66BB6A" },
+        { "label": "Problem Reports", "pct": 72, "color": "#F9A825" },
+        { "label": "Commercial Data", "pct": 63, "color": "#FF8F00" },
+        { "label": "Media Attachments", "pct": 45, "color": "#E65100" }
+      ]
+    }
+  },
+
+  "kpis": {
+    "_lines": "2611 (state.kpiData) + 2867..2874 (kpis array)",
+    "_note": "kpiData lives in state and is editable via the KPI edit modal. The kpis array maps kpiData into 4 display cards.",
+    "kpiData": { "visits": "1,024", "farmers": "22,210", "convRate": "38.7%", "followups": "34" },
+    "cards": [
+      { "title": "Total Visits", "valueFrom": "kpiData.visits", "change": "↑ 12.3%", "accent": "#2E7D32", "bg": "#E8F5E9", "sub": "This month" },
+      { "title": "Farmers Registered", "valueFrom": "kpiData.farmers", "change": "↑ 8.7%", "accent": "#1565C0", "bg": "#E3F2FD", "sub": "Total database" },
+      { "title": "Conversion Rate", "valueFrom": "kpiData.convRate", "change": "↑ 3.2pp", "accent": "#F57F17", "bg": "#FFF8E1", "sub": "Visit → purchase" },
+      { "title": "Pending Follow-ups", "valueFrom": "kpiData.followups", "change": "↓ 15%", "accent": "#E65100", "bg": "#FFF3E0", "sub": "Due this week" }
+    ]
+  },
+
+  "leads": {
+    "_lines": "3043..3048",
+    "_note": "Lead Pipeline kanban columns. items are filtered from the farmers array by farmer.status (NOT a separate dataset). NOTE the columns filter on f.status with values New/Contacted/Follow-up/Converted; some farmers have status='High Value' or 'Dormant' which fall into no column.",
+    "columns": [
+      { "title": "New", "color": "#2E7D32", "filterStatus": "New" },
+      { "title": "Contacted", "color": "#1565C0", "filterStatus": "Contacted" },
+      { "title": "Follow-up", "color": "#E65100", "filterStatus": "Follow-up" },
+      { "title": "Converted", "color": "#7B1FA2", "filterStatus": "Converted" }
+    ],
+    "funnelNumbers_seeAnalytics": "analytics.funnel"
+  },
+
+  "clusters": {
+    "_lines": "3158..3398",
+    "_note": "Farmer Clusters are fully runtime-generated — state.farmerClusters starts as [] (no demo clusters). createCluster() (3356..3369) builds a cluster object from the current map layer + store filter. Shape documented below for the data layer.",
+    "initialFarmerClusters": [],
+    "clusterShape": {
+      "id": "Date.now()",
+      "name": "draft name or 'Cluster N'",
+      "criteria": {
+        "layer": "s.mapLayer",
+        "layerLabel": "currentLayerLabel2 (e.g. 'Farmer Segment')",
+        "layerValue": "s.clusterModalLayerFilter",
+        "store": "s.mapStoreFilter (store id or null)",
+        "storeName": "currentStoreName2"
+      },
+      "farmerIds": "[ids of matched farmers]",
+      "farmerNames": "[names of matched farmers]",
+      "farmerCount": "matched count",
+      "createdDate": "Jun 23"
+    },
+    "layerLabelMap": {
+      "_line": 3308,
+      "segment": "Farmer Segment", "crop": "Crop Type", "lastVisit": "Last Visited",
+      "issues": "Issues & Concerns", "leadStatus": "Lead Status"
+    },
+    "layerFilterOpts": {
+      "_lines": "3314..3320",
+      "segment": ["all", "High Value", "Medium Value", "New/Low"],
+      "crop": ["all", "(distinct farmer.crop values)"],
+      "lastVisit": ["all", "Recent (< 7 days)", "This Month", "Older"],
+      "issues": ["all", "Active Issues", "No Issues"],
+      "leadStatus": ["all", "New", "Contacted", "Follow-up", "Converted", "Lost"]
+    }
+  },
+
+  "segments": {
+    "_note": "Farmer VALUE segment label/colour maps used across Farmer 360, map legend, lookup, etc.",
+    "labels": { "_line": 2724, "values": ["High Value", "Medium Value", "New/Low", "Dormant"] },
+    "colors": {
+      "_line": 2725,
+      "High Value": "#2E7D32", "Medium Value": "#1565C0", "New/Low": "#F57F17", "Dormant": "#9E9E9E"
+    },
+    "backgrounds": {
+      "_line": 2726,
+      "High Value": "#E8F5E9", "Medium Value": "#E3F2FD", "New/Low": "#FFF8E1", "Dormant": "#F5F5F5"
+    },
+    "segFilters": { "_lines": "3657..3662", "_note": "Filter pills = ['All', ...labels]. 'All' active bg #424242." },
+    "segCards": {
+      "_lines": "3650..3656",
+      "_note": "Segmentation summary cards. revenue = '₹'+round(sum(f.totalPurchase)/1000)+'K total revenue' — but farmers have NO totalPurchase field, so revenue computes to '₹NaNK' / '₹0K' at runtime (data gap)."
+    }
+  },
+
+  "stores": {
+    "_lines": "2790..2845",
+    "_note": "Store master data (baseStores). 6 stores. Each has officers[] and a bdm{}. left/top are map percentage positions. farmerIds map store→farmers (used by farmerStoreMap). Note baseStores left/top differ from the separate map pinPositions array.",
+    "items": [
+      {
+        "id": 1, "code": "AGRO0012", "name": "Ram Nagar (Barabanki)", "shortName": "Ram Nagar", "zone": "Barabanki", "district": "Barabanki",
+        "address": "Ram Nagar, Bahraich Road, Burwal, Near Dharam Kanta, Barabanki — 225205",
+        "lat": 27.092272, "lng": 81.403687, "left": "48%", "top": "56%", "color": "#1565C0", "status": "Active",
+        "farmerIds": [1, 2], "farmerCount": 6582,
+        "officers": [
+          { "name": "Durgesh Mishra", "role": "Agriculture Officer", "mobile": "6386828077", "email": "dm599782@gmail.com", "empCode": "AGC" },
+          { "name": "Rinku Verma", "role": "Store Manager", "mobile": "9670536576", "email": "rv7199164@gmail.com", "empCode": "CI" }
+        ],
+        "bdm": { "name": "Pradeep Kumar Singh", "mobile": "8081846159", "email": "pradeepsingh4590singh@gmail.com", "empCode": "UA012" }
+      },
+      {
+        "id": 2, "code": "AGRO0015", "name": "Haidergarh (Barabanki)", "shortName": "Haidergarh", "zone": "Barabanki", "district": "Barabanki",
+        "address": "Village Ansari, Haidergarh–Jagdishpur Road, Haidergarh, Barabanki — 227301",
+        "lat": 26.59957, "lng": 81.373657, "left": "47%", "top": "80%", "color": "#2E7D32", "status": "Active",
+        "farmerIds": [3, 4], "farmerCount": 6537,
+        "officers": [
+          { "name": "Dev Prakash Narayan", "role": "Store Manager", "mobile": "9648842431", "email": "", "empCode": "CI" }
+        ],
+        "bdm": { "name": "Ashish Kumar", "mobile": "6393387553", "email": "", "empCode": "UA021" }
+      },
+      {
+        "id": 3, "code": "AGRO0018", "name": "Tiloi (Amethi)", "shortName": "Tiloi", "zone": "Amethi", "district": "Amethi",
+        "address": "Gram Tiloi, District Amethi — 229309",
+        "lat": 26.3902, "lng": 81.474525, "left": "51%", "top": "91%", "color": "#E65100", "status": "Active",
+        "farmerIds": [5, 6], "farmerCount": 2843,
+        "officers": [
+          { "name": "Aviral Pal", "role": "Agriculture Officer", "mobile": "9696919243", "email": "aviralpalsultanpur@gmail.com", "empCode": "AGC" },
+          { "name": "Sujit Kumar Pandey", "role": "Store Manager", "mobile": "7652056334", "email": "skp1.dmt@gmail.com", "empCode": "CI" }
+        ],
+        "bdm": { "name": "Pawan Kumar Pandey", "mobile": "9119603928", "email": "pk3061519@gmail.com", "empCode": "UA026" }
+      },
+      {
+        "id": 4, "code": "AGRO0019", "name": "Shivgarh (Raebareli)", "shortName": "Shivgarh", "zone": "Raibareilly", "district": "Raebareli",
+        "address": "Village Bhawanigarh, Bachrawan–Haidergarh Road, Raebareli — 229308",
+        "lat": 26.354658, "lng": 82.286346, "left": "88%", "top": "92%", "color": "#7B1FA2", "status": "Active",
+        "farmerIds": [7, 8], "farmerCount": 1434,
+        "officers": [
+          { "name": "Aniket Srivastava", "role": "Agriculture Officer", "mobile": "6386733853", "email": "aniketsri.1234@gmail.com", "empCode": "AGC" },
+          { "name": "Ankur Singh", "role": "Store Manager", "mobile": "6387146248", "email": "as0877678@gmail.com", "empCode": "CI" }
+        ],
+        "bdm": { "name": "Om Prakash Mishra", "mobile": "9511119241", "email": "mishraomprakash813@gmail.com", "empCode": "UA025" }
+      },
+      {
+        "id": 5, "code": "AGRO0028", "name": "Sanda Farm (Lakhimpur Kheri)", "shortName": "Sanda Farm", "zone": "Lakhimpur Khiri", "district": "Lakhimpur Kheri",
+        "address": "Vill Sanda Post Mahewaganj, Lakhimpur Kheri — 261506",
+        "lat": 28.023666, "lng": 80.799576, "left": "20%", "top": "11%", "color": "#F57F17", "status": "Active",
+        "farmerIds": [9, 10], "farmerCount": 4563,
+        "officers": [
+          { "name": "Ajay Pal Yadav", "role": "Agriculture Officer", "mobile": "7081016448", "email": "ajaypalsinghyadav8853@gmail.com", "empCode": "AGC" },
+          { "name": "Sant Verma", "role": "Agriculture Officer", "mobile": "9450461145", "email": "santkumar19921@gmail.com", "empCode": "AGC" },
+          { "name": "Ankit Yadav", "role": "Store Manager", "mobile": "9198087155", "email": "as9781622@gmail.com", "empCode": "CI" }
+        ],
+        "bdm": { "name": "Arun Verma", "mobile": "9119603923", "email": "ARUNKUMARVERMA978@gmail.com", "empCode": "UA451" }
+      },
+      {
+        "id": 6, "code": "AGRO0031", "name": "Aliganj (Lakhimpur Kheri)", "shortName": "Aliganj", "zone": "Lakhimpur Khiri", "district": "Lakhimpur Kheri",
+        "address": "Aliganj–Palia Marg, Aliganj, Lakhimpur Kheri — 262802",
+        "lat": 28.11385, "lng": 80.592384, "left": "11%", "top": "7%", "color": "#C62828", "status": "Active",
+        "farmerIds": [11, 12], "farmerCount": 1251,
+        "officers": [
+          { "name": "Ajay Kumar Verma", "role": "Agriculture Officer", "mobile": "9897676642", "email": "ajkumar676642@gmail.com", "empCode": "AGC" },
+          { "name": "Abhishek Kumar Verma", "role": "Store Manager", "mobile": "7408177913", "email": "", "empCode": "CI" }
+        ],
+        "bdm": { "name": "Arun Verma", "mobile": "9119603923", "email": "ARUNKUMARVERMA978@gmail.com", "empCode": "UA451" }
+      }
+    ],
+    "empCodeRoleMeta": {
+      "_line": 3803,
+      "AGC": { "roleBg": "#E3F2FD", "roleColor": "#1565C0" },
+      "CI": { "roleBg": "#FFF8E1", "roleColor": "#E65100" },
+      "BDM_or_other": { "roleBg": "#F3E5F5", "roleColor": "#7B1FA2", "label": "BDM / Regional Manager" }
+    }
+  },
+
+  "newVisitForm": {
+    "_note": "New Visit wizard — 5 steps. stepLabels at line 2994. Each chip/option set built via mkSingle (single-select) or mkMulti (multi-select). Field → option-set mapping below. Selected chips render bg #E8F5E9 / text #2E7D32 / border #2E7D32.",
+    "stepLabels": ["Farmer & Location", "Land & Crops", "Products & Issues", "Commercial & Services", "Review & Submit"],
+    "steps": {
+      "step1_FarmerLocation": {
+        "_template": "lines ~ in template; fields driven by sf() text setters",
+        "fields": [
+          { "key": "name", "type": "text", "label": "Farmer Name" },
+          { "key": "father", "type": "text", "label": "Father's Name" },
+          { "key": "mobile", "type": "text", "label": "primaryIdLabel (prop: 'Mobile Number'|'Farmer ID'|'Aadhaar Number'); triggers mobileLookup when >=10 digits" },
+          { "key": "village", "type": "text", "label": "Village", "default": "Ram Nagar" },
+          { "key": "district", "type": "text", "label": "District", "default": "Barabanki" },
+          { "key": "visitPurpose", "type": "text", "label": "Visit Reason/Purpose (required if prop visitReasonRequired)" }
+        ]
+      },
+      "step2_LandCrops": {
+        "fields": [
+          { "key": "landHolding", "type": "single", "optionSet": "landChips", "_line": 3019, "options": ["< 1 Bigha", "1–3 Bigha", "3–5 Bigha", "5–10 Bigha", "10–20 Bigha", "20–50 Bigha", "50–100 Bigha", "100+ Bigha"] },
+          { "key": "soil", "type": "single", "optionSet": "soilChips", "_line": 3020, "options": ["Sandy", "Sandy Loam", "Loam", "Clay Loam", "Clay", "Black Soil", "Red Soil", "Alluvial Soil", "Saline Soil", "Other"] },
+          { "key": "soilTesting", "type": "single", "optionSet": "soilTestChips", "_line": 3021, "options": ["Required", "Not Required"] },
+          { "key": "waterSource", "type": "multi", "optionSet": "waterChips", "_line": 3022, "options": ["Canal", "Tube Well", "Bore Well", "River", "Pond", "Rain Water", "Drip Irrigation", "Sprinkler Irrigation", "Other"] },
+          { "key": "mainCrop", "type": "single", "optionSet": "mainCropChips", "_line": 3023, "options": ["Wheat", "Paddy", "Maize", "Mustard", "Potato", "Sugarcane", "Gram", "Arhar", "Urad", "Moong", "Soybean", "Groundnut", "Vegetables", "Fruits", "Other"] },
+          { "key": "crop", "type": "multi", "optionSet": "cropChips", "_line": 3024, "options": ["Wheat", "Paddy", "Maize", "Mustard", "Potato", "Sugarcane", "Gram", "Arhar", "Urad", "Moong", "Soybean", "Groundnut", "Tomato", "Onion", "Chilli", "Brinjal", "Okra", "Cabbage", "Cauliflower", "Pea", "Other"] },
+          { "key": "otherCrops", "type": "text", "label": "Other Crops (free text)" },
+          { "key": "season", "type": "single", "optionSet": "seasonChips", "_line": 3025, "options": ["Kharif", "Rabi", "Zaid"], "default": "Rabi" },
+          { "key": "cropInsured", "type": "toggle", "label": "Crop Insured", "default": false }
+        ]
+      },
+      "step3_ProductsIssues": {
+        "fields": [
+          { "key": "product", "type": "multi", "optionSet": "productChips", "_line": 3028, "options": ["Seeds", "Fertilizers", "Pesticides", "Fungicides", "Herbicides", "Insecticides", "Bio Products", "Micronutrients", "PGR", "Farm Equipment", "Other"] },
+          { "key": "productRequired", "type": "multi", "optionSet": "prodReqChips", "_line": 3029, "options": ["Seeds", "Fertilizers", "DAP", "Urea", "NPK", "Micronutrients", "Insecticides", "Fungicides", "Herbicides", "Bio Fertilizers", "Growth Promoters", "Equipment", "Other"] },
+          { "key": "currentProblem", "type": "multi", "optionSet": "probChips", "_line": 3030, "options": ["Pest Infestation", "Disease Infection", "Weed Problem", "Irrigation Issue", "Fertilizer Req.", "Seed Req.", "Low Yield", "Soil Issue", "Market Price", "Labour Shortage", "Other"] },
+          { "key": "cropRisk", "type": "multi", "optionSet": "riskChips", "_line": 3031, "options": ["Pest Attack", "Disease", "Drought", "Flood", "Water Logging", "Low Germination", "Nutrient Deficiency", "Weather Damage", "Animal Damage", "None", "Other"] },
+          { "key": "dangerZone", "type": "multi", "optionSet": "dangerChips", "_line": 3032, "options": ["Flood Prone", "Water Logging", "Heavy Rainfall", "Drought Prone", "Hailstorm", "Heat Wave", "Frost", "Cold Wave", "Storm/Wind", "River Overflow", "Salinity", "Soil Erosion", "Wild Animal", "Pest Outbreak", "Disease Outbreak", "No Major Risk"] }
+        ]
+      },
+      "step4_CommercialServices": {
+        "fields": [
+          { "key": "annualExpense", "type": "single", "optionSet": "expenseChips", "_line": 3035, "options": ["< ₹10K", "₹10–25K", "₹25–50K", "₹50K–1L", "₹1–2.5L", "₹2.5L+"] },
+          { "key": "purchaseFreq", "type": "single", "optionSet": "freqChips", "_line": 3036, "options": ["Weekly", "Monthly", "Seasonal", "As Required"] },
+          { "key": "otherShops", "type": "text", "label": "Other Shops (free text)" },
+          { "key": "fpoMember", "type": "toggle", "label": "FPO Member", "default": false },
+          { "key": "contractFarming", "type": "toggle", "label": "Contract Farming", "default": false },
+          { "key": "dairyServices", "type": "toggle", "label": "Dairy Services", "default": false },
+          { "key": "whatsappAvail", "type": "toggle", "label": "WhatsApp Available", "default": false },
+          { "key": "leadStatus", "type": "single", "optionSet": "statusChips", "_line": 3037, "options": ["New", "Contacted", "Recommendation Given", "Follow-up Scheduled", "Converted", "Lost"], "default": "New" }
+        ]
+      },
+      "step5_ReviewSubmit": {
+        "_note": "Review screen — re-displays all collected form values; submit calls submitVisit() which resets form (to Chandpur/Agra defaults) and returns to dashboard."
+      }
+    },
+    "stepperColors": {
+      "_lines": "2995..3002",
+      "circleBg": "current #2E7D32, past #66BB6A, future #E0E0E0",
+      "textColor": "current #2E7D32, past #43A047, future #BDBDBD",
+      "lineBg": "past #66BB6A, future #E8E8E8"
+    },
+    "toggleColors": { "on": "#2E7D32", "off": "#BDBDBD", "knobOnPos": 24, "knobOffPos": 2, "labels": { "on": "Yes", "off": "No" } }
+  },
+
+  "misc": {
+    "componentProps": {
+      "_lines": "2559..2583",
+      "_note": "data-props on the <script> tag — configurable editor props.",
+      "primaryIdLabel": { "editor": "enum", "options": ["Mobile Number", "Farmer ID", "Aadhaar Number"], "default": "Mobile Number", "tsType": "string" },
+      "visitReasonRequired": { "editor": "boolean", "default": true, "tsType": "boolean" },
+      "requireGPS": { "editor": "boolean", "default": true, "tsType": "boolean" },
+      "defaultDistrict": { "editor": "enum", "options": ["Agra", "Firozabad", "Mainpuri", "Etah", "Mathura", "Hathras"], "default": "Agra", "tsType": "string" }
+    },
+    "preview": { "_line": 2560, "width": 1440, "height": 900 },
+    "dashboardSubtitles": {
+      "_line": 2716,
+      "regional": "Agra Region · Sunday, June 22, 2026",
+      "officer": "My Territory · Sunday, June 22, 2026",
+      "central": "All Regions · Organization Overview",
+      "sysadmin": "System Administration"
+    },
+    "viewTitles": {
+      "_lines": "2717..2720",
+      "_note": "[title, subtitle] per view. Subtitles with hardcoded counts: farmers '1,284 registered farmers · Segmented view'; users '4 active users · Role-based access'.",
+      "dashboard": ["Dashboard", "{dashSubs[role]}"],
+      "analytics": ["Analytics & Insights", "central: 'Cross-region performance analysis' / else 'Deep-dive into field operations data'"],
+      "newVisit": ["New Visit Entry", "Step N of 5"],
+      "farmers": ["Farmer 360", "1,284 registered farmers · Segmented view"],
+      "farmerDetail": ["Farmer 360 — Profile", ""],
+      "leads": ["Lead Pipeline", "Track farmer engagement funnel"],
+      "actions": ["Action Planner", "{N} projects · {M} active"],
+      "projectDetail": ["Project Details", ""],
+      "mapView": ["Map View", "Farmer locations · Agra District & surrounding"],
+      "farmerCluster": ["Farmer Clusters", "Segmented farmer groups for targeted actions"],
+      "visitRepo": ["Visit Repository", "Complete visit records across all officers & stores"],
+      "visitDetail": ["Visit Detail", ""],
+      "users": ["User Management", "4 active users · Role-based access"],
+      "settings": ["System Settings", "Configuration & master data"],
+      "audit": ["Audit Log", "System activity & data changes"]
+    },
+    "navVisibilityByRole": {
+      "_lines": "2693..2703",
+      "showNewVisit": "regional | officer | sysadmin",
+      "showFarmer360": "all",
+      "showAnalytics": "all",
+      "showLeads": "regional | officer | sysadmin",
+      "showActions": "regional | central | officer | sysadmin",
+      "showUsers": "central | sysadmin",
+      "showSettings": "sysadmin",
+      "showAudit": "sysadmin",
+      "showVisitRepo": "all",
+      "showMapView": "all",
+      "showMasterData": "central | sysadmin",
+      "isAdmin": "sysadmin"
+    },
+    "mapPinPositions": {
+      "_lines": "3178..3185",
+      "_note": "Farmer pin positions on Map View (percentage left/top), keyed by farmer id. Separate from store left/top.",
+      "items": [
+        { "id": 1, "left": "50%", "top": "54%" }, { "id": 2, "left": "47%", "top": "58%" },
+        { "id": 3, "left": "44%", "top": "79%" }, { "id": 4, "left": "48%", "top": "81%" },
+        { "id": 5, "left": "50%", "top": "89%" }, { "id": 6, "left": "53%", "top": "92%" },
+        { "id": 7, "left": "85%", "top": "90%" }, { "id": 8, "left": "88%", "top": "93%" },
+        { "id": 9, "left": "20%", "top": "13%" }, { "id": 10, "left": "23%", "top": "10%" },
+        { "id": 11, "left": "9%", "top": "6%" }, { "id": 12, "left": "12%", "top": "9%" }
+      ]
+    },
+    "legacyIssueMap": {
+      "_line": 3187,
+      "_note": "Unused legacy issue map (_legacy). Real issues come from farmer.issues[0] via farmerIssueMap.",
+      "1": "Pest Infestation", "2": "Nutrient Deficiency", "3": "UNUSED", "4": "Weed Problem",
+      "5": "Disease Infection", "6": "None", "7": "None", "8": "None", "9": "Irrigation Issue",
+      "10": "None", "11": "None", "12": "None"
+    },
+    "mapLayerColorFns": {
+      "_lines": "3189..3195",
+      "segment": { "High Value": "#2E7D32", "Medium Value": "#1565C0", "New/Low": "#F57F17", "Dormant": "#9E9E9E" },
+      "crop": { "Wheat": "#F9A825", "Rice": "#66BB6A", "Sugarcane": "#2E7D32", "Potato": "#8D6E63", "Mustard": "#FF8F00", "Millets": "#78909C", "Barley": "#FFA000", "Paddy": "#66BB6A" },
+      "lastVisit": "<=7 days #2E7D32, <=14 #F9A825, <=30 #E65100, else #C62828",
+      "issues": { "Pest Infestation": "#C62828", "Disease Infection": "#E65100", "Irrigation Issue": "#1565C0", "Nutrient Deficiency": "#7B1FA2", "Weed Problem": "#F57F17", "None": "#2E7D32" },
+      "leadStatus": { "New": "#2E7D32", "Contacted": "#1565C0", "Follow-up": "#E65100", "Converted": "#7B1FA2", "Lost": "#757575" }
+    },
+    "mapLegendMeta": {
+      "_lines": "3222..3228",
+      "segment": { "label": "Farmer Segment", "items": [{ "label": "High Value", "color": "#2E7D32" }, { "label": "Medium Value", "color": "#1565C0" }, { "label": "New/Low", "color": "#F57F17" }, { "label": "Dormant", "color": "#9E9E9E" }] },
+      "crop": { "label": "Main Crop", "items": [{ "label": "Wheat", "color": "#F9A825" }, { "label": "Sugarcane", "color": "#2E7D32" }, { "label": "Rice/Paddy", "color": "#66BB6A" }, { "label": "Potato", "color": "#8D6E63" }, { "label": "Mustard", "color": "#FF8F00" }, { "label": "Millets", "color": "#78909C" }, { "label": "Barley", "color": "#FFA000" }] },
+      "lastVisit": { "label": "Last Visited", "items": [{ "label": "Within 7 days", "color": "#2E7D32" }, { "label": "8–14 days", "color": "#F9A825" }, { "label": "15–30 days", "color": "#E65100" }, { "label": ">30 days", "color": "#C62828" }] },
+      "issues": { "label": "Issues & Concerns", "items": [{ "label": "Pest", "color": "#C62828" }, { "label": "Disease", "color": "#E65100" }, { "label": "Irrigation", "color": "#1565C0" }, { "label": "Nutrient", "color": "#7B1FA2" }, { "label": "Weed", "color": "#F57F17" }, { "label": "None", "color": "#2E7D32" }] },
+      "leadStatus": { "label": "Lead Status", "items": [{ "label": "New", "color": "#2E7D32" }, { "label": "Contacted", "color": "#1565C0" }, { "label": "Follow-up", "color": "#E65100" }, { "label": "Converted", "color": "#7B1FA2" }, { "label": "Lost", "color": "#757575" }] }
+    },
+    "mapLayerPills": {
+      "_lines": "3295..3306",
+      "items": [
+        { "key": "segment", "label": "Farmer Segment", "swatch": "#2E7D32" },
+        { "key": "crop", "label": "Crop", "swatch": "#F9A825" },
+        { "key": "lastVisit", "label": "Last Visited", "swatch": "#E65100" },
+        { "key": "issues", "label": "Issues & Concerns", "swatch": "#C62828" },
+        { "key": "leadStatus", "label": "Lead Status", "swatch": "#7B1FA2" }
+      ]
+    },
+    "farmerDetailVisitHistory": {
+      "_lines": "3171..3175",
+      "_note": "Hardcoded fallback visit timeline on Farmer 360 detail (separate from farmer.visitLog). First item uses sel.crop / sel.lastVisit with defaults.",
+      "items": [
+        { "title": "Crop inspection — {crop||Wheat}", "date": "{lastVisit||Jun 10}", "desc": "Checked crop health, soil moisture levels good. Recommended DAP fertilizer application.", "dotColor": "#2E7D32" },
+        { "title": "Follow-up visit", "date": "May 28", "desc": "Farmer reported minor pest issue on leaves. Advised Imidacloprid spray. Scheduled follow-up.", "dotColor": "#F9A825" },
+        { "title": "Initial registration", "date": "May 15", "desc": "First visit. Collected farmer profile, land details, and current crop information.", "dotColor": "#1565C0" }
+      ]
+    },
+    "masterDataTabs": {
+      "_lines": "3761..3803",
+      "_note": "Master Data view tabs. employees table is derived by flattening every store's officers[] + bdm into one list.",
+      "tabs": ["stores", "farmers", "employees"]
+    },
+    "editModalTypes": {
+      "_note": "Admin edit modal supports types: farmer, user, kpi, store. Drafts and save handlers at 3445..3496.",
+      "leadStatusSelectOptions": ["New", "Contacted", "Follow-up", "Converted"],
+      "_storeSaveBug": "saveEditModal store branch references undefined `st` (line 3492) — would throw; data-layer note."
+    }
+  }
+}

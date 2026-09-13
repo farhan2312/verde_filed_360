@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+  }
+  ::selection {
+    background: #e4efc9;
+  }
+}
+
+@layer components {
+  /* Range slider styling to match the original design */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #678722;
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: #678722;
+    cursor: pointer;
+  }
+
+  /* Bucket slider (New Visit): larger glove-friendly white thumb with a green
+     ring. Scoped to .nv-bucket-range so it never restyles other sliders. */
+  .nv-bucket-range::-webkit-slider-thumb {
+    width: 26px;
+    height: 26px;
+    background: #ffffff;
+    border: 2px solid #678722;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+  .nv-bucket-range::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    background: #ffffff;
+    border: 2px solid #678722;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* Leaflet container default sizing (map view) */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #e8efe6;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}

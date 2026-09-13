@@ -73,8 +73,7 @@ export async function loginAction(formData: FormData): Promise<AuthResult> {
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[login] failed:", msg.split("
-")[0]);
+    console.error("[login] failed:", msg.split(/\r?\n/)[0]);
     if (/reach database|connect|ECONNREFUSED|ETIMEDOUT|timed out|P1001|P1002/i.test(msg))
       return { error: "Can't reach the database right now. Please try again in a moment." };
     if (/AUTH_SECRET/.test(msg)) return { error: "Server is missing AUTH_SECRET — contact the administrator." };

@@ -27,7 +27,10 @@ export interface ApiSaleLine {
   TaxableValue: number | null;
   ItemDiscountAmount: number | null;
   InvoiceDiscountAmount: number | null;
-  CouponCode: string | null;
+  CouponCode?: string | null; // legacy field (pre Sep-2026 payloads)
+  item_coupon_code: string | null; // line-level offer code; "0" = none
+  invoice_coupon_code: string | null; // bill-level offer code; "0" = none
+  UsedInCrop: string | null; // crop the store tagged the line to (free text)
   BatchNo: string | null;
   ExpiryDate: string | null;
   HSNCODE: string | null;

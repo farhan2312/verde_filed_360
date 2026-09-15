@@ -91,11 +91,14 @@ function villageOut(r: ApiSaleLine): string {
   return v && !/^\d+$/.test(v) ? v : "";
 }
 const s = (v: unknown) => (v == null ? "" : String(v));
+/** Coupon codes come through as "0" / "" / "NA" when none was used. */
+const coupon = (v: unknown) => { const c = s(v).trim(); return /^(0|na|n\/a|null|none)?$/i.test(c) ? "" : c.toUpperCase(); };
 
 export const MATRIX_HEADER = [
   "Retailer Name", "Order No", "Item Name", "MainCategory", "SubCategory", "Qty", "Rate",
   "CGST Rate", "SGST Rate", "CGST Value", "SGST Value", "Total", "Taxable Value", "DiscountAmount",
   "Batch No", "UOM", "Financial Year", "BillDate", "Cus Name", "Cus Mobile", "Cus Village", "Return Qty",
+  "Crops", "CouponCode", "Invoice Coupon",
 ];
 
 export function toMatrix(records: ApiSaleLine[]): string[][] {
@@ -106,6 +109,7 @@ export function toMatrix(records: ApiSaleLine[]): string[][] {
       s(r.RetailerName).trim(), s(r.OrderNo).trim(), s(r.ItemName).trim(), s(r.MainCategory), s(r.SubCategory), s(r.Qty), s(r.Rate),
       s(r.CGSTRate), s(r.SGSTRate), s(r.CGSTValue), s(r.SGSTValue), s(r.Total), s(r.TaxableValue), discount ? String(discount) : "",
       s(r.BatchNo), s(r.UOM), s(r.FinancialYear), billDateOut(r.BillDate), s(r.CusName).trim(), s(r.CusMobile), villageOut(r), s(r.ReturnQty),
+      s(r.UsedInCrop).trim(), coupon(r.item_coupon_code), coupon(r.invoice_coupon_code),
     ]);
   }
   return rows;

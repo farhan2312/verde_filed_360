@@ -83,8 +83,9 @@ interface Bill {
   order: string; total: number; itemNames: string[]; itemCodes: string[]; category: string | null;
   dateIso: string | null; dateStr: string; mobile: string | null;
   store: string; name: string; village: string; fy: string;
+  couponCode: string | null; // bill-level offer code (Invoice Coupon column)
   // Per-line detail — drives the SaleLine rows so line-based analytics (crop trend) sees this upload.
-  lines: { code: string; item: string; total: number; crop: string | null; detail: LineDetail }[];
+  lines: { code: string; item: string; total: number; crop: string | null; cropRaw: string | null; couponCode: string | null; detail: LineDetail }[];
 }
 
 /** Optional per-line columns (present in the API feed; older lean files omit them). */
@@ -124,7 +125,8 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
   // Optional line detail (API feed / full exports).
   const iQty = col("Qty"), iRet = col("Return Qty"), iUom = col("UOM"), iRate = col("Rate"), iTaxable = col("Taxable Value"),
     iCgstR = col("CGST Rate"), iSgstR = col("SGST Rate"), iCgstV = col("CGST Value"), iSgstV = col("SGST Value"),
-    iDisc = col("DiscountAmount"), iBatch = col("Batch No"), iSub = col("SubCategory");
+    iDisc = col("DiscountAmount"), iBatch = col("Batch No"), iSub = col("SubCategory"),
+    iCoupon = col("CouponCode"), iInvCoupon = col("Invoice Coupon"); // offer codes — line-level and bill-level
   const cell = (row: string[], i: number) => (i >= 0 ? String(row[i] ?? "").trim() || null : null);
   const ncell = (row: string[], i: number) => (i >= 0 ? numOrNull(row[i]) : null);
 
@@ -149,7 +151,7 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
         dateIso: toIso(String(row[iDate] ?? "")), dateStr: String(row[iDate] ?? "").trim(),
         mobile: normMobile(String(row[iMobile] ?? "")), store: String(row[iStore] ?? "").trim(),
         name: String(row[iName] ?? "").trim(), village: String(row[iVillage] ?? "").trim(),
-        fy: String(row[iFy] ?? "").trim(), lines: [],
+        fy: String(row[iFy] ?? "").trim(), couponCode: cell(row, iInvCoupon), lines: [],
       };
       bills.set(order, b);
     }
@@ -160,8 +162,10 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
     const code = iCode >= 0 ? String(row[iCode] ?? "").trim() : "";
     if (code) b.itemCodes.push(code);
     // Per-line crop: AE "Crops" cell (cleaned to a canonical key, null if blank/0/junk).
-    const crop = iCrops >= 0 ? cleanCrop(String(row[iCrops] ?? "")) : null;
-    b.lines.push({ code, item, total: lineTotal, crop, detail: {
+    const cropRaw = iCrops >= 0 ? String(row[iCrops] ?? "").trim() || null : null;
+    const crop = cleanCrop(cropRaw);
+    if (!b.couponCode && iInvCoupon >= 0) b.couponCode = cell(row, iInvCoupon); // any line of the bill may carry it
+    b.lines.push({ code, item, total: lineTotal, crop, cropRaw, couponCode: cell(row, iCoupon), detail: {
       qty: ncell(row, iQty), returnQty: ncell(row, iRet), uom: cell(row, iUom), unitPrice: ncell(row, iRate), basic: ncell(row, iTaxable),
       cgstRate: ncell(row, iCgstR), sgstRate: ncell(row, iSgstR), cgst: ncell(row, iCgstV), sgst: ncell(row, iSgstV),
       discount: ncell(row, iDisc), batchNo: cell(row, iBatch), subCategory: cell(row, iSub),
@@ -256,6 +260,7 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
       amountNum: Math.round(b.total),
       store: b.store || null,
       financialYear: fyLabel(b.fy),
+      couponCode: b.couponCode,
       importId: importId ?? null,
       source: "REAL" as const,
     });
@@ -321,7 +326,7 @@ export async function importSalesMatrix(rows: string[][], _uploadedBy: string, i
           cgstRate: d.cgstRate, sgstRate: d.sgstRate, cgst: d.cgst, sgst: d.sgst, discount: d.discount, batchNo: d.batchNo,
           soldAt, financialYear: fyLabel(b.fy),
           mainCategory: b.category, subCategory: d.subCategory, custName: b.name || null, custPhone: b.mobile,
-          cropTag: l.crop, source: "REAL" as const,
+          cropTag: l.crop, cropRaw: l.cropRaw, couponCode: l.couponCode, invoiceCouponCode: b.couponCode, source: "REAL" as const,
         });
       }
     }

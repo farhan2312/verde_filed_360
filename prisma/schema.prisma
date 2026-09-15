@@ -241,6 +241,7 @@ model Sale {
   amountNum     Int? // numeric total (rupees) for analytics/LTV
   store         String? // retailer / store name
   financialYear String? // e.g. "FY 24-25"
+  couponCode    String? // ERP invoice_coupon_code — bill-level offer code redeemed (null = none)
   importId      Int? // the SalesImport batch that created this row — enables exact per-import deletion
   source        DataSource @default(REAL)
   createdAt     DateTime   @default(now())
@@ -252,6 +253,7 @@ model Sale {
   @@index([soldAt]) // date-sorted analytics/history
   @@index([invoice]) // Order No lookup during master backfill / line linking
   @@index([importId]) // delete-an-import
+  @@index([couponCode]) // campaign attribution by redeemed code
 }
 
 // ─────────────────────────── Product catalog + line-item transactions ───────────────────────────
@@ -341,13 +343,18 @@ model SaleLine {
   custName      String?
   custPhone     String? // normalized
   b2b           Boolean   @default(false)
-  cropTag       String? // crop this sale was for — cleaned per-line from the master file's Crops column (campaign attribution)
+  cropTag       String? // crop this sale was for — cleaned from the ERP's UsedInCrop (campaign attribution)
+  cropRaw       String? // UsedInCrop as the store typed it (audit / re-cleaning)
+  couponCode        String? // ERP item_coupon_code — line-level offer code (null = none)
+  invoiceCouponCode String? // ERP invoice_coupon_code — denormalised from the bill
   source        DataSource @default(REAL)
   createdAt     DateTime  @default(now())
 
   @@index([productId])
   @@index([farmerId])
   @@index([orderNo])
+  @@index([couponCode])
+  @@index([invoiceCouponCode])
   @@index([soldAt])
   @@index([storeId, soldAt])
   @@index([productId, soldAt])

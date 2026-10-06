@@ -18,7 +18,7 @@ import { cropLabel } from "@/lib/crops";
 import { inr } from "@/lib/format";
 import {
   saveCommTemplate, createCommTemplate, deleteCommTemplate, createCampaign, getCampaignTracker, extendCampaign, updateCampaignCommPlans, deleteCampaign, getCampaignMembers, markCampaignMember, getCampaignAnalytics, exportCampaignAudienceXlsx, exportCampaignTrackerXlsx, getSmsTemplates,
-  type CampaignListItem, type CampaignTracker, type ProjectVM, type CampaignMemberVM, type CampaignAnalytics, type SmsTemplateVM, type UpliftRow, type RoundAttribution,
+  type CampaignListItem, type CampaignTracker, type ProjectVM, type CampaignMemberVM, type CampaignAnalytics, type SmsTemplateVM, type TrackerScope, type SegRow, type MatchView,
 } from "@/app/actions/campaigns";
 import { downloadB64 } from "@/lib/download";
 
@@ -1581,11 +1581,18 @@ function AnalyticsBody({ a, campaign }: { a: CampaignAnalytics; campaign: Campai
   );
 }
 
+const VIEW_LABEL: Record<MatchView, string> = { coupon: "Coupon", crop: "Crop", total: "All transactions" };
+
 function TrackerBody({ t }: { t: CampaignTracker }) {
   const a = t.attribution;
   const reachPct = t.reach.testTotal > 0 ? Math.round((t.reach.reached / t.reach.testTotal) * 100) : 0;
-  const [upliftBy, setUpliftBy] = useState<"value" | "lifecycle">("value");
-  const uplift = upliftBy === "value" ? t.upliftByValue : t.upliftByLifecycle;
+  const [scopeKey, setScopeKey] = useState(t.scopes[0]?.key ?? "overall");
+  const [view, setView] = useState<MatchView>("total");
+  const [axis, setAxis] = useState<"value" | "lifecycle">("value");
+  const scope: TrackerScope | undefined = t.scopes.find((s) => s.key === scopeKey) ?? t.scopes[0];
+  const rows = scope ? (axis === "value" ? scope.byValue : scope.byLifecycle) : [];
+  // Reached test who bought anything (all-transaction view), overall — for the outreach KPI.
+  const payingContacted = t.scopes[0] ? t.scopes[0].byValue.reduce((s, r) => s + r.views.total.buy, 0) : 0;
   return (
     <div className="flex flex-col gap-4">
       <div className={`${CARD} p-4`}>
@@ -1594,7 +1601,7 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
           <Kpi label="Test farmers" value={n(t.reach.testTotal)} />
           <Kpi label={`Reached (${reachPct}%)`} value={n(t.reach.reached)} color="#7DA02E" />
           <Kpi label="Call·WA·SMS·Visit" value={`${n(t.reach.byApproach.CALL)}·${n(t.reach.byApproach.WHATSAPP)}·${n(t.reach.byApproach.SMS)}·${n(t.reach.byApproach.IN_PERSON)}`} />
-          <Kpi label="Paying (contacted)" value={n(a.payingFarmers)} color="#1565C0" />
+          <Kpi label="Bought (contacted)" value={n(payingContacted)} color="#1565C0" />
         </div>
         <div className="mt-2 text-[11px] text-[#9E9E9E]">A farmer can be reached by more than one approach, so the Call·WA·SMS·Visit counts can add up to more than “Reached”.</div>
         {/* Interest response breakdown (of the reached farmers) */}
@@ -1638,42 +1645,55 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
         </div>
       )}
 
+      {/* ── Campaign performance: relative uplift by segment, per round or overall, across 3 match views ── */}
       <div className={`${CARD} p-4`}>
-        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[13px] font-bold text-[#1A1C1A]">Attributed revenue</div>
-          <div className="text-[11px] text-[#9E9E9E]">{a.windowStart} → {a.windowEnd}</div>
+        <div className="mb-1 text-[13px] font-bold text-[#1A1C1A]">Campaign performance</div>
+        <div className="mb-3 text-[11px] text-[#9E9E9E]">
+          Uplift % = (Reach %buy − Control %buy) ÷ Reach %buy. Incremental = uplift × total sales (all transactions, base ₹) — shown as <b>all-test / reached</b>. Buy follows the selected view; total sales is every transaction. Window: {scope?.windowStart} → {scope?.windowEnd} (+30-day tail). Basis: <b>{a.basisLabel}</b>.
         </div>
-        <div className="mb-2 text-[11.5px] text-[#616161]">Counts purchases by <b>contacted</b> farmers · matched on — <b>{a.basisLabel}</b></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-[10px] bg-[#F5F9EA] px-4 py-3"><div className="text-[20px] font-bold text-[#66852A]">{inr(a.matchedRevenue)}</div><div className="text-[11px] text-[#7DA02E]">Campaign-matched revenue</div></div>
-          <div className="rounded-[10px] bg-[#F5F7F5] px-4 py-3"><div className="text-[20px] font-bold text-[#1A1C1A]">{inr(a.totalRevenue)}</div><div className="text-[11px] text-[#9E9E9E]">All purchases by contacted farmers</div></div>
-        </div>
-        {a.noCatalogMatch && (
-          <div className="mt-2 rounded-[10px] border border-[#F5CE8E] bg-[#FEF6E9] px-3 py-2 text-[11.5px] text-[#8D6E00]">
-            No sales data carries this cluster's crop, so crop-matched revenue reads ₹0 — use the "all purchases" figure for context, or target by product category for precise attribution.
-          </div>
-        )}
-      </div>
 
-      <div className={`${CARD} p-4`}>
-        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[13px] font-bold text-[#1A1C1A]">Test vs control uplift</div>
+        {/* Scope: Overall + each round */}
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {t.scopes.map((sc) => (
+            <button key={sc.key} type="button" onClick={() => setScopeKey(sc.key)}
+              className="rounded-full px-3 py-1 text-[11.5px] font-semibold transition-colors"
+              style={scopeKey === sc.key ? { background: "#66852A", color: "#fff" } : { background: "#F5F5F5", color: "#616161" }}>
+              {sc.label}
+            </button>
+          ))}
+        </div>
+        {/* View + axis toggles */}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex rounded-[8px] border border-[#E0E0E0] bg-[#F5F7F5] p-0.5">
+            {(["coupon", "crop", "total"] as MatchView[]).map((v) => (
+              <button key={v} type="button" onClick={() => setView(v)}
+                className="rounded-[6px] px-2.5 py-1 text-[11.5px] font-semibold transition-colors"
+                style={{ background: view === v ? "#fff" : "transparent", color: view === v ? "#7DA02E" : "#9E9E9E", boxShadow: view === v ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
+                {VIEW_LABEL[v]}
+              </button>
+            ))}
+          </div>
           <div className="inline-flex rounded-[8px] border border-[#E0E0E0] bg-[#F5F7F5] p-0.5">
             {([["value", VALUE_TITLE], ["lifecycle", LIFECYCLE_TITLE]] as const).map(([k, label]) => (
-              <button key={k} type="button" onClick={() => setUpliftBy(k)}
+              <button key={k} type="button" onClick={() => setAxis(k)}
                 className="rounded-[6px] px-2.5 py-1 text-[11.5px] font-semibold transition-colors"
-                style={{ background: upliftBy === k ? "#fff" : "transparent", color: upliftBy === k ? "#7DA02E" : "#9E9E9E", boxShadow: upliftBy === k ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
+                style={{ background: axis === k ? "#fff" : "transparent", color: axis === k ? "#7DA02E" : "#9E9E9E", boxShadow: axis === k ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
                 {label}
               </button>
             ))}
           </div>
         </div>
-        <div className="mb-2 text-[11px] text-[#9E9E9E]">Value tier and lifecycle are independent — a farmer can be an HNI <b>and</b> Lapsed. Toggle to break the same members down either way.</div>
-        <UpliftTable uplift={uplift} axisLabel={upliftBy === "value" ? VALUE_TITLE : LIFECYCLE_TITLE} />
+        {view === "coupon" && scope && scope.couponCodes.length === 0 && (
+          <div className="mb-2 rounded-[8px] border border-[#F5CE8E] bg-[#FEF6E9] px-3 py-1.5 text-[11px] text-[#8D6E00]">No coupon codes on this {scope.key === "overall" ? "campaign" : "round"} — coupon view reads zero. Add codes on the round to track redemptions.</div>
+        )}
+        {view === "coupon" && scope && scope.couponCodes.length > 0 && !scope.anyCouponSale && (
+          <div className="mb-2 rounded-[8px] border border-[#F5CE8E] bg-[#FEF6E9] px-3 py-1.5 text-[11px] text-[#8D6E00]">No sale yet carries <b>{scope.couponCodes.join(", ")}</b> — the sales feed is still sending "no coupon" on every line, so the coupon view stays at zero. It fills in as redeemed bills arrive; meanwhile use <b>All transactions</b>.</div>
+        )}
+        {a.noCatalogMatch && view === "crop" && (
+          <div className="mb-2 rounded-[8px] border border-[#F5CE8E] bg-[#FEF6E9] px-3 py-1.5 text-[11px] text-[#8D6E00]">No sales data carries this cluster's crop, so the crop view reads zero — use "All transactions".</div>
+        )}
+        <SegTable rows={rows} view={view} />
       </div>
-
-      {/* Per-round attribution — coupon-tracked rounds vs spend-based rounds */}
-      {t.rounds.length > 0 && <RoundsSection rounds={t.rounds} />}
 
       {/* Broadcast reach — kept separate from individual outreach (mass-send DELIVERY, carrier-confirmed) */}
       <div className={`${CARD} border-[#EDE7F6] p-4`} style={{ background: "#FCFAFF" }}>
@@ -1692,109 +1712,37 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
   );
 }
 
-/* ── Uplift table (test vs control purchase-rate lift), reused by the campaign-wide + per-round views ── */
-function UpliftTable({ uplift, axisLabel }: { uplift: UpliftRow[]; axisLabel: string }) {
-  if (uplift.length === 0) return <div className="py-4 text-center text-[12.5px] text-[#9E9E9E]">No members / no matched sales yet. Uplift matures as monthly sales are imported.</div>;
+/* ── Segment × view attribution table (Shilpa's spec): relative uplift + incremental (all-test / reached) ── */
+function SegTable({ rows, view }: { rows: SegRow[]; view: MatchView }) {
+  if (rows.length === 0) return <div className="py-4 text-center text-[12.5px] text-[#9E9E9E]">No members / no sales in this window yet.</div>;
+  const pct = (x: number) => `${x}%`;
   return (
-    <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-[12px]">
-      <thead><tr className="border-b border-[#EEE] text-[10px] font-bold uppercase text-[#9E9E9E]">
-        <th className="py-2">{axisLabel}</th><th className="text-right">Test</th><th className="text-right">Reached</th><th className="text-right">Test %buy</th><th className="text-right">Ctrl %buy</th><th className="text-right">Uplift</th><th className="text-right">Incremental ₹</th>
-      </tr></thead>
-      <tbody>{uplift.map((u) => { const testPct = u.test.reached > 0 ? (u.test.purchased / u.test.reached) : (u.test.farmers ? u.test.purchased / u.test.farmers : 0); const ctrlPct = u.control.farmers ? u.control.purchased / u.control.farmers : 0; return (
-        <tr key={u.segment} className="border-b border-[#F5F5F5]">
-          <td className="py-2 font-semibold" style={{ color: segMeta(u.segment).color }}>{segMeta(u.segment).label}</td>
-          <td className="text-right">{n(u.test.farmers)}</td>
-          <td className="text-right">{n(u.test.reached)}</td>
-          <td className="text-right">{(testPct * 100).toFixed(0)}%</td>
-          <td className="text-right">{(ctrlPct * 100).toFixed(0)}%</td>
-          <td className="text-right font-semibold" style={{ color: u.upliftPurchasePct >= 0 ? "#7DA02E" : "#C62828" }}>{u.upliftPurchasePct > 0 ? "+" : ""}{u.upliftPurchasePct}pp</td>
-          <td className="text-right font-bold text-[#1A1C1A]">{inr(u.incremental)}</td>
-        </tr>
-      ); })}</tbody>
-    </table></div>
-  );
-}
-
-/* ── Per-round attribution: each round is coupon-tracked (has a code) or spend-based (no code) ── */
-function RoundsSection({ rounds }: { rounds: RoundAttribution[] }) {
-  return (
-    <div className={`${CARD} p-4`}>
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className="text-[13px] font-bold text-[#1A1C1A]">By round</div>
-        <span className="text-[11px] text-[#9E9E9E]">coupon-tracked rounds report redemptions · others fall back to matched spend</span>
-      </div>
-      <div className="mb-3 text-[11.5px] text-[#616161]">
-        A round with a <b>coupon code</b> is scored on <b>hard redemptions</b> (a reached test farmer buying on that code). A round with no coupon uses the same <b>matched-spend</b> calc as the campaign total. Uplift is shown for both.
-      </div>
-      <div className="flex flex-col gap-3">
-        {rounds.map((r) => <RoundCard key={r.ordinal} r={r} />)}
-      </div>
-    </div>
-  );
-}
-
-function RoundCard({ r }: { r: RoundAttribution }) {
-  const [by, setBy] = useState<"value" | "lifecycle">("value");
-  const uplift = by === "value" ? r.upliftByValue : r.upliftByLifecycle;
-  const coupon = r.mode === "COUPON";
-  const codeList = r.couponCodes.join(", ");
-  return (
-    <div className="rounded-[12px] border border-[#ECECEC] bg-[#FCFDFA] p-3.5">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[12.5px] font-bold text-[#1A1C1A]">Round {r.ordinal} · {r.name}</span>
-          {coupon
-            ? <span className="rounded-full bg-[#E9F2CF] px-2 py-0.5 text-[10px] font-bold text-[#66852A]">COUPON · {codeList}</span>
-            : <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-bold text-[#757575]">SPEND-BASED · no coupon</span>}
-        </div>
-        <span className="text-[10.5px] text-[#9E9E9E]">{r.windowStart} → {r.windowEnd}</span>
-      </div>
-
-      {coupon ? (
-        <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Kpi label={`Redeemed (of ${n(r.reached)} reached)`} value={n(r.redeemers)} color="#66852A" />
-            <Kpi label="Redemption rate" value={r.reached > 0 ? `${r.redemptionRatePct}%` : "—"} color="#7DA02E" />
-            <Kpi label="Coupon revenue" value={inr(r.couponRevenue)} color="#1565C0" />
-            <Kpi label="Influenced (matched)" value={inr(r.matchedRevenue)} />
-          </div>
-          {!r.anyRedemption ? (
-            <div className="mt-2 rounded-[10px] border border-[#F5CE8E] bg-[#FEF6E9] px-3 py-2 text-[11.5px] text-[#8D6E00]">
-              No sale yet carries <b>{codeList}</b> — the sales feed is still sending “no coupon” on every line, so the redemption figures stay at zero. They fill in as redeemed bills arrive; meanwhile use <b>Influenced (matched)</b> = {inr(r.matchedRevenue)} for this round.
-            </div>
-          ) : (
-            <div className="mt-2 text-[11px] text-[#9E9E9E]">
-              Success = <b>reached test</b> farmers who redeemed <b>{codeList}</b>. Coupon revenue is the base (pre-tax) value on those coded lines.
-              {r.otherRedemptions > 0 && <> {n(r.otherRedemptions)} more redemption{r.otherRedemptions === 1 ? "" : "s"} came from farmers outside the reached-test group (control / not-yet-reached / non-members) — not credited.</>}
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Kpi label="Paying (contacted)" value={n(r.payingFarmers)} color="#1565C0" />
-            <Kpi label="Matched revenue" value={inr(r.matchedRevenue)} color="#66852A" />
-            <Kpi label="Reached" value={n(r.reached)} />
-          </div>
-          <div className="mt-2 text-[11px] text-[#9E9E9E]">No coupon on this round — attributed on matched spend by reached test farmers, same basis as the campaign total. Add a coupon code to this round to switch it to hard redemption tracking.</div>
-        </>
-      )}
-
-      <div className="mt-3 border-t border-[#F0F0F0] pt-2.5">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.3px] text-[#757575]">Uplift (this round)</span>
-          <div className="inline-flex rounded-[8px] border border-[#E0E0E0] bg-[#F5F7F5] p-0.5">
-            {([["value", VALUE_TITLE], ["lifecycle", LIFECYCLE_TITLE]] as const).map(([k, label]) => (
-              <button key={k} type="button" onClick={() => setBy(k)}
-                className="rounded-[6px] px-2 py-0.5 text-[11px] font-semibold transition-colors"
-                style={{ background: by === k ? "#fff" : "transparent", color: by === k ? "#7DA02E" : "#9E9E9E", boxShadow: by === k ? "0 1px 2px rgba(0,0,0,0.1)" : "none" }}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <UpliftTable uplift={uplift} axisLabel={by === "value" ? VALUE_TITLE : LIFECYCLE_TITLE} />
-      </div>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[860px] text-right text-[12px]">
+        <thead><tr className="border-b border-[#EEE] text-[10px] font-bold uppercase text-[#9E9E9E]">
+          <th className="py-2 text-left">Segment</th><th>Test</th><th>Reach</th><th>Buy</th><th>Test %buy</th><th>Reach %buy</th>
+          <th>Control</th><th>Ctrl buy</th><th>Ctrl %buy</th><th>Uplift %</th><th>Incremental ₹</th><th>Total sales</th>
+        </tr></thead>
+        <tbody>{rows.map((r) => { const c = r.views[view]; return (
+          <tr key={r.segment} className="border-b border-[#F5F5F5]">
+            <td className="py-2 text-left font-semibold" style={{ color: segMeta(r.segment).color }}>{segMeta(r.segment).label}</td>
+            <td>{n(r.test)}</td>
+            <td>{n(r.reached)}</td>
+            <td className="font-semibold text-[#1A1C1A]">{n(c.buy)}</td>
+            <td>{pct(c.testPctBuy)}</td>
+            <td>{pct(c.reachPctBuy)}</td>
+            <td>{n(r.control)}</td>
+            <td>{n(c.controlBuy)}</td>
+            <td>{pct(c.controlPctBuy)}</td>
+            <td className="font-semibold" style={{ color: c.upliftPct == null ? "#9E9E9E" : c.upliftPct >= 0 ? "#7DA02E" : "#C62828" }}>
+              {r.isLeads ? "—" : c.upliftPct == null ? "—" : `${c.upliftPct > 0 ? "+" : ""}${c.upliftPct}%`}
+            </td>
+            <td className="font-bold text-[#1A1C1A]">{inr(c.incrAllTest)}<div className="text-[10px] font-normal text-[#9E9E9E]">{inr(c.incrReached)} reached</div></td>
+            <td className="text-[#1A1C1A]">{inr(r.totalSalesAllTest)}<div className="text-[10px] text-[#9E9E9E]">{inr(r.totalSalesReached)} reached</div></td>
+          </tr>
+        ); })}</tbody>
+      </table>
+      <div className="mt-2 text-[10.5px] text-[#9E9E9E]">Leads / No-spend: no control comparison — their full sales count as incremental (shown in the Incremental column).</div>
     </div>
   );
 }

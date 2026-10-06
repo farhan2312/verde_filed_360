@@ -112,6 +112,7 @@ export const NAV_VISIBILITY: Record<string, (r: RoleKey) => boolean> = {
   visitRepo: () => true,
   actionRegistry: () => true, // follow-ups; scoped per role (officer→store, RM→district)
   farmers: () => true, // Farmer 360 — scoped per role (officer→store, RM→region)
+  stores: (r) => r === "regional" || r === "central" || r === "sysadmin", // Store 360 — RM (own stores) + admins
   mapView: (r) => r !== "officer", // officers work a single store; RMs see their region only
   farmerCluster: (r) => r !== "officer", // RMs may view (region-scoped) clusters but not create them
   analytics: () => true,
@@ -172,6 +173,15 @@ export function viewTitle(
       return ["Farmer 360", "1,284 registered farmers · Segmented view"];
     case "farmerDetail":
       return ["Farmer 360 — Profile", ""];
+    case "stores":
+      return [
+        "Store 360",
+        role === "regional"
+          ? "Your stores — farmers, sales, campaigns & follow-ups"
+          : "All stores — farmers, sales, campaigns & follow-ups",
+      ];
+    case "storeDetail":
+      return ["Store 360 — Store Record", ""];
     case "actions":
       return [
         "Action Planner",

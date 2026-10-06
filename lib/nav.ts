@@ -1,13 +1,13 @@
 ﻿import { canAccess, type RoleKey } from "./roles";
 
 export type NavId =
-  | "dashboard" | "newVisit" | "visitRepo" | "actionRegistry" | "farmers" | "mapView"
+  | "dashboard" | "newVisit" | "visitRepo" | "actionRegistry" | "farmers" | "stores" | "mapView"
   | "farmerCluster" | "analytics" | "actions" | "projects" | "campaigns" | "ghoshti"
   | "products" | "movement"
   | "users" | "salesImport" | "settings" | "audit" | "bugs" | "whatsappInbox";
 
 /** A "view" can also be a detail variant of a nav id (for header titles). */
-export type ViewId = NavId | "farmerDetail" | "visitDetail" | "projectDetail" | "ghoshtiDetail" | "training";
+export type ViewId = NavId | "farmerDetail" | "storeDetail" | "visitDetail" | "projectDetail" | "ghoshtiDetail" | "training";
 
 export interface NavItem {
   id: NavId;
@@ -21,6 +21,7 @@ export const MAIN_NAV: NavItem[] = [
   { id: "visitRepo", label: "Visit Repo", href: "/visits" },
   { id: "actionRegistry", label: "Action Registry", href: "/action-registry" },
   { id: "farmers", label: "Farmer 360", href: "/farmers" },
+  { id: "stores", label: "Store 360", href: "/stores" },
   { id: "mapView", label: "Map View", href: "/map" },
   { id: "farmerCluster", label: "Farmer Clusters", href: "/clusters" },
   { id: "projects", label: "Projects", href: "/projects" },
@@ -79,6 +80,8 @@ export function routeToView(pathname: string): ViewId {
   if (pathname.startsWith("/action-registry")) return "actionRegistry";
   if (/^\/farmers\/[^/]+/.test(pathname)) return "farmerDetail";
   if (pathname.startsWith("/farmers")) return "farmers";
+  if (/^\/stores\/[^/]+/.test(pathname)) return "storeDetail";
+  if (pathname.startsWith("/stores")) return "stores";
   if (/^\/actions\/[^/]+/.test(pathname)) return "projectDetail";
   if (pathname.startsWith("/actions")) return "actions";
   if (pathname.startsWith("/projects")) return "projects";

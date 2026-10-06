@@ -34,6 +34,12 @@ export const NavIcons: Record<NavId, (p: P) => JSX.Element> = {
       <circle cx="9" cy="5" r="3.5" /><path d="M2 16.5c0-3.87 3.13-7 7-7s7 3.13 7 7" />
     </svg>
   ),
+  stores: ({ className }) => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M2.5 2.5h13l1 4.2a2.2 2.2 0 0 1-4.3.6 2.2 2.2 0 0 1-4.4 0 2.2 2.2 0 0 1-4.3-.6l1-4.2z" />
+      <path d="M3 8.4v7h12v-7M7 15.5v-3.8h4v3.8" />
+    </svg>
+  ),
   mapView: ({ className }) => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" className={className}>
       <path d="M11 2l-5.5 2L1 2v13l4.5 2L11 15l6 2V4l-6-2zM6.5 14.5L3 13V4.5l3.5 1.2v8.8zm5 0V5.7l3 1v8L11.5 14.5z" />

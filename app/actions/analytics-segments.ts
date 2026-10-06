@@ -786,6 +786,81 @@ export async function getCropTrend(crops: string[]): Promise<CropTrendPoint[]> {
   return out;
 }
 
+/* ── New customers created from sales (FARM-C-*), by first-purchase month, stacked by village ── */
+export interface NewFarmerAcq {
+  villages: string[]; // legend order: top villages, then "Other", then "Unknown"
+  months: { ym: string; label: string; total: number; counts: Record<string, number> }[];
+  total: number;
+  distinctVillages: number;
+}
+
+/**
+ * Farmers whose profile was auto-created by the ERP sales sync (no prior registration) — code
+ * `FARM-C-<mobile>`. Bucketed by the month of their FIRST purchase (= when they first appeared as a
+ * customer), split by village. Role-scoped (officer→store, RM→region). Top-20 villages kept; the long
+ * tail → "Other". Village comes from the ERP CusAddress and is blank for ~16% of rows — blank and
+ * placeholder values ("-", "NA", "N/A", "NULL", "NIL") are bucketed explicitly as "Unknown"; casing and
+ * whitespace variants of the same village are merged.
+ */
+export async function getNewFarmerAcquisition(): Promise<NewFarmerAcq> {
+  const empty: NewFarmerAcq = { villages: [], months: [], total: 0, distinctVillages: 0 };
+  const { role, storeId, managedStoreIds } = await getScope();
+  if (role === "campaigner") return empty;
+  const scopeSql: Prisma.Sql =
+    role === "officer"
+      ? storeId != null ? Prisma.sql`AND f."storeId" = ${storeId}` : Prisma.sql`AND false`
+      : role === "regional"
+        ? managedStoreIds && managedStoreIds.length ? Prisma.sql`AND f."storeId" = ANY(${managedStoreIds})` : Prisma.sql`AND false`
+        : Prisma.empty;
+  let rows: { ym: string; village: string; n: number }[] = [];
+  try {
+    rows = await prisma.$queryRaw<{ ym: string; village: string; n: number }[]>(Prisma.sql`
+      SELECT to_char(date_trunc('month', t.first_sale), 'YYYY-MM') ym, t.village village, COUNT(*)::int n
+      FROM (
+        SELECT f.id,
+               CASE WHEN upper(btrim(COALESCE(f."village", ''))) IN ('', '-', '--', 'NA', 'N/A', 'NULL', 'NIL', 'NONE')
+                    THEN ''
+                    ELSE initcap(regexp_replace(btrim(f."village"), '[[:space:]]+', ' ', 'g')) END village,
+               MIN(s."soldAt") first_sale
+        FROM "Farmer" f JOIN "Sale" s ON s."farmerId" = f.id
+        WHERE f."code" LIKE 'FARM-C-%' AND f."source" = 'REAL' ${scopeSql}
+        GROUP BY f.id, 2
+      ) t
+      WHERE t.first_sale IS NOT NULL
+      GROUP BY 1, 2 ORDER BY 1`);
+  } catch { return empty; }
+  if (!rows.length) return empty;
+
+  const UNKNOWN = "Unknown", OTHER = "Other";
+  const villageOf = (r: { village: string }) => (r.village === "" ? UNKNOWN : r.village);
+  const villageTotal = new Map<string, number>();
+  const monthSet = new Set<string>();
+  for (const r of rows) {
+    const v = villageOf(r);
+    villageTotal.set(v, (villageTotal.get(v) ?? 0) + r.n);
+    monthSet.add(r.ym);
+  }
+  const distinctVillages = [...villageTotal.keys()].filter((v) => v !== UNKNOWN).length;
+  // Top-20 named villages; everything else → Other; blank → Unknown (kept separate, shown last).
+  const top = [...villageTotal.entries()].filter(([v]) => v !== UNKNOWN).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([v]) => v);
+  const topSet = new Set(top);
+  const bucket = (v: string) => (v === UNKNOWN ? UNKNOWN : topSet.has(v) ? v : OTHER);
+
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const byYm = new Map<string, { ym: string; label: string; total: number; counts: Record<string, number> }>();
+  for (const ym of [...monthSet].sort()) { const [y, m] = ym.split("-"); byYm.set(ym, { ym, label: `${MONTHS[Number(m) - 1]} '${y.slice(2)}`, total: 0, counts: {} }); }
+  let hasOther = false, hasUnknown = false, total = 0;
+  for (const r of rows) {
+    const b = bucket(villageOf(r));
+    if (b === OTHER) hasOther = true;
+    if (b === UNKNOWN) hasUnknown = true;
+    const mo = byYm.get(r.ym)!;
+    mo.counts[b] = (mo.counts[b] ?? 0) + r.n; mo.total += r.n; total += r.n;
+  }
+  const villages = [...top, ...(hasOther ? [OTHER] : []), ...(hasUnknown ? [UNKNOWN] : [])];
+  return { villages, months: [...byYm.values()], total, distinctVillages };
+}
+
 /* ── Lead → customer conversions (wasLead flag), role-scoped, broken down by month + store ── */
 export interface LeadConversions {
   total: number;         // converted (wasLead = true)

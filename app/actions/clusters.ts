@@ -301,7 +301,7 @@ export async function exportClusterFarmersXlsx(clusterId: number): Promise<{ ok:
       where,
       orderBy: { p12mSpend: { sort: "desc", nulls: "last" } },
       take: 100_000,
-      select: { id: true, name: true, village: true, salesCropTags: true, valueSegment: true, lifecycleSegment: true, lifetimeSpend: true, store: { select: { name: true } } },
+      select: { id: true, name: true, village: true, salesCropTags: true, valueSegment: true, lifecycleSegment: true, lifetimeSpend: true, store: { select: { name: true, regionalManager: true } } },
     });
     if (!farmers.length) return { ok: false, error: "No members to export." };
 
@@ -316,10 +316,11 @@ export async function exportClusterFarmersXlsx(clusterId: number): Promise<{ ok:
     }
 
     const ltvLabel = selectedCrops.length ? `${selectedCrops.map(cropLabel).join(" + ")} spend (₹)` : "LTV (₹)";
-    const header = ["Farmer", "Store", "Village", "Crop", "Value segment", "Lifecycle", ltvLabel];
+    const header = ["Farmer", "Store", "RM", "Village", "Crop", "Value segment", "Lifecycle", ltvLabel];
     const rows: (string | number)[][] = farmers.map((f) => [
       f.name,
       shortStoreName(f.store?.name) || "—",
+      (f.store?.regionalManager ?? "").trim() || "—",
       f.village ?? "—",
       selectedCrops.length
         ? ((f.salesCropTags ?? []).filter((c) => selectedCrops.includes(c)).map(cropLabel).join(", ") || selectedCrops.map(cropLabel).join(", "))

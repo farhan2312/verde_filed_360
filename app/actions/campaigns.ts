@@ -15,7 +15,7 @@ import { asCoupons } from "@/lib/campaign-phases";
 import { logAudit } from "@/lib/audit";
 import { getSession } from "@/lib/auth";
 import { cropLabel } from "@/lib/crops";
-import { buildWorkbookB64 } from "@/lib/xlsx-export";
+import { buildWorkbookB64, type Cell } from "@/lib/xlsx-export";
 import { sendSms, zapConfig, listSmsTemplates, type SmsTemplate } from "@/lib/zapsms";
 import { sendWhatsApp, waConfig, waCreateTemplate } from "@/lib/whatsapp";
 import { SAMPLE_VARS, resolveVars, fillDltTemplate, fillWaTemplate, positionalParams, countDltVars, VAR_LABEL, type FarmerVarSource } from "@/lib/campaign-vars";
@@ -537,7 +537,7 @@ export async function listCampaigns(): Promise<CampaignListItem[]> {
 /** Scoped enrolled-farmer list for a campaign — TEST group only (the CONTROL holdout is never contacted). */
 export interface CampaignMemberVM {
   id: number; name: string; mobile: string | null; village: string | null; store: string | null;
-  segment: string; reached: boolean; mediums: string[]; comment: string | null; reachedAt: string | null;
+  segment: string; valueSegment: string | null; reached: boolean; mediums: string[]; comment: string | null; reachedAt: string | null;
   reachedBy: string | null; reachedByCode: string | null;
   response: string | null; responseCrop: string | null; // interest outcome + the crop when OTHER_CROP
   broadcastMediums: string[]; // channels DELIVERED via mass send (separate from `reached`)
@@ -552,7 +552,7 @@ export async function getCampaignMembers(campaignId: number, limit = 25000): Pro
   const members = await prisma.campaignMember.findMany({
     where: { campaignId, group: "TEST", ...(scope ?? {}) }, // officers/RMs contact only the TEST group
     take: limit, orderBy: { id: "asc" },
-    select: { id: true, farmerId: true, segment: true, reached: true, mediums: true, comment: true, reachedAt: true, reachedBy: true, reachedByCode: true, storeId: true, response: true, responseCrop: true, broadcastMediums: true },
+    select: { id: true, farmerId: true, segment: true, valueSegment: true, reached: true, mediums: true, comment: true, reachedAt: true, reachedBy: true, reachedByCode: true, storeId: true, response: true, responseCrop: true, broadcastMediums: true },
   });
   if (!members.length) return [];
   const [farmers, stores] = await Promise.all([
@@ -566,7 +566,7 @@ export async function getCampaignMembers(campaignId: number, limit = 25000): Pro
     return {
       id: m.id, name: f?.name ?? `Farmer #${m.farmerId}`, mobile: f?.mobile ?? null, village: f?.village ?? null,
       store: m.storeId != null ? sMap.get(m.storeId) ?? null : null,
-      segment: m.segment, reached: m.reached, mediums: m.mediums, comment: m.comment, reachedAt: iso(m.reachedAt),
+      segment: m.segment, valueSegment: m.valueSegment, reached: m.reached, mediums: m.mediums, comment: m.comment, reachedAt: iso(m.reachedAt),
       reachedBy: m.reachedBy, reachedByCode: m.reachedByCode, response: m.response, responseCrop: m.responseCrop,
       broadcastMediums: m.broadcastMediums,
     };
@@ -683,14 +683,14 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
   ];
 
   // ── All farmers sheet (full current outreach state) ──
-  const allHeader = ["Group", "Farmer", "Mobile", "Village", "Store", "Value segment", "Lifecycle", "Reached", "Channels", "Response", "Response crop", "Broadcast delivered", "SMS sent", "WhatsApp sent",
+  const allHeader = ["Group", "Farmer", "Mobile", "Village", "Store", "RM", "Value segment", "Lifecycle", "Reached", "Channels", "Response", "Response crop", "Broadcast delivered", "SMS sent", "WhatsApp sent",
     ...(anyCoupons ? ["Coupon(s) redeemed", "Coupon revenue (₹)"] : []),
     "Recorded by", "Recorded at (IST)", "Comment"];
   const allRows: (string | number)[][] = members.map((m) => {
     const f = fMap.get(m.farmerId);
     const cp = couponByFarmer.get(m.farmerId);
     return [
-      m.group ?? "", f?.name ?? `Farmer #${m.farmerId}`, f?.mobile ?? "", f?.village ?? "", store(m.storeId),
+      m.group ?? "", f?.name ?? `Farmer #${m.farmerId}`, f?.mobile ?? "", f?.village ?? "", store(m.storeId), rm(m.storeId),
       m.valueSegment ? segMeta(m.valueSegment).label : (m.segment ? segMeta(m.segment).label : ""),
       m.lifecycleSegment ? segMeta(m.lifecycleSegment).label : "",
       m.reached ? "Yes" : "No",
@@ -703,14 +703,14 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
     ];
   });
 
-  const sheets: { name: string; rows: (string | number)[][] }[] = [
+  const sheets: { name: string; rows: Cell[][] }[] = [
     { name: "Overview", rows: overview },
     { name: "All farmers", rows: [allHeader, ...allRows] },
   ];
 
   // ── One sheet per round — message sends in that round's window + who was reached in it ──
-  const roundHeader = ["Farmer", "Mobile", "Store", "SMS sent (round)", "WhatsApp sent (round)", "Reached in round", "Response (current)", "Comment (current)", "Recorded by", "Recorded at (IST)"];
-  const roundHeaderCoupon = ["Farmer", "Mobile", "Store", "Group", "SMS sent (round)", "WhatsApp sent (round)", "Reached in round", "Redeemed coupon", "Coupon revenue (₹)", "Response (current)", "Comment (current)", "Recorded by", "Recorded at (IST)"];
+  const roundHeader = ["Farmer", "Mobile", "Store", "RM", "SMS sent (round)", "WhatsApp sent (round)", "Reached in round", "Response (current)", "Comment (current)", "Recorded by", "Recorded at (IST)"];
+  const roundHeaderCoupon = ["Farmer", "Mobile", "Store", "RM", "Group", "SMS sent (round)", "WhatsApp sent (round)", "Reached in round", "Redeemed coupon", "Coupon revenue (₹)", "Response (current)", "Comment (current)", "Recorded by", "Recorded at (IST)"];
   for (const p of phases) {
     const rc = roundCoupon.get(p.ordinal)!;
     const isCoupon = rc.codes.length > 0;
@@ -723,7 +723,7 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
       // Coupon rounds also list farmers who redeemed even with no logged send/reach (e.g. via broadcast).
       if (!sms && !wa && !reachedIn && !(isCoupon && redeemed > 0)) continue;
       const f = fMap.get(m.farmerId);
-      const base: (string | number)[] = [f?.name ?? `Farmer #${m.farmerId}`, f?.mobile ?? "", store(m.storeId)];
+      const base: (string | number)[] = [f?.name ?? `Farmer #${m.farmerId}`, f?.mobile ?? "", store(m.storeId), rm(m.storeId)];
       const tail: (string | number)[] = [m.response ? RESP[m.response] ?? m.response : "", reachedIn ? (m.comment ?? "") : "", reachedIn && m.reachedBy ? `${m.reachedBy}${m.reachedByCode ? ` (${m.reachedByCode})` : ""}` : "", reachedIn ? fmtTs(m.reachedAt) : ""];
       rrows.push(isCoupon
         ? [...base, m.group ?? "", sms, wa, reachedIn ? "Yes" : "", redeemed > 0 ? "Yes" : "", redeemed > 0 ? Math.round(redeemed) : "", ...tail]
@@ -734,32 +734,133 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
     sheets.push({ name: nm || `Round ${p.ordinal}`, rows: rrows.length ? [isCoupon ? roundHeaderCoupon : roundHeader, ...rrows] : [[noActivity]] });
   }
 
-  // ── Transactions sheet — exactly what the TEST farmers bought in the campaign window (+30-day tail) ──
-  // Answers "what did these farmers actually buy", independent of coupon / crop attribution.
+  // ── Transactions sheet — every line item campaign farmers (TEST + CONTROL) bought in the window (+30-day tail) ──
+  // The Group column lets you compare the contacted test group vs the un-contacted control; independent of coupon / crop attribution.
   if (camp) {
     const winStart = camp.startDate;
     const winEnd = new Date(camp.endDate); winEnd.setDate(winEnd.getDate() + 30);
-    const testIds = [...new Set(members.filter((m) => m.group === "TEST").map((m) => m.farmerId))];
-    const txns = testIds.length
-      ? await prisma.saleLine.findMany({
-          where: { source: "REAL", farmerId: { in: testIds }, soldAt: { gte: winStart, lte: winEnd } },
-          select: { farmerId: true, soldAt: true, orderNo: true, itemRaw: true, cropTag: true, qty: true, uom: true, basic: true, couponCode: true, invoiceCouponCode: true, storeId: true },
-          orderBy: [{ farmerId: "asc" }, { soldAt: "asc" }],
-          take: 100000,
-        })
-      : [];
-    const txnHeader = ["Farmer", "Mobile", "Store", "RM", "Date", "Order No", "Item", "Crop", "Qty", "UOM", "Base value (₹)", "Coupon"];
+    // Every enrolled farmer (TEST + CONTROL). Bounded by farmer ids + date window, queried in id chunks
+    // (same 15k slice as matchedSpendByFarmer) with an overall row cap so a huge control group can't blow memory.
+    const memberIds = [...new Set(members.map((m) => m.farmerId))];
+    const memMeta = new Map(members.map((m) => [m.farmerId, {
+      group: m.group ?? "",
+      vseg: m.valueSegment ? segMeta(m.valueSegment).label : (m.segment ? segMeta(m.segment).label : ""),
+      reached: m.reached ? "Yes" : "No",
+    }]));
+    const TXN_CAP = 100000;
+    const txns: Prisma.SaleLineGetPayload<{ select: { farmerId: true; soldAt: true; orderNo: true; itemRaw: true; cropTag: true; qty: true; uom: true; basic: true; couponCode: true; invoiceCouponCode: true; storeId: true } }>[] = [];
+    for (let i = 0; i < memberIds.length && txns.length < TXN_CAP; i += 15000) {
+      const slice = memberIds.slice(i, i + 15000);
+      const rows = await prisma.saleLine.findMany({
+        where: { source: "REAL", farmerId: { in: slice }, soldAt: { gte: winStart, lte: winEnd } },
+        select: { farmerId: true, soldAt: true, orderNo: true, itemRaw: true, cropTag: true, qty: true, uom: true, basic: true, couponCode: true, invoiceCouponCode: true, storeId: true },
+        orderBy: [{ farmerId: "asc" }, { soldAt: "asc" }],
+        take: TXN_CAP - txns.length,
+      });
+      txns.push(...rows);
+    }
+    // Test rows first, then control (stable sort keeps farmer/date order within each group; autofilter slices either way).
+    const grpRank = (fid: number | null) => (fid != null && memMeta.get(fid)?.group === "TEST" ? 0 : 1);
+    txns.sort((a, b) => grpRank(a.farmerId) - grpRank(b.farmerId));
+    const txnHeader = ["Group", "Reached", "Farmer", "Mobile", "Store", "RM", "Value segment", "Date", "Order No", "Item", "Crop", "Qty", "UOM", "Base value (₹)", "Coupon"];
     const txnRows: (string | number)[][] = txns.map((r) => {
       const f = r.farmerId != null ? fMap.get(r.farmerId) : undefined;
+      const meta = r.farmerId != null ? memMeta.get(r.farmerId) : undefined;
       // Verde ingest already stores NULL for the "no coupon" placeholders, so either column is a real code.
       const coupon = r.couponCode || r.invoiceCouponCode || "";
       return [
-        f?.name ?? (r.farmerId != null ? `Farmer #${r.farmerId}` : "—"), f?.mobile ?? "", store(r.storeId), rm(r.storeId),
+        meta?.group ?? "", meta?.reached ?? "", f?.name ?? (r.farmerId != null ? `Farmer #${r.farmerId}` : "—"), f?.mobile ?? "", store(r.storeId), rm(r.storeId), meta?.vseg ?? "",
         r.soldAt ? fmtDay(r.soldAt) : "", r.orderNo ?? "", r.itemRaw ?? "", r.cropTag ? cropLabel(r.cropTag) : "",
         r.qty ?? 0, r.uom ?? "", Math.round(r.basic ?? 0), coupon,
       ];
     });
-    sheets.push({ name: "Transactions (test)", rows: txnRows.length ? [txnHeader, ...txnRows] : [["No transactions by test farmers in the campaign window."]] });
+    sheets.push({ name: "Transactions", rows: txnRows.length ? [txnHeader, ...txnRows] : [["No transactions by campaign farmers in the window."]] });
+  }
+
+  // ── Performance (formulas) sheet — the Campaign Tracker segment table with LIVE Excel formula linking ──
+  // Mirrors the modal: every scope (all rounds + each round) x 3 match views x value / lifecycle segments.
+  // Raw inputs (Test / Reach / Buy / Control / Ctrl buy / Total sales) are plain values; every derived column
+  // (%buy, uplift %, incremental, block totals) is a real formula, so the workbook recalculates when opened and
+  // an analyst can overwrite an input to see the effect. Cached values are supplied for viewers that don't recalc.
+  // Zero-safe: each ratio is guarded (IF(den=0,...)), a block is only emitted when it has segment rows (so a
+  // Total row's SUM range is never empty), and a campaign with no rounds simply has the single "All rounds" scope.
+  const tracker = await getCampaignTracker(campaignId);
+  if (tracker && tracker.scopes.length) {
+    const VIEW_LBL: Record<MatchView, string> = { coupon: "Coupon-redeemed", crop: "Crop-matched", total: "All transactions" };
+    const COLHDR = ["Segment", "Test", "Reach", "Buy", "Test %Buy", "Reach %Buy", "Control", "Ctrl Buy", "Ctrl %Buy", "Uplift %", "Incr (all test)", "Incr (reached)", "Total sales (all test)", "Total sales (reached)"];
+    const ratio = (a: number, b: number) => (b > 0 ? a / b : 0);
+    // Relative uplift as a fraction, or null when n/a (leads rows, or nobody reached bought).
+    const upliftOf = (r: SegRow, v: MatchView): number | null => {
+      if (v === "coupon" || r.isLeads) return null; // coupon view: control can't redeem a code, uplift is n/a
+      const rr = ratio(r.views[v].buy, r.reached);
+      return rr === 0 ? null : (rr - ratio(r.views[v].controlBuy, r.control)) / rr;
+    };
+    // Incremental multiplier: leads count their whole sales, n/a uplift counts nothing.
+    const incrMult = (r: SegRow, v: MatchView) => (r.isLeads ? 1 : upliftOf(r, v) ?? 0);
+    // Incremental per row for the block Total: COUPON view = actual coupon revenue redeemed (from the tracker);
+    // other views = multiplier x total sales. Mirrors computeScope.
+    const incrOf = (r: SegRow, v: MatchView, reached: boolean) =>
+      v === "coupon" ? (reached ? r.views[v].incrReached : r.views[v].incrAllTest) : incrMult(r, v) * (reached ? r.totalSalesReached : r.totalSalesAllTest);
+    const perf: Cell[][] = [
+      ["Campaign performance - live formulas. Uplift % = (Reach %Buy - Ctrl %Buy) / Reach %Buy. Incremental = Uplift % x total sales (all transactions). Leads / No-spend have no control: their full sales are incremental. In the Coupon-redeemed view uplift is n/a (control cannot redeem a code) and Incremental = the actual coupon revenue redeemed (base Rs on coded lines), entered as a value. Edit any value cell (Test, Reach, Buy, Control, Ctrl Buy, Total sales) and the rest recalculates."],
+      [],
+    ];
+    const axes: { label: string; pick: (sc: TrackerScope) => SegRow[] }[] = [
+      { label: "Value segments", pick: (sc) => sc.byValue },
+      { label: "Lifecycle segments", pick: (sc) => sc.byLifecycle },
+    ];
+    for (const sc of tracker.scopes) {
+      for (const view of MV) {
+        for (const axis of axes) {
+          const segRows = axis.pick(sc);
+          const note = view === "coupon"
+            ? (!sc.couponCodes.length ? "  [no coupon code on this scope - Buy stays 0]" : !sc.anyCouponSale ? "  [no sale carries these codes yet - Buy stays 0]" : "")
+            : "";
+          perf.push([`${sc.label}  |  ${VIEW_LBL[view]}  |  ${axis.label}  |  ${sc.windowStart} to ${sc.windowEnd}${note}`]);
+          if (!segRows.length) { perf.push(["No members in this scope yet."], []); continue; }
+          perf.push(COLHDR);
+          const first = perf.length + 1; // Excel row of the first segment row
+          for (const r of segRows) {
+            const c = r.views[view];
+            const x = perf.length + 1; // Excel row of the row we are about to push
+            const up = upliftOf(r, view);
+            const isCoupon = view === "coupon";
+            // Coupon view: uplift n/a; Incremental = coupon revenue redeemed (a value, not uplift x sales).
+            const uplift: Cell = isCoupon || r.isLeads ? "—" : { f: `IF(F${x}=0,"",(F${x}-I${x})/F${x})`, z: "0.0%", v: up ?? "" };
+            const incrAll: Cell = isCoupon ? c.incrAllTest : r.isLeads ? { f: `M${x}`, v: r.totalSalesAllTest } : { f: `IF(J${x}="",0,J${x}*M${x})`, v: (up ?? 0) * r.totalSalesAllTest };
+            const incrReach: Cell = isCoupon ? c.incrReached : r.isLeads ? { f: `N${x}`, v: r.totalSalesReached } : { f: `IF(J${x}="",0,J${x}*N${x})`, v: (up ?? 0) * r.totalSalesReached };
+            perf.push([
+              segMeta(r.segment).label, r.test, r.reached, c.buy,
+              { f: `IF(B${x}=0,0,D${x}/B${x})`, z: "0.0%", v: ratio(c.buy, r.test) },
+              { f: `IF(C${x}=0,0,D${x}/C${x})`, z: "0.0%", v: ratio(c.buy, r.reached) },
+              r.control, c.controlBuy,
+              { f: `IF(G${x}=0,0,H${x}/G${x})`, z: "0.0%", v: ratio(c.controlBuy, r.control) },
+              uplift, incrAll, incrReach,
+              r.totalSalesAllTest, r.totalSalesReached,
+            ]);
+          }
+          // Block total - SUM over this block's rows (never empty: guarded above); ratios re-derived from the sums.
+          const last = perf.length; // Excel row of the last segment row
+          const t = perf.length + 1;
+          const sum = (col: string, v: number): Cell => ({ f: `SUM(${col}${first}:${col}${last})`, v });
+          const tot = (pick: (r: SegRow) => number) => segRows.reduce((a, r) => a + pick(r), 0);
+          const tTest = tot((r) => r.test), tReach = tot((r) => r.reached), tBuy = tot((r) => r.views[view].buy), tCtrl = tot((r) => r.control), tCBuy = tot((r) => r.views[view].controlBuy);
+          perf.push([
+            "Total", sum("B", tTest), sum("C", tReach), sum("D", tBuy),
+            { f: `IF(B${t}=0,0,D${t}/B${t})`, z: "0.0%", v: ratio(tBuy, tTest) },
+            { f: `IF(C${t}=0,0,D${t}/C${t})`, z: "0.0%", v: ratio(tBuy, tReach) },
+            sum("G", tCtrl), sum("H", tCBuy),
+            { f: `IF(G${t}=0,0,H${t}/G${t})`, z: "0.0%", v: ratio(tCBuy, tCtrl) },
+            "—",
+            sum("K", tot((r) => incrOf(r, view, false))),
+            sum("L", tot((r) => incrOf(r, view, true))),
+            sum("M", tot((r) => r.totalSalesAllTest)), sum("N", tot((r) => r.totalSalesReached)),
+          ]);
+          perf.push([]);
+        }
+      }
+    }
+    sheets.push({ name: "Performance (formulas)", rows: perf });
   }
 
   const safe = (campaignName || "campaign").replace(/[\\/?*[\]:]/g, " ").trim().slice(0, 60) || "campaign";
@@ -860,8 +961,9 @@ export async function exportCampaignAudienceXlsx(campaignId: number, campaignNam
   });
   if (!members.length) return { ok: false, error: "No enrolled farmers in your scope for this campaign." };
 
-  const stores = await prisma.store.findMany({ select: { id: true, name: true } });
+  const stores = await prisma.store.findMany({ select: { id: true, name: true, regionalManager: true } });
   const sMap = new Map(stores.map((s) => [s.id, shortStoreName(s.name)]));
+  const rmByName = new Map(stores.map((s) => [shortStoreName(s.name), (s.regionalManager ?? "").trim()]));
 
   const V = [...VALUE_SEGMENTS], L = [...LIFECYCLE_SEGMENTS];
   const vseg = (m: { valueSegment: string | null; segment: string }) => m.valueSegment ?? (V.includes(m.segment as never) ? m.segment : "REGULAR");
@@ -879,9 +981,9 @@ export async function exportCampaignAudienceXlsx(campaignId: number, campaignNam
   const mrows = [...cross.entries()].map(([store, c]) => ({ store, ...c })).sort((a, b) => b.total - a.total);
 
   const matrixSheet: (string | number)[][] = [
-    ["Store", ...V.map((s) => segMeta(s).label), "Segment Total", ...L.map((s) => segMeta(s).label), "Lifecycle Total"],
-    ["All stores", ...V.map((k) => vTot[k] ?? 0), members.length, ...L.map((k) => lTot[k] ?? 0), members.length],
-    ...mrows.map((r) => [r.store, ...V.map((k) => r.value[k] ?? 0), r.total, ...L.map((k) => r.lifecycle[k] ?? 0), r.total]),
+    ["Store", "RM", ...V.map((s) => segMeta(s).label), "Segment Total", ...L.map((s) => segMeta(s).label), "Lifecycle Total"],
+    ["All stores", "", ...V.map((k) => vTot[k] ?? 0), members.length, ...L.map((k) => lTot[k] ?? 0), members.length],
+    ...mrows.map((r) => [r.store, rmByName.get(r.store) ?? "", ...V.map((k) => r.value[k] ?? 0), r.total, ...L.map((k) => r.lifecycle[k] ?? 0), r.total]),
   ];
   const safe = (campaignName || "campaign").replace(/[\\/?*[\]:]/g, " ").trim().slice(0, 60) || "campaign";
   const b64 = buildWorkbookB64([
@@ -1090,9 +1192,9 @@ export interface SegViewCell {
   reachPctBuy: number;    // buy / reached  (%, 1-dp)
   controlBuy: number;     // control who bought (this view)
   controlPctBuy: number;  // controlBuy / control  (%, 1-dp)
-  upliftPct: number | null; // relative uplift % (1-dp); null = n/a (reach%=0, or a leads row)
-  incrAllTest: number;    // uplift × total-sales(all test)   [leads: = total sales]
-  incrReached: number;    // uplift × total-sales(reached)    [leads: = total sales]
+  upliftPct: number | null; // relative uplift % (1-dp); null = n/a (coupon view, reach%=0, or a leads row)
+  incrAllTest: number;    // COUPON view: coupon revenue redeemed; else uplift × total-sales (leads: = total sales)
+  incrReached: number;    // same basis, reached-test subset
 }
 export interface SegRow {
   segment: string; isLeads: boolean;
@@ -1125,15 +1227,16 @@ async function computeScope(members: UpliftMemberVM[], pf: ProductFilter, codes:
   const boughtIn = (fid: number, v: MatchView) => ((v === "total" ? allSpend : v === "crop" ? cropMap : couponSpend).get(fid) ?? 0) > 0;
 
   const build = (keyOf: (m: UpliftMemberVM) => string, order: readonly string[]): SegRow[] => {
-    type Acc = { test: number; reached: number; control: number; totAll: number; totReached: number; buy: Record<MatchView, number>; cbuy: Record<MatchView, number> };
-    const mk = (): Acc => ({ test: 0, reached: 0, control: 0, totAll: 0, totReached: 0, buy: { coupon: 0, crop: 0, total: 0 }, cbuy: { coupon: 0, crop: 0, total: 0 } });
+    type Acc = { test: number; reached: number; control: number; totAll: number; totReached: number; cpAll: number; cpReached: number; buy: Record<MatchView, number>; cbuy: Record<MatchView, number> };
+    const mk = (): Acc => ({ test: 0, reached: 0, control: 0, totAll: 0, totReached: 0, cpAll: 0, cpReached: 0, buy: { coupon: 0, crop: 0, total: 0 }, cbuy: { coupon: 0, crop: 0, total: 0 } });
     const bySeg = new Map<string, Acc>();
     for (const m of members) {
       const k = keyOf(m); const a = bySeg.get(k) ?? mk();
       const spend = allSpend.get(m.farmerId) ?? 0;
+      const cp = couponSpend.get(m.farmerId) ?? 0; // Rs this farmer redeemed on a campaign coupon
       if (m.group === "TEST") {
-        a.test++; a.totAll += spend;
-        if (m.reached) { a.reached++; a.totReached += spend; for (const v of MV) if (boughtIn(m.farmerId, v)) a.buy[v]++; }
+        a.test++; a.totAll += spend; a.cpAll += cp;
+        if (m.reached) { a.reached++; a.totReached += spend; a.cpReached += cp; for (const v of MV) if (boughtIn(m.farmerId, v)) a.buy[v]++; }
       } else { a.control++; for (const v of MV) if (boughtIn(m.farmerId, v)) a.cbuy[v]++; }
       bySeg.set(k, a);
     }
@@ -1144,7 +1247,11 @@ async function computeScope(members: UpliftMemberVM[], pf: ProductFilter, codes:
       for (const v of MV) {
         const reachRatio = a.reached > 0 ? a.buy[v] / a.reached : 0;
         const ctrlRatio = a.control > 0 ? a.cbuy[v] / a.control : 0;
-        const uplift = !isLeads && reachRatio > 0 ? (reachRatio - ctrlRatio) / reachRatio : null;
+        // COUPON view: control can never redeem a code, so a test-vs-control uplift is meaningless
+        // (it would always read 100%). Incremental here = the actual coupon revenue redeemed, not
+        // uplift x total sales. CROP / TOTAL views keep the relative-uplift attribution.
+        const isCoupon = v === "coupon";
+        const uplift = isCoupon || isLeads || reachRatio <= 0 ? null : (reachRatio - ctrlRatio) / reachRatio;
         views[v] = {
           buy: a.buy[v],
           testPctBuy: a.test > 0 ? Math.round((a.buy[v] / a.test) * 1000) / 10 : 0,
@@ -1152,8 +1259,8 @@ async function computeScope(members: UpliftMemberVM[], pf: ProductFilter, codes:
           controlBuy: a.cbuy[v],
           controlPctBuy: Math.round(ctrlRatio * 1000) / 10,
           upliftPct: uplift != null ? Math.round(uplift * 1000) / 10 : null,
-          incrAllTest: isLeads ? Math.round(a.totAll) : uplift != null ? Math.round(uplift * a.totAll) : 0,
-          incrReached: isLeads ? Math.round(a.totReached) : uplift != null ? Math.round(uplift * a.totReached) : 0,
+          incrAllTest: isCoupon ? Math.round(a.cpAll) : isLeads ? Math.round(a.totAll) : uplift != null ? Math.round(uplift * a.totAll) : 0,
+          incrReached: isCoupon ? Math.round(a.cpReached) : isLeads ? Math.round(a.totReached) : uplift != null ? Math.round(uplift * a.totReached) : 0,
         };
       }
       return { segment, isLeads, test: a.test, reached: a.reached, control: a.control, totalSalesAllTest: Math.round(a.totAll), totalSalesReached: Math.round(a.totReached), views };

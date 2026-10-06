@@ -648,7 +648,7 @@ export async function exportWorkbookXlsx(f: WbFilters): Promise<{ ok: boolean; f
   const [cross, stores, lineRows] = await Promise.all([
     prisma.$queryRaw<{ storeId: number | null; vseg: string; lseg: string; n: number }[]>(Prisma.sql`
       WITH ${cte} SELECT "storeId", vseg, lseg, COUNT(*)::int n FROM tiers WHERE ${tf} GROUP BY 1,2,3`),
-    prisma.store.findMany({ select: { id: true, name: true } }),
+    prisma.store.findMany({ select: { id: true, name: true, regionalManager: true } }),
     prisma.$queryRaw<{ orderNo: string; soldAt: Date | null; fy: string | null; name: string; mobile: string | null; zone: string | null; storeId: number | null; itemRaw: string; cropTag: string | null; mainCategory: string | null; qty: number; uom: string | null; basic: number; vseg: string | null; lseg: string | null }[]>(Prisma.sql`
       WITH ${cte}
       SELECT sl."orderNo" "orderNo", sl."soldAt" "soldAt", sl."financialYear" fy, f.name, f.mobile, f."zone" AS zone, sl."storeId" AS "storeId",
@@ -660,6 +660,7 @@ export async function exportWorkbookXlsx(f: WbFilters): Promise<{ ok: boolean; f
   ]);
 
   const nameById = new Map(stores.map((s) => [s.id, shortStore(s.name)]));
+  const rmById = new Map(stores.map((s) => [s.id, (s.regionalManager ?? "").trim()]));
   const V = [...VALUE_SEGMENTS], L = [...LIFECYCLE_SEGMENTS];
   // Full Value × Lifecycle per store (3 tiers × 4 lifecycle stages), matching the on-screen Detailed view.
   const byStore = new Map<number | null, { cross: Record<string, Record<string, number>>; total: number }>();
@@ -673,31 +674,33 @@ export async function exportWorkbookXlsx(f: WbFilters): Promise<{ ok: boolean; f
     (grandCross[r.vseg] ??= {})[r.lseg] = (grandCross[r.vseg]?.[r.lseg] ?? 0) + cnt; grand += cnt;
   }
   const rows = [...byStore.entries()].map(([storeId, s]) => ({
-    storeName: storeId == null ? "Unassigned" : nameById.get(storeId) ?? `Store #${storeId}`, ...s,
+    storeName: storeId == null ? "Unassigned" : nameById.get(storeId) ?? `Store #${storeId}`,
+    rm: storeId == null ? "" : rmById.get(storeId) ?? "", ...s,
   })).sort((a, b) => b.total - a.total).slice(0, 100);
 
   // Two-row grouped header: each Value group spans its Lifecycle sub-columns (merged), like the UI.
-  const nSub = L.length, totalCol = 1 + V.length * nSub;
-  const groupHeader: (string | number)[] = ["Store", ...V.flatMap((v) => [segMeta(v).label, ...Array(nSub - 1).fill("")]), "Total"];
-  const subHeader: (string | number)[] = ["", ...V.flatMap(() => L.map((l) => segMeta(l).label)), ""];
+  const nSub = L.length, totalCol = 2 + V.length * nSub;
+  const groupHeader: (string | number)[] = ["Store", "RM", ...V.flatMap((v) => [segMeta(v).label, ...Array(nSub - 1).fill("")]), "Total"];
+  const subHeader: (string | number)[] = ["", "", ...V.flatMap(() => L.map((l) => segMeta(l).label)), ""];
   const flatCross = (c: Record<string, Record<string, number>>) => V.flatMap((v) => L.map((l) => c[v]?.[l] ?? 0));
   const mergedSheet: (string | number)[][] = [
     groupHeader, subHeader,
-    ["All stores", ...flatCross(grandCross), grand],
-    ...rows.map((r) => [r.storeName, ...flatCross(r.cross), r.total]),
+    ["All stores", "", ...flatCross(grandCross), grand],
+    ...rows.map((r) => [r.storeName, r.rm, ...flatCross(r.cross), r.total]),
   ];
   const mergedSheetMerges = [
     { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // "Store" spans both header rows
-    ...V.map((_, gi) => ({ s: { r: 0, c: 1 + gi * nSub }, e: { r: 0, c: 1 + gi * nSub + nSub - 1 } })), // each value group
+    { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } }, // "RM" spans both header rows
+    ...V.map((_, gi) => ({ s: { r: 0, c: 2 + gi * nSub }, e: { r: 0, c: 2 + gi * nSub + nSub - 1 } })), // each value group
     { s: { r: 0, c: totalCol }, e: { r: 1, c: totalCol } }, // "Total" spans both header rows
   ];
   const isoDate = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
 
   // ── By sales-line sheet: one row per matching SaleLine (crop + FY filters applied at line level). ──
   const lineSheet: (string | number)[][] = [
-    ["Order No", "Date", "Financial year", "Farmer", "Mobile", "Store", "Region", "Item", "Crop", "Category", "Qty", "UOM", "Base value (₹)", "Value segment", "Lifecycle"],
+    ["Order No", "Date", "Financial year", "Farmer", "Mobile", "Store", "RM", "Region", "Item", "Crop", "Category", "Qty", "UOM", "Base value (₹)", "Value segment", "Lifecycle"],
     ...lineRows.map((r) => [
-      r.orderNo ?? "", isoDate(r.soldAt), r.fy ?? "", r.name, r.mobile ?? "", r.storeId != null ? nameById.get(r.storeId) ?? "" : "", r.zone ?? "",
+      r.orderNo ?? "", isoDate(r.soldAt), r.fy ?? "", r.name, r.mobile ?? "", r.storeId != null ? nameById.get(r.storeId) ?? "" : "", r.storeId != null ? rmById.get(r.storeId) ?? "" : "", r.zone ?? "",
       r.itemRaw, r.cropTag ? cropLabel(r.cropTag) : "—", r.mainCategory ?? "", Number(r.qty ?? 0), r.uom ?? "", Number(r.basic ?? 0),
       r.vseg ? segMeta(r.vseg).label : "—", r.lseg ? segMeta(r.lseg).label : "—",
     ]),

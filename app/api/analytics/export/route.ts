@@ -68,7 +68,7 @@ function farmerConds(f: ExportFilters, storeIds?: number[], zones?: string[]): P
 /** Sales sheets: Value×Lifecycle×Store matrix + every matching sale line. Returns the counts. */
 async function writeSalesSheets(
   wb: ExcelJS.stream.xlsx.WorkbookWriter, f: ExportFilters,
-  storeIds: number[] | undefined, zones: string[] | undefined, nameById: Map<number, string>,
+  storeIds: number[] | undefined, zones: string[] | undefined, nameById: Map<number, string>, rmById: Map<number, string>,
 ): Promise<{ grandTotal: number; lineCount: number }> {
   const fWhere = Prisma.join(farmerConds(f, storeIds, zones), " AND ");
   const cropLine = f.crops?.length ? Prisma.sql`AND sl."cropTag" = ANY(${f.crops}::text[])` : Prisma.empty;
@@ -97,17 +97,18 @@ async function writeSalesSheets(
     grand[key] = (grand[key] ?? 0) + r.n; grandTotal += r.n;
   }
   const matrixSorted = [...byStore.entries()].map(([sid, s]) => ({
-    name: sid == null ? "Unassigned" : nameById.get(sid) ?? `Store #${sid}`, ...s,
+    name: sid == null ? "Unassigned" : nameById.get(sid) ?? `Store #${sid}`,
+    rm: sid == null ? "" : rmById.get(sid) ?? "", ...s,
   })).sort((a, b) => b.total - a.total).slice(0, 200);
   const ws1 = wb.addWorksheet("Value x Lifecycle x Store");
-  ws1.addRow(["Store", ...combos.map(([v, l]) => `${segMeta(v).label} · ${segMeta(l).label}`), "Total"]).commit();
-  ws1.addRow(["All stores", ...combos.map(([v, l]) => grand[`${v}|${l}`] ?? 0), grandTotal]).commit();
-  for (const s of matrixSorted) ws1.addRow([s.name, ...combos.map(([v, l]) => s.cell[`${v}|${l}`] ?? 0), s.total]).commit();
+  ws1.addRow(["Store", "RM", ...combos.map(([v, l]) => `${segMeta(v).label} · ${segMeta(l).label}`), "Total"]).commit();
+  ws1.addRow(["All stores", "", ...combos.map(([v, l]) => grand[`${v}|${l}`] ?? 0), grandTotal]).commit();
+  for (const s of matrixSorted) ws1.addRow([s.name, s.rm, ...combos.map(([v, l]) => s.cell[`${v}|${l}`] ?? 0), s.total]).commit();
   await ws1.commit();
 
   // ── Sheet: every matching sale line (keyset-paged) ──
   const ws2 = wb.addWorksheet("Sales lines");
-  ws2.addRow(["Order No", "Date", "Financial year", "Farmer", "Mobile", "Village", "Store", "District", "Item", "Crop", "Category", "Qty", "UOM", "Base value (Rs)", "Value segment", "Lifecycle"]).commit();
+  ws2.addRow(["Order No", "Date", "Financial year", "Farmer", "Mobile", "Village", "Store", "RM", "District", "Item", "Crop", "Category", "Qty", "UOM", "Base value (Rs)", "Value segment", "Lifecycle"]).commit();
   let cursor = 0, lineCount = 0;
   const BATCH = 10000;
   for (;;) {
@@ -127,7 +128,7 @@ async function writeSalesSheets(
       cursor = r.id; lineCount++;
       ws2.addRow([
         r.ordno ?? "", r.soldat ? new Date(r.soldat).toISOString().slice(0, 10) : "", r.fy ?? "",
-        r.name, r.mobile ?? "", r.village ?? "", r.sid != null ? nameById.get(r.sid) ?? "" : "", r.zone ?? "",
+        r.name, r.mobile ?? "", r.village ?? "", r.sid != null ? nameById.get(r.sid) ?? "" : "", r.sid != null ? rmById.get(r.sid) ?? "" : "", r.zone ?? "",
         r.item, r.crop ? cropLabel(r.crop) : "", r.cat ?? "", r.qty ?? 0, r.uom ?? "",
         Math.round(r.basic ?? 0), r.vseg ? segMeta(r.vseg).label : "", r.lseg ? segMeta(r.lseg).label : "",
       ]).commit();
@@ -163,7 +164,7 @@ async function writeVisitsSheet(
 
   const ws = wb.addWorksheet("Visits");
   ws.addRow([
-    "Visit ID", "Date", "Farmer", "Mobile", "Village", "Store", "District", "Officer", "Recorded by", "Emp code",
+    "Visit ID", "Date", "Farmer", "Mobile", "Village", "Store", "RM", "District", "Officer", "Recorded by", "Emp code",
     "Visit type", "Visit mode", "GPS lat", "GPS lng", "Follow-up date", "Soil type", "Soil testing", "Water source",
     "Main crop", "Crops", "Other crops", "Season", "Crop insured", "Land holding", "Products", "Product required",
     "Current problem", "Crop risk", "Danger zone", "Annual expense", "Purchase freq", "Other shops",
@@ -177,6 +178,7 @@ async function writeVisitsSheet(
         COALESCE(to_char(v."visitedAt",'YYYY-MM-DD'), v."date") AS date,
         f.name AS farmer, f.mobile, f.village,
         btrim(regexp_replace(COALESCE(vs.name, fs.name), '\\s*\\(.*?\\)\\s*', '', 'g')) AS store,
+        COALESCE(vs."regionalManager", fs."regionalManager") AS rm,
         COALESCE(vs.zone, fs.zone) AS district,
         v."officerName" AS officer, v."recordedBy" AS recordedby, v."recordedByCode" AS empcode,
         COALESCE(v.type, v.purpose) AS visittype, v."visitMode" AS visitmode, v."gpsLat" AS lat, v."gpsLng" AS lng,
@@ -205,7 +207,7 @@ async function writeVisitsSheet(
     for (const r of rows) {
       cursor = Number(r.id); count++;
       ws.addRow([
-        Number(r.id), s(r.date), s(r.farmer), s(r.mobile), s(r.village), s(r.store), s(r.district),
+        Number(r.id), s(r.date), s(r.farmer), s(r.mobile), s(r.village), s(r.store), s(r.rm), s(r.district),
         s(r.officer), s(r.recordedby), s(r.empcode), s(r.visittype), s(r.visitmode),
         r.lat ?? "", r.lng ?? "", s(r.followup), s(r.soiltype), s(r.soiltesting), s(r.water),
         s(r.maincrop), s(r.crops), s(r.othercrops), s(r.season), yn(r.insured), s(r.land),
@@ -236,8 +238,9 @@ export async function GET(req: NextRequest) {
   // Sysadmin-only (guarded above), so no per-role narrowing of stores/districts — filters apply as sent.
   const storeIds = f.storeIds, zones = f.zones;
 
-  const stores = await prisma.store.findMany({ select: { id: true, name: true } });
+  const stores = await prisma.store.findMany({ select: { id: true, name: true, regionalManager: true } });
   const nameById = new Map(stores.map((s) => [s.id, s.name.replace(/\s*\(.*?\)\s*/g, "").trim() || s.name]));
+  const rmById = new Map(stores.map((s) => [s.id, (s.regionalManager ?? "").trim()]));
 
   const pass = new PassThrough();
   const wb = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: pass, useStyles: false, useSharedStrings: false });
@@ -247,7 +250,7 @@ export async function GET(req: NextRequest) {
     try {
       let sales: { grandTotal: number; lineCount: number } | null = null;
       let visitCount: number | null = null;
-      if (wantSales) sales = await writeSalesSheets(wb, f, storeIds, zones, nameById);
+      if (wantSales) sales = await writeSalesSheets(wb, f, storeIds, zones, nameById, rmById);
       if (wantVisits) visitCount = await writeVisitsSheet(wb, f, scope);
 
       // ── One combined "Filters applied" sheet covering everything in this file ──

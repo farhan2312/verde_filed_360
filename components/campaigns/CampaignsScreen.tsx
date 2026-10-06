@@ -732,11 +732,11 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
       </Modal>
 
       {/* Campaign Tracker (managers only) */}
-      <Modal open={trackerOf != null} onClose={() => setTrackerOf(null)} className="max-w-[840px]">
+      <Modal open={trackerOf != null} onClose={() => setTrackerOf(null)} className="w-[96vw] max-w-[1400px] flex flex-col overflow-y-hidden">
         {trackerOf && (
           <>
-            <ModalHeader eyebrow="Campaign Tracker" eyebrowColor="#7DA02E" title={trackerOf.name} subtitle="Outreach reach · real attributed revenue · test vs control uplift" onClose={() => setTrackerOf(null)} />
-            <div className="max-h-[72vh] overflow-y-auto px-5 py-4">
+            <ModalHeader eyebrow="Campaign Tracker" eyebrowColor="#7DA02E" title={trackerOf.name} subtitle="Outreach reach · segment uplift · incremental sales" onClose={() => setTrackerOf(null)} />
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
               <div className="mb-3 flex justify-end">
                 <button type="button" disabled={trackerExporting}
                   onClick={async () => {
@@ -928,8 +928,20 @@ export function statusOf(m: CampaignMemberVM): "reached" | "unreachable" | "pend
   if (m.mediums.includes("UNREACHABLE")) return "unreachable";
   return "pending";
 }
-/** Sort order for the list — un-contacted first, unreachable next, reached last. */
-export function rank(m: CampaignMemberVM): number { const s = statusOf(m); return s === "pending" ? 0 : s === "unreachable" ? 1 : 2; }
+/** Value-tier order so the highest-value farmers surface first (HNI -> Potential HNI -> Regular -> unknown -> No-spend / Lead).
+ *  A NULL valueSegment falls back to the member's campaign segment; anything unrecognised ranks just above No-spend / Lead,
+ *  never above HNI. No-spend and Lead farmers (no purchases) always land last. */
+const VALUE_RANK: Record<string, number> = { HNI: 0, POTENTIAL_HNI: 1, REGULAR: 2, NO_SPEND: 4, LEAD: 4 };
+export function valueRank(m: CampaignMemberVM): number {
+  const key = m.valueSegment ?? m.segment;
+  return VALUE_RANK[key] ?? 3;
+}
+/** Sort order for the list - un-contacted first (then unreachable, then reached), and WITHIN each of
+ *  those, by value tier so HNI farmers are contacted before Potential HNI, Regular, No-spend. */
+export function rank(m: CampaignMemberVM): number {
+  const s = statusOf(m); const status = s === "pending" ? 0 : s === "unreachable" ? 1 : 2;
+  return status * 10 + valueRank(m);
+}
 /** Normalise an Indian mobile to its last 10 digits for tel:/wa.me links (null if not a usable number). */
 export function digits10(mobile: string | null): string | null {
   if (!mobile) return null;
@@ -1245,7 +1257,7 @@ function MemberRow({ member, crops, onChange, commPlans, templates, canSms }: { 
 
 /* ── Focus mode: one farmer at a time (queue: head = current; skip requeues; back re-opens last) ── */
 function FocusMode({ members, crops, onChange, onExit, onCurrent, commPlans, templates, canSms }: { members: CampaignMemberVM[]; crops: CropOption[]; onChange: (m: CampaignMemberVM) => void; onExit: () => void; onCurrent?: (m: CampaignMemberVM | null) => void; commPlans: string[]; templates: CommTemplateVM[]; canSms?: boolean }) {
-  const [queue, setQueue] = useState<number[]>(() => members.filter((m) => statusOf(m) === "pending").map((m) => m.id));
+  const [queue, setQueue] = useState<number[]>(() => members.filter((m) => statusOf(m) === "pending").sort((a, b) => valueRank(a) - valueRank(b)).map((m) => m.id)); // highest-value tier first (stable sort keeps list order within a tier)
   const [history, setHistory] = useState<number[]>([]);
   const currentId = queue[0];
   const member = members.find((m) => m.id === currentId) ?? null;
@@ -1716,12 +1728,13 @@ function TrackerBody({ t }: { t: CampaignTracker }) {
 function SegTable({ rows, view }: { rows: SegRow[]; view: MatchView }) {
   if (rows.length === 0) return <div className="py-4 text-center text-[12.5px] text-[#9E9E9E]">No members / no sales in this window yet.</div>;
   const pct = (x: number) => `${x}%`;
+  const coupon = view === "coupon";
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[860px] text-right text-[12px]">
         <thead><tr className="border-b border-[#EEE] text-[10px] font-bold uppercase text-[#9E9E9E]">
           <th className="py-2 text-left">Segment</th><th>Test</th><th>Reach</th><th>Buy</th><th>Test %buy</th><th>Reach %buy</th>
-          <th>Control</th><th>Ctrl buy</th><th>Ctrl %buy</th><th>Uplift %</th><th>Incremental ₹</th><th>Total sales</th>
+          <th>Control</th><th>Ctrl buy</th><th>Ctrl %buy</th><th>Uplift %</th><th>{coupon ? "Coupon revenue ₹" : "Incremental ₹"}</th><th>Total sales</th>
         </tr></thead>
         <tbody>{rows.map((r) => { const c = r.views[view]; return (
           <tr key={r.segment} className="border-b border-[#F5F5F5]">
@@ -1742,7 +1755,11 @@ function SegTable({ rows, view }: { rows: SegRow[]; view: MatchView }) {
           </tr>
         ); })}</tbody>
       </table>
-      <div className="mt-2 text-[10.5px] text-[#9E9E9E]">Leads / No-spend: no control comparison — their full sales count as incremental (shown in the Incremental column).</div>
+      <div className="mt-2 text-[10.5px] text-[#9E9E9E]">
+        {coupon
+          ? "Coupon view: control can't redeem a code, so uplift is n/a (—) — the column shows actual coupon revenue redeemed (base ₹ on coded lines), all-test / reached."
+          : "Leads / No-spend: no control comparison — their full sales count as incremental (shown in the Incremental column)."}
+      </div>
     </div>
   );
 }

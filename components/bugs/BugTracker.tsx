@@ -13,7 +13,7 @@ const KIND_META: Record<string, { label: string; bg: string; c: string }> = {
 
 const COLUMNS: { key: string; label: string; color: string; hint: string }[] = [
   { key: "OPEN", label: "Open", color: "#1565C0", hint: "Not yet started" },
-  { key: "IN_PROGRESS", label: "In Progress", color: "#E65100", hint: "Being worked on" },
+  { key: "NEEDS_CLARIFICATION", label: "Needs Clarification", color: "#E65100", hint: "Awaiting more info from the reporter" },
   { key: "TESTING", label: "Testing", color: "#7B1FA2", hint: "Verifying the fix" },
   { key: "FIXED", label: "Fixed", color: "#7DA02E", hint: "Resolved" },
   { key: "CLOSED", label: "Closed", color: "#616161", hint: "Done & archived" },
@@ -69,7 +69,7 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
     return {
       total: bugs.length,
       open: by((b) => b.status === "OPEN"),
-      inProgress: by((b) => b.status === "IN_PROGRESS" || b.status === "TESTING"),
+      inProgress: by((b) => b.status === "NEEDS_CLARIFICATION" || b.status === "TESTING"),
       fixed: by((b) => b.status === "FIXED" || b.status === "CLOSED"),
       turnaround: resolved.length ? (avgDays < 1 ? `${Math.round(avgDays * 24)}h` : `${avgDays.toFixed(1)}d`) : "—",
     };
@@ -145,7 +145,7 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Kpi label="Total Bugs" value={kpis.total} />
         <Kpi label="Open" value={kpis.open} sub="Not yet fixed" color="#1565C0" />
-        <Kpi label="In Progress" value={kpis.inProgress} sub="Working + testing" color="#E65100" />
+        <Kpi label="Needs Clarification" value={kpis.inProgress} sub="Awaiting info + testing" color="#E65100" />
         <Kpi label="Fixed" value={kpis.fixed} sub="Resolved & closed" color="#7DA02E" />
         <Kpi label="Avg Turnaround" value={kpis.turnaround} sub="Reported → fixed" />
       </div>

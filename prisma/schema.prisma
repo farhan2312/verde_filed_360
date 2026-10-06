@@ -966,7 +966,7 @@ model Bug {
   description  String?
   kind         String    @default("BUG") // BUG | FEATURE
   severity     String    @default("MEDIUM") // LOW | MEDIUM | HIGH | CRITICAL
-  status       String    @default("OPEN") // OPEN | IN_PROGRESS | TESTING | FIXED | CLOSED
+  status       String    @default("OPEN") // OPEN | NEEDS_CLARIFICATION | TESTING | FIXED | CLOSED
   page         String? // where it was reported
   reporter     String? // reporter's name
   reporterCode String? // reporter's employee code

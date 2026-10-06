@@ -293,7 +293,7 @@ export async function getOverallAnalytics(f: OverallFilters): Promise<OverallDat
     prisma.action.count({ where: { status: "OPEN", dueDate: { lt: new Date() }, ...(attStoreIn ? { storeId: attStoreIn } : {}) } }),
     prisma.visit.count({ where: { reviewedAt: null, ...(codeIn ? { recordedByCode: codeIn } : {}) } }),
     prisma.ghoshti.count({ where: { status: "PENDING", ...(attStoreIn ? { storeId: attStoreIn } : {}) } }),
-    prisma.bug.count({ where: { status: { in: ["OPEN", "IN_PROGRESS", "TESTING"] } } }),
+    prisma.bug.count({ where: { status: { in: ["OPEN", "NEEDS_CLARIFICATION", "TESTING"] } } }),
   ]);
   const attention: Tile[] = [
     { key: "a_never", label: "Never signed in", value: neverIn, tone: neverIn > 0 ? "bad" : "good", sub: "accounts unused" },
@@ -426,8 +426,8 @@ export async function getOverallDrilldown(tileKey: string, f: OverallFilters): P
     return cap({ title: "Ghoshti awaiting approval", note: "Current state — not limited to the window.", columns: ["Date", "Store", "Topic", "Organiser"], rows: list.map((g) => [fmtDate(g.date), g.storeName ?? "—", g.topic ?? "—", g.createdByName ?? "—"]), count });
   }
   if (tileKey === "a_bugs") {
-    const count = await prisma.bug.count({ where: { status: { in: ["OPEN", "IN_PROGRESS", "TESTING"] } } });
-    const list = await prisma.bug.findMany({ where: { status: { in: ["OPEN", "IN_PROGRESS", "TESTING"] } }, orderBy: { createdAt: "desc" }, take: DRILL_CAP, select: { createdAt: true, title: true, severity: true, status: true, reporter: true } });
+    const count = await prisma.bug.count({ where: { status: { in: ["OPEN", "NEEDS_CLARIFICATION", "TESTING"] } } });
+    const list = await prisma.bug.findMany({ where: { status: { in: ["OPEN", "NEEDS_CLARIFICATION", "TESTING"] } }, orderBy: { createdAt: "desc" }, take: DRILL_CAP, select: { createdAt: true, title: true, severity: true, status: true, reporter: true } });
     return cap({ title: "Open bug reports", note: "Org-wide — bug reports carry no owner, so the person/role filter does not apply.", columns: ["When", "Title", "Severity", "Status", "Reporter"], rows: list.map((b) => [fmtDate(b.createdAt), b.title, b.severity, b.status, b.reporter ?? "—"]), count });
   }
 

@@ -15,7 +15,7 @@ import { StoreTagsCard } from "@/components/settings/StoreTagsCard";
 import { listStoreTags, type StoreTagVM } from "@/app/actions/store-tags";
 import { countVars } from "@/lib/wa-template-presets";
 import { salesApiConfig } from "@/lib/sales-api";
-import { getSyncSettings } from "@/lib/sales-sync";
+import { DEFAULT_LOOKBACK_DAYS, getSyncSettings } from "@/lib/sales-sync";
 import { getActiveSalesSync } from "@/app/actions/sales-sync";
 import { getRole } from "@/lib/session";
 import { SalesSyncRunCard, type LastRunVM } from "@/components/sales-sync/SalesSyncRunCard";
@@ -101,7 +101,7 @@ export default async function SettingsPage() {
 
   // ERP sales sync (sysadmin): schedule controls + run-now card.
   const isSysadmin = (await getRole()) === "sysadmin";
-  let sync: { settings: { lookbackDays: number; enabled: boolean }; active: Awaited<ReturnType<typeof getActiveSalesSync>>; lastRun: LastRunVM | null } = { settings: { lookbackDays: 1, enabled: true }, active: null, lastRun: null };
+  let sync: { settings: { lookbackDays: number; enabled: boolean }; active: Awaited<ReturnType<typeof getActiveSalesSync>>; lastRun: LastRunVM | null } = { settings: { lookbackDays: DEFAULT_LOOKBACK_DAYS, enabled: true }, active: null, lastRun: null };
   if (isSysadmin) {
     try {
       const [settings, active, last] = await Promise.all([getSyncSettings(), getActiveSalesSync(), prisma.salesImport.findFirst({ where: { status: { not: "RUNNING" } }, orderBy: { createdAt: "desc" } })]);

@@ -270,6 +270,27 @@ export async function deleteGhoshti(ghoshtiId: number): Promise<{ ok: boolean; e
 
 // ─────────────────────────── Reads ───────────────────────────
 
+/**
+ * How many PENDING Ghoshtis the current user can approve — drives the sidebar badge so approvals
+ * aren't delayed. Central/sysadmin see every pending one; an RM sees officer-created pending meetups
+ * in their own zone (mirrors canApproveGhoshti); everyone else sees none. Own creations never count
+ * (central/sysadmin auto-approve theirs; an RM's own are RM-created, not officer-created).
+ */
+export async function countPendingGhoshtiApprovals(): Promise<number> {
+  try {
+    const scope = await getScope();
+    if (scope.role === "central" || scope.role === "sysadmin") {
+      return await prisma.ghoshti.count({ where: { status: "PENDING" } });
+    }
+    if (scope.role === "regional" && scope.zone) {
+      return await prisma.ghoshti.count({ where: { status: "PENDING", createdByRole: "officer", zone: scope.zone } });
+    }
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
 export async function listGhoshtis(filter?: { status?: string }): Promise<GhoshtiListItem[]> {
   const scope = await getScope();
   const scopeWhere = ghoshtiScopeWhere(scope);

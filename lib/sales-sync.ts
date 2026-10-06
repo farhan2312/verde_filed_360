@@ -7,7 +7,7 @@
  * then SUCCESS / FAILED with totals. Long windows are fetched month by month so one bad month
  * doesn't lose the whole backfill; each month's totals are folded into the run as it goes.
  *
- * Entry points: the daily cron route (yesterday, IST), the Settings "Run now" card, and
+ * Entry points: the daily cron route (last few days, IST), the Settings "Run now" card, and
  * `scripts/sales-sync.ts` for CLI backfills.
  */
 import { prisma } from "@/lib/prisma";
@@ -30,17 +30,20 @@ export interface SyncProgress {
   stores: number;
 }
 
+/** Default scheduled lookback (days) when no `sync.lookbackDays` Setting is stored; catches bills posted a day or two late. */
+export const DEFAULT_LOOKBACK_DAYS = 3;
+
 /** Setting keys for the sync (stored in `Setting`). */
 export const SYNC_SETTING_KEYS = {
-  lookbackDays: "sync.lookbackDays", // how many days back the scheduled run covers (1 = yesterday only)
+  lookbackDays: "sync.lookbackDays", // how many days back the scheduled run covers (default 3; 1 = yesterday only)
   enabled: "sync.enabled", // "true" | "false" — pause the schedule without removing the cron
 } as const;
 
 export async function getSyncSettings(): Promise<{ lookbackDays: number; enabled: boolean }> {
   const rows = await prisma.setting.findMany({ where: { key: { in: Object.values(SYNC_SETTING_KEYS) } } });
   const m = new Map(rows.map((r) => [r.key, r.value]));
-  const lb = parseInt(m.get(SYNC_SETTING_KEYS.lookbackDays) ?? "1", 10);
-  return { lookbackDays: Number.isFinite(lb) && lb >= 1 ? Math.min(lb, 31) : 1, enabled: (m.get(SYNC_SETTING_KEYS.enabled) ?? "true") !== "false" };
+  const lb = parseInt(m.get(SYNC_SETTING_KEYS.lookbackDays) ?? String(DEFAULT_LOOKBACK_DAYS), 10);
+  return { lookbackDays: Number.isFinite(lb) && lb >= 1 ? Math.min(lb, 31) : DEFAULT_LOOKBACK_DAYS, enabled: (m.get(SYNC_SETTING_KEYS.enabled) ?? "true") !== "false" };
 }
 
 // ── Dates (the ERP's bill dates are Indian calendar days) ──

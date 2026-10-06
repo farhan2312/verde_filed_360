@@ -24,6 +24,7 @@ export interface ActionVM {
   farmerName: string;
   farmerMobile: string;
   farmerVillage: string;
+  lastVisit: string | null; // ISO timestamp of the farmer's most recent visit (null = never)
   storeId: number | null;
   storeName: string;
   district: string;

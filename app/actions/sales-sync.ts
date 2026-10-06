@@ -6,6 +6,7 @@ import { getRole } from "@/lib/session";
 import { getActor } from "@/lib/scope";
 import { logAudit } from "@/lib/audit";
 import { previewImportDeletion, deleteImportData } from "@/lib/sales-import-delete";
+import { syncPasswordRequired } from "@/lib/sync-password";
 import { activeSyncRun, getSyncSettings, parseProgress, SYNC_SETTING_KEYS, type SyncProgress } from "@/lib/sales-sync";
 
 export interface ActiveRun { id: number; fromDate: string | null; toDate: string | null; trigger: string | null; startedBy: string | null; startedAt: string; progress: SyncProgress | null }
@@ -15,6 +16,12 @@ export async function getActiveSalesSync(): Promise<ActiveRun | null> {
   const r = await activeSyncRun();
   if (!r) return null;
   return { id: r.id, fromDate: r.fromDate, toDate: r.toDate, trigger: r.trigger, startedBy: r.uploadedBy, startedAt: r.createdAt.toISOString(), progress: parseProgress(r.progress) };
+}
+
+/** Whether the manual "Run sync now" button needs the static password (env SALES_SYNC_PASSWORD is set). Sysadmin only. */
+export async function getSalesSyncPasswordRequired(): Promise<boolean> {
+  if ((await getRole()) !== "sysadmin") return false;
+  return syncPasswordRequired();
 }
 
 /** A finished run's summary — used to show the outcome of a run that finished while the card was polling. */

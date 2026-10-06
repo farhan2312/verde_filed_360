@@ -22,6 +22,7 @@ export interface PerfRange {
   prevFrom?: string;  // ISO — previous comparison window (for growth); undefined = no comparison
   prevTo?: string;
   storeTags?: number[]; // store-tag ids — restrict to stores carrying ANY of these
+  storeStatus?: string[]; // store status — "Active" | "Inactive"
   label?: string;     // display label of the chosen range (for the UI, echoed back)
 }
 
@@ -73,16 +74,17 @@ const growth = (cur: number, prev: number): number | null =>
   prev > 0 ? ((cur - prev) / prev) * 100 : null;
 
 /** Resolve the scoped store-id set: number[] to restrict, or null for "all stores" (admins). */
-async function scopedStoreIds(storeTags?: number[]): Promise<number[] | null | "none"> {
+async function scopedStoreIds(storeTags?: number[], storeStatus?: string[]): Promise<number[] | null | "none"> {
   const scope = await getScope();
   const where = storeScopeWhere(scope);
   if (where === "none") return "none";
 
-  // Tag filter (and/or the admin "all" case) → materialise the id list.
+  // Tag / status filter (and/or the admin "all" case) → materialise the id list.
   const cond: Prisma.StoreWhereInput = {};
   if (where && where !== null) Object.assign(cond, where);
   if (storeTags?.length) cond.tagIds = { hasSome: storeTags };
-  if (!where && !storeTags?.length) return null; // admin, no tag filter → all stores
+  if (storeStatus?.length) cond.status = { in: storeStatus };
+  if (!where && !storeTags?.length && !storeStatus?.length) return null; // admin, no filter → all stores
 
   const stores = await prisma.store.findMany({ where: cond, select: { id: true } });
   return stores.map((s) => s.id);
@@ -91,7 +93,7 @@ async function scopedStoreIds(storeTags?: number[]): Promise<number[] | null | "
 const D = (s?: string) => (s ? new Date(s) : null);
 
 export async function getPerformance(kind: PerfKind, range: PerfRange = {}): Promise<PerfData> {
-  const ids = await scopedStoreIds(range.storeTags);
+  const ids = await scopedStoreIds(range.storeTags, range.storeStatus);
   const empty: PerfData = {
     kind, rows: [],
     totals: { entities: 0, sales: 0, salesPrev: 0, salesGrowthPct: null, visits: 0, visitsReviewed: 0, actionsOpen: 0, actionsOverdue: 0, leadsConverted: 0, currentLeads: 0, farmers: 0 },

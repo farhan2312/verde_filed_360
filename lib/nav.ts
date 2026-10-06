@@ -1,4 +1,4 @@
-import { canAccess, type RoleKey } from "./roles";
+﻿import { canAccess, type RoleKey } from "./roles";
 
 export type NavId =
   | "dashboard" | "newVisit" | "visitRepo" | "actionRegistry" | "farmers" | "mapView"
@@ -41,7 +41,7 @@ export const ADMIN_NAV: NavItem[] = [
   { id: "salesImport", label: "Sales Sync", href: "/sales-sync" },
   { id: "settings", label: "Settings", href: "/settings" },
   { id: "audit", label: "Audit Log", href: "/audit" },
-  { id: "bugs", label: "Bug Tracker", href: "/bugs" },
+  { id: "bugs", label: "Issue Tracker", href: "/bugs" },
 ];
 
 /** Nav items visible to a role (RBAC). */

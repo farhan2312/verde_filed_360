@@ -8,7 +8,7 @@ export const maxDuration = 300;
 /**
  * Daily ERP sales sync — invoked by Vercel Cron (see vercel.json) with `Authorization: Bearer $CRON_SECRET`.
  * Any external scheduler can call it the same way. Pulls the last `sync.lookbackDays` full days
- * (default: just yesterday, IST) so the nightly run never re-fetches history.
+ * (default: 3 days ending yesterday, IST, to catch late-posted bills; re-fetching is idempotent).
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET?.trim();

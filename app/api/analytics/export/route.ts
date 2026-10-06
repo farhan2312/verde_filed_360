@@ -21,11 +21,14 @@ export const dynamic = "force-dynamic";
  * RBAC enforced from the session. Filters arrive base64 in `?f=`.
  */
 interface ExportFilters {
-  storeIds?: number[]; zones?: string[]; villages?: string[]; crops?: string[]; pests?: string[];
+  storeIds?: number[]; storeStatus?: string[]; zones?: string[]; villages?: string[]; crops?: string[]; pests?: string[];
   valueSegments?: string[]; lifecycleSegments?: string[]; spendTiers?: number[]; fyStarts?: number[];
   problems?: string[]; // visit lens — Current Problem
   visitFrom?: string; visitTo?: string; // visit lens — visitedAt range (ISO YYYY-MM-DD)
+  salesFrom?: string; salesTo?: string; // sales lens — soldAt range on the sale-lines sheet (ISO YYYY-MM-DD)
 }
+const ymd = (s: string | undefined, endOfDay = false): Date | null =>
+  s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T${endOfDay ? "23:59:59" : "00:00:00"}Z`) : null;
 type ExportType = "sales" | "visits" | "both";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -42,6 +45,7 @@ function fyWindow(fyStarts?: number[]): Prisma.Sql | null {
 function farmerConds(f: ExportFilters, storeIds?: number[], zones?: string[]): Prisma.Sql[] {
   const c: Prisma.Sql[] = [Prisma.sql`f.source = 'REAL'`];
   if (storeIds?.length) c.push(Prisma.sql`f."storeId" = ANY(${storeIds})`);
+  if (f.storeStatus?.length) c.push(Prisma.sql`st."status" = ANY(${f.storeStatus})`);
   if (zones?.length) c.push(Prisma.sql`st."zone" = ANY(${zones})`);
   if (f.villages?.length) c.push(Prisma.sql`upper(btrim(f."village")) = ANY(${f.villages})`);
   if (f.pests?.length) c.push(Prisma.sql`f."pestTags" && ${f.pests}::text[]`);
@@ -70,6 +74,12 @@ async function writeSalesSheets(
   const cropLine = f.crops?.length ? Prisma.sql`AND sl."cropTag" = ANY(${f.crops}::text[])` : Prisma.empty;
   const fyw = fyWindow(f.fyStarts);
   const fyLine = fyw ? Prisma.sql`AND ${fyw}` : Prisma.empty;
+  // Optional soldAt date window — bounds the sale-lines dump so it isn't "everything since day 0".
+  const sFrom = ymd(f.salesFrom), sTo = ymd(f.salesTo, true);
+  const dateLine = Prisma.join([
+    ...(sFrom ? [Prisma.sql`AND sl."soldAt" >= ${sFrom}`] : []),
+    ...(sTo ? [Prisma.sql`AND sl."soldAt" <= ${sTo}`] : []),
+  ], " ");
   const V = [...VALUE_SEGMENTS], L = [...LIFECYCLE_SEGMENTS];
   const combos = V.flatMap((v) => L.map((l) => [v, l] as const));
 
@@ -110,7 +120,7 @@ async function writeSalesSheets(
         f."storeId" sid, st."zone" zone, sl."itemRaw" item, sl."cropTag" crop, sl."mainCategory" cat,
         sl.qty, sl.uom, sl."basic" basic, f."valueSegment" vseg, f."lifecycleSegment" lseg
       FROM "SaleLine" sl JOIN "Farmer" f ON f.id = sl."farmerId" LEFT JOIN "Store" st ON st.id = f."storeId"
-      WHERE sl.source = 'REAL' AND sl."farmerId" IS NOT NULL AND ${fWhere} ${cropLine} ${fyLine} AND sl.id > ${cursor}
+      WHERE sl.source = 'REAL' AND sl."farmerId" IS NOT NULL AND ${fWhere} ${cropLine} ${fyLine} ${dateLine} AND sl.id > ${cursor}
       ORDER BY sl.id LIMIT ${BATCH}`);
     if (!rows.length) break;
     for (const r of rows) {
@@ -140,6 +150,7 @@ async function writeVisitsSheet(
   }
   if (f.storeIds?.length) vc.push(Prisma.sql`(v."storeId" = ANY(${f.storeIds}) OR (v."storeId" IS NULL AND f."storeId" = ANY(${f.storeIds})))`);
   if (f.zones?.length) vc.push(Prisma.sql`(vs."zone" = ANY(${f.zones}) OR (v."storeId" IS NULL AND fs."zone" = ANY(${f.zones})))`);
+  if (f.storeStatus?.length) vc.push(Prisma.sql`COALESCE(vs."status", fs."status") = ANY(${f.storeStatus})`);
   if (f.villages?.length) vc.push(Prisma.sql`upper(btrim(f."village")) = ANY(${f.villages})`);
   if (f.crops?.length) vc.push(Prisma.sql`f."visitCropTags" && ${f.crops}::text[]`);
   if (f.pests?.length) vc.push(Prisma.sql`f."pestTags" && ${f.pests}::text[]`);
@@ -211,6 +222,8 @@ async function writeVisitsSheet(
 
 export async function GET(req: NextRequest) {
   const scope = await getScope();
+  // Downloads of raw sales / visit data are restricted to system admins.
+  if (scope.role !== "sysadmin") return new Response("Only system admins can download sales / visit data.", { status: 403 });
   let f: ExportFilters = {};
   const raw = req.nextUrl.searchParams.get("f");
   if (raw) { try { f = JSON.parse(Buffer.from(decodeURIComponent(raw), "base64").toString("utf8")); } catch { f = {}; } }
@@ -220,14 +233,8 @@ export async function GET(req: NextRequest) {
   const wantSales = type === "sales" || type === "both";
   const wantVisits = type === "visits" || type === "both";
 
-  // RBAC guards (apply to whichever sheets are requested).
-  if (scope.role === "officer" && scope.storeId == null) return new Response("No store assigned to your account.", { status: 403 });
-  if (scope.role === "regional" && !scope.zone) return new Response("No district assigned to your account.", { status: 403 });
-
-  // Scope-derived store/district filters for the SALES sheets (LAST, so no query param can widen them).
-  let storeIds = f.storeIds, zones = f.zones;
-  if (scope.role === "officer") { storeIds = [scope.storeId as number]; zones = undefined; }
-  else if (scope.role === "regional") { zones = [scope.zone as string]; }
+  // Sysadmin-only (guarded above), so no per-role narrowing of stores/districts — filters apply as sent.
+  const storeIds = f.storeIds, zones = f.zones;
 
   const stores = await prisma.store.findMany({ select: { id: true, name: true } });
   const nameById = new Map(stores.map((s) => [s.id, s.name.replace(/\s*\(.*?\)\s*/g, "").trim() || s.name]));
@@ -251,6 +258,7 @@ export async function GET(req: NextRequest) {
         ["Filter", "Applied"],
         ["Exported data", type === "both" ? "Sales + Visits" : type === "visits" ? "Visits" : "Sales"],
         ["Stores", list((wantSales ? storeIds : f.storeIds), (id) => nameById.get(id) ?? `#${id}`, "All stores")],
+        ["Store status", list(f.storeStatus, (s) => String(s), "Active + Inactive")],
         ["Districts", list((wantSales ? zones : f.zones), (z) => String(z), "All districts")],
         ["Villages", list(f.villages, (v) => String(v), "All villages")],
         ["Crops", list(f.crops, cropLabel, "All crops")],
@@ -262,6 +270,7 @@ export async function GET(req: NextRequest) {
           ["", ""],
           ["— Sales filters —", ""],
           ["Financial year(s)", list(f.fyStarts, fyLbl, "All FYs")],
+          ["Sale-line date range", f.salesFrom || f.salesTo ? `${f.salesFrom ?? "start"} to ${f.salesTo ?? "today"}` : "All dates"],
           ["Value segment", list(f.valueSegments, (s) => segMeta(s).label, "All")],
           ["Lifecycle", list(f.lifecycleSegments, (s) => segMeta(s).label, "All")],
           ["Spend tier", list(f.spendTiers, (i) => SPEND_TIERS[i]?.label ?? String(i), "Any")],

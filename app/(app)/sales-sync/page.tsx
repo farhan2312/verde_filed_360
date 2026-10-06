@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getRole } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { salesApiConfig } from "@/lib/sales-api";
-import { addDays, getSyncSettings, todayIst } from "@/lib/sales-sync";
+import { addDays, DEFAULT_LOOKBACK_DAYS, getSyncSettings, todayIst } from "@/lib/sales-sync";
 import { getActiveSalesSync } from "@/app/actions/sales-sync";
 import { SalesSyncScreen, type CoverageDay, type DayBar, type RunRow, type SyncStats } from "@/components/sales-sync/SalesSyncScreen";
 import type { LastRunVM } from "@/components/sales-sync/SalesSyncRunCard";
@@ -29,7 +29,7 @@ export default async function SalesSyncPage() {
   let stats: SyncStats = { runs30: 0, success30: 0, failed30: 0, records30: 0, bills30: 0, newCustomers30: 0, avgDurationMs: null, totalBills: 0, totalLines: 0, totalFarmers: 0, lastBillDate: null };
   let lastRun: LastRunVM | null = null;
   let active = null;
-  let settings = { lookbackDays: 1, enabled: true };
+  let settings = { lookbackDays: DEFAULT_LOOKBACK_DAYS, enabled: true };
 
   try {
     const [rows, totalBills, totalLines, totalFarmers, lastSale, cov] = await Promise.all([

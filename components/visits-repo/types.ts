@@ -25,6 +25,9 @@ export interface VisitFilterState {
   period: string;
   review: string; // "all" | "reviewed" | "pending"
   q: string; // free-text search (farmer name / mobile / village / officer)
+  date: string; // exact visit date (YYYY-MM-DD), IST; overrides period/range when set
+  from: string; // visit date range start (YYYY-MM-DD), IST
+  to: string;   // visit date range end (YYYY-MM-DD), IST
 }
 
 export interface VisitFilterOptions {

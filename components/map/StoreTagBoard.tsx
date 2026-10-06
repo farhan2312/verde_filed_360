@@ -5,6 +5,7 @@ import { grouped } from "@/lib/format";
 import { SearchIcon } from "@/components/icons";
 import type { StoreListItem, StoreTagMeta } from "./types";
 import { StoreTagPills } from "./StoreTagPills";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 /**
  * Dedicated store-tagging tab: a searchable table of every in-scope store with its current tags.
@@ -12,13 +13,15 @@ import { StoreTagPills } from "./StoreTagPills";
  * (tri-state: fills all / clears all). A per-row "＋" adds a single tag; clicking a pill removes it.
  * Filter by tag to find stores. Catalog CRUD stays in Settings.
  */
-export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply }: {
+export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply, onClearAll }: {
   stores: StoreListItem[];
   tags: StoreTagMeta[];
   tagMap: Map<number, StoreTagMeta>;
   tagIdsByStore: Record<number, number[]>;
   onApply: (storeIds: number[], tagId: number, on: boolean) => void;
+  onClearAll: (storeIds: number[]) => void;
 }) {
+  const { confirm, dialog } = useConfirm();
   const [q, setQ] = useState("");
   const [filterTags, setFilterTags] = useState<Set<number>>(new Set());
   const [untagged, setUntagged] = useState(false);
@@ -71,6 +74,7 @@ export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply }: 
 
   return (
     <div className="animate-[fadeUp_0.35s_ease-out] flex flex-col gap-3">
+      {dialog}
       {/* Toolbar */}
       <div className="rounded-[14px] border border-black/[0.04] bg-white p-3.5 shadow-card">
         <div className="flex flex-wrap items-center gap-2.5">
@@ -119,7 +123,20 @@ export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply }: 
               </button>
             );
           })}
-          <button type="button" onClick={() => setSelected(new Set())} className="ml-auto text-[11.5px] font-semibold text-[#C62828] hover:underline">Clear selection</button>
+          {selList.some((id) => tagsOf(id).length > 0) && (
+            <button type="button"
+              onClick={async () => {
+                if (await confirm({
+                  title: `Remove ALL tags from ${selList.length} selected store${selList.length > 1 ? "s" : ""}?`,
+                  message: "Every tag on the selected stores will be removed. This can't be undone.",
+                  confirmLabel: "Clear all tags",
+                })) onClearAll(selList);
+              }}
+              className="ml-auto rounded-full border-[1.5px] border-[#E0A0A0] px-2.5 py-[3px] text-[11px] font-semibold text-[#C62828] hover:bg-[#FDECEA]">
+              Clear all tags
+            </button>
+          )}
+          <button type="button" onClick={() => setSelected(new Set())} className={`${selList.some((id) => tagsOf(id).length > 0) ? "" : "ml-auto "}text-[11.5px] font-semibold text-[#C62828] hover:underline`}>Clear selection</button>
         </div>
       )}
 
@@ -167,6 +184,15 @@ export function StoreTagBoard({ stores, tags, tagMap, tagIdsByStore, onApply }: 
                           </button>
                         ); })}
                         <AddTagMenu tags={tags} has={t} onAdd={(tagId) => onApply([s.id], tagId, true)} />
+                        {t.length >= 2 && (
+                          <button type="button" title="Remove all tags from this store"
+                            onClick={async () => {
+                              if (await confirm({ title: `Remove all tags from ${s.shortName}?`, confirmLabel: "Clear all tags" })) onClearAll([s.id]);
+                            }}
+                            className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-[#9E9E9E] hover:bg-[#FDECEA] hover:text-[#C62828]">
+                            clear all
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

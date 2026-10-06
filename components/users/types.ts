@@ -20,7 +20,8 @@ export interface UserRow {
   storeName: string;
   /** Region (User.zone) — mainly regional managers; "" when none. */
   zone: string;
-  lastActive: string;
+  lastActive: string;      // relative label, e.g. "2h ago"
+  lastActiveAt: string | null; // exact ISO timestamp of the most recent activity (for the precise date+time)
   visitsMtd: string;
   /** "Active" | "Inactive" */
   status: string;

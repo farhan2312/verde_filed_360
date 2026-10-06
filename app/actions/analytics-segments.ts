@@ -18,6 +18,7 @@ export interface WbFilters {
   lens: Lens;
   storeIds?: number[];       // stores — match ANY
   storeTags?: number[];      // store-tag ids — a farmer's store carries ANY of these (array overlap)
+  storeStatus?: string[];    // store status — "Active" | "Inactive" — a farmer's store is ANY of these
   zones?: string[];          // regions — match ANY
   villages?: string[];       // villages (UPPER-TRIMMED keys) — match ANY; both lenses
   crops?: string[];          // crops (sales or visit depending on lens) — match ANY (array overlap)
@@ -29,6 +30,8 @@ export interface WbFilters {
   problems?: string[];       // visit lens — match ANY
   visitFrom?: string;        // visit lens — visitedAt >= this date (ISO YYYY-MM-DD)
   visitTo?: string;          // visit lens — visitedAt <= this date (ISO YYYY-MM-DD)
+  salesFrom?: string;        // sales lens — bounds the EXPORT's sale lines: soldAt >= this date (ISO YYYY-MM-DD)
+  salesTo?: string;          // sales lens — bounds the EXPORT's sale lines: soldAt <= this date (ISO YYYY-MM-DD)
 }
 
 const num = (x: unknown) => (x == null ? 0 : Number(x));
@@ -53,6 +56,7 @@ function staticConds(f: WbFilters, alias = ""): Prisma.Sql[] {
   const c: Prisma.Sql[] = [Prisma.sql`${col(alias, "source")} = 'REAL'`];
   if (f.storeIds?.length) c.push(Prisma.sql`${col(alias, "storeId")} = ANY(${f.storeIds})`);
   if (f.storeTags?.length) c.push(Prisma.sql`EXISTS (SELECT 1 FROM "Store" st WHERE st.id = ${col(alias, "storeId")} AND st."tagIds" && ${f.storeTags}::int[])`);
+  if (f.storeStatus?.length) c.push(Prisma.sql`EXISTS (SELECT 1 FROM "Store" st WHERE st.id = ${col(alias, "storeId")} AND st."status" = ANY(${f.storeStatus}))`);
   if (f.zones?.length) c.push(Prisma.sql`${col(alias, "zone")} = ANY(${f.zones})`);
   if (f.villages?.length) c.push(Prisma.sql`upper(btrim(${col(alias, "village")})) = ANY(${f.villages})`);
   if (f.crops?.length) {
@@ -711,6 +715,7 @@ export async function exportWorkbookXlsx(f: WbFilters): Promise<{ ok: boolean; f
     ["Lens", scoped.lens === "visit" ? "Visits" : "Sales"],
     ["Financial year(s)", listOf(scoped.fyStarts, fyLbl, "All FYs (all-time spend)")],
     ["Stores", listOf(scoped.storeIds, (id) => nameById.get(id) ?? `#${id}`, "All stores")],
+    ["Store status", listOf(scoped.storeStatus, (s) => String(s), "Active + Inactive")],
     ["Regions / zones", listOf(scoped.zones, (z) => String(z), "All regions")],
     ["Crops", listOf(scoped.crops, cropLabel, "All crops")],
     ["Pests / diseases", listOf(scoped.pests, tagLabel, "All")],

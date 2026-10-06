@@ -27,7 +27,7 @@ const money = (x: number) => (x >= 1e7 ? `₹${(x / 1e7).toFixed(2)} Cr` : x >= 
 const fyStartOfYm = (ym: string) => { const [y, m] = ym.split("-").map(Number); return m >= 4 ? y : y - 1; };
 const fyLabel = (y: number) => `FY ${y}–${String((y + 1) % 100).padStart(2, "0")}`; // FY 2024–25
 
-export function AnalyticsWorkbench({ initial, facets, canChain = false }: { initial: WbData; facets: WbFacets; canChain?: boolean }) {
+export function AnalyticsWorkbench({ initial, facets, canChain = false, canExport = false }: { initial: WbData; facets: WbFacets; canChain?: boolean; canExport?: boolean }) {
   const [filters, setFilters] = useState<WbFilters>({ lens: "sales" });
   const [perfTab, setPerfTab] = useState<PerfKind | null>(null); // null = segmentation (Sales/Visits); else a performance board
   const [data, setData] = useState(initial);
@@ -42,7 +42,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
   const [treeBy, setTreeBy] = useState<"value" | "lifecycle">("value"); // shared primary dimension for the KPI tree AND the detailed matrix
   const flipTree = () => setTreeBy((b) => (b === "value" ? "lifecycle" : "value"));
   const years = filters.fyStarts ?? []; // selected FY start years — drives the whole sales analysis
-  const toggleStr = (key: "zones" | "villages" | "crops" | "pests" | "problems" | "valueSegments" | "lifecycleSegments", v: string) => {
+  const toggleStr = (key: "zones" | "villages" | "crops" | "pests" | "problems" | "valueSegments" | "lifecycleSegments" | "storeStatus", v: string) => {
     const cur = (filters[key] as string[] | undefined) ?? [];
     apply({ [key]: cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v] } as Partial<WbFilters>);
   };
@@ -65,10 +65,11 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
     setExporting(true); setExportBytes(0);
     try {
       const f = {
-        storeIds: filters.storeIds, storeTags: filters.storeTags, zones: filters.zones, villages: filters.villages, crops: filters.crops, pests: filters.pests,
+        storeIds: filters.storeIds, storeTags: filters.storeTags, storeStatus: filters.storeStatus, zones: filters.zones, villages: filters.villages, crops: filters.crops, pests: filters.pests,
         valueSegments: filters.valueSegments, lifecycleSegments: filters.lifecycleSegments,
         spendTiers: filters.spendTiers, fyStarts: filters.fyStarts, problems: filters.problems,
         visitFrom: filters.visitFrom, visitTo: filters.visitTo,
+        salesFrom: filters.salesFrom, salesTo: filters.salesTo,
       };
       const url = `/api/analytics/export?f=${encodeURIComponent(btoa(JSON.stringify(f)))}&type=${type}`;
       const res = await fetch(url);
@@ -111,7 +112,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
     setExportScope((s) => (s === "both" ? s : lens === "visit" ? "visits" : "sales")); // follow the lens unless the user chose Both
     apply({ lens, crops: undefined, valueSegments: undefined, lifecycleSegments: undefined, spendTiers: undefined, problems: undefined });
   };
-  const clearAll = () => apply({ storeIds: undefined, storeTags: undefined, zones: undefined, villages: undefined, crops: undefined, pests: undefined, valueSegments: undefined, lifecycleSegments: undefined, spendTiers: undefined, problems: undefined, fyStarts: undefined, visitFrom: undefined, visitTo: undefined });
+  const clearAll = () => apply({ storeIds: undefined, storeTags: undefined, storeStatus: undefined, zones: undefined, villages: undefined, crops: undefined, pests: undefined, valueSegments: undefined, lifecycleSegments: undefined, spendTiers: undefined, problems: undefined, fyStarts: undefined, visitFrom: undefined, visitTo: undefined, salesFrom: undefined, salesTo: undefined });
 
   const openCell = (storeId: number | null, storeName: string, dim: SegDim | "cross", seg: string) => {
     setCell({ storeId, storeName, dim, seg }); setRows(null);
@@ -120,7 +121,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
 
   const cropOpts = filters.lens === "sales" ? facets.salesCrops : facets.visitCrops;
   const activeFilterCount = [
-    filters.storeIds, filters.storeTags, filters.zones, filters.villages, filters.crops, filters.pests,
+    filters.storeIds, filters.storeTags, filters.storeStatus, filters.zones, filters.villages, filters.crops, filters.pests,
     filters.valueSegments, filters.lifecycleSegments, filters.spendTiers, filters.problems, filters.fyStarts,
   ].filter((a) => a && a.length).length;
   const k = data.kpis;
@@ -165,6 +166,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
               Preparing Excel… {fmtBytes(exportBytes)}
             </span>
           )}
+          {canExport && (
           <div className="inline-flex overflow-hidden rounded-[10px] border border-[#7DA02E]">
             <select value={exportScope} onChange={(e) => setExportScope(e.target.value as ExportScope)} disabled={exporting}
               aria-label="What to export"
@@ -178,6 +180,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
               title="Export the current filters to Excel (streamed, any size)">
               {exporting ? "Exporting…" : "⬇ Export"}</button>
           </div>
+          )}
           <button type="button" onClick={() => setSaving(true)} disabled={k.farmers === 0}
             className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">＋ Save as cluster</button>
         </div>
@@ -197,6 +200,8 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
           <MultiSel ph="All store tags" accent="#00838F" options={facets.storeTags.map((t) => [String(t.id), t.name])}
             selected={(filters.storeTags ?? []).map(String)} onToggle={(v) => toggleInt("storeTags", Number(v))} onClear={() => apply({ storeTags: undefined })} />
         )}
+        <MultiSel ph="Active + Inactive" accent="#607D8B" options={[["Active", "Active"], ["Inactive", "Inactive"]]}
+          selected={filters.storeStatus ?? []} onToggle={(v) => toggleStr("storeStatus", v)} onClear={() => apply({ storeStatus: undefined })} />
         <MultiSel ph="All districts" options={facets.zones.map((z) => [z, z])}
           selected={filters.zones ?? []} onToggle={(v) => toggleStr("zones", v)} onClear={() => apply({ zones: undefined })} />
         <MultiSel ph="All villages" options={facets.villages.map((v) => [v.village, `${v.village} (${n(v.count)})`])}
@@ -229,6 +234,16 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false }: { init
       {filters.lens === "visit" && (
         <VisitDateFilter minDate={facets.visitMinDate} from={filters.visitFrom} to={filters.visitTo}
           onChange={(from, to) => apply({ visitFrom: from, visitTo: to })} />
+      )}
+      {/* Sales export date range — bounds the sale lines in the Excel download (not the on-screen board,
+          which is FY-driven). Export is sysadmin-only, so this only shows to those who can download. */}
+      {filters.lens === "sales" && canExport && (
+        <div>
+          <VisitDateFilter label="Sales export dates:" minDate={facets.years.length ? `${Math.min(...facets.years)}-04-01` : null}
+            from={filters.salesFrom} to={filters.salesTo}
+            onChange={(from, to) => setFilters((prev) => ({ ...prev, salesFrom: from, salesTo: to }))} />
+          <div className="-mt-1.5 mb-3 px-1 text-[11px] text-[#9E9E9E]">Bounds the sale lines in the Excel export. Leave as “All time” to export every dated line.</div>
+        </div>
       )}
 
       {/* KPIs — sales: Total farmers + Value×Lifecycle cross-tab tree (flippable). Visit: the field metrics. */}

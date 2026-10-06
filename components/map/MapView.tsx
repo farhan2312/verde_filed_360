@@ -11,7 +11,7 @@ import { FarmerDetailPanel } from "./FarmerDetailPanel";
 import { StoreList } from "./StoreList";
 import { StoreFarmersPanel } from "./StoreFarmersPanel";
 import { StoreTagBoard } from "./StoreTagBoard";
-import { applyStoreTagBulk } from "@/app/actions/store-tags";
+import { applyStoreTagBulk, clearStoreTagsBulk } from "@/app/actions/store-tags";
 
 type MapTab = "map" | "tags";
 
@@ -53,6 +53,16 @@ export function MapView({
     startTag(async () => {
       const r = await applyStoreTagBulk(storeIds, tagId, on);
       if (!r.ok) { setTagIdsByStore(prev); alert(r.error ?? "Could not update tags."); }
+    });
+  };
+
+  // Strip every tag from the given stores at once (bulk / per-row "Clear all"). Optimistic.
+  const clearAllTags = (storeIds: number[]) => {
+    const prev = tagIdsByStore;
+    setTagIdsByStore((cur) => { const next = { ...cur }; for (const id of storeIds) next[id] = []; return next; });
+    startTag(async () => {
+      const r = await clearStoreTagsBulk(storeIds);
+      if (!r.ok) { setTagIdsByStore(prev); alert(r.error ?? "Could not clear tags."); }
     });
   };
   const [selectedStoreIds, setSelectedStoreIds] = useState<Set<number>>(new Set());
@@ -125,7 +135,7 @@ export function MapView({
       </div>
 
       {tab === "tags" ? (
-        <StoreTagBoard stores={allStores} tags={storeTags} tagMap={tagMap} tagIdsByStore={tagIdsByStore} onApply={applyTag} />
+        <StoreTagBoard stores={allStores} tags={storeTags} tagMap={tagMap} tagIdsByStore={tagIdsByStore} onApply={applyTag} onClearAll={clearAllTags} />
       ) : (
       <>
       {/* Map display controls */}

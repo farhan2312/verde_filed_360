@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressBar } from "@/components/ui";
-import { getActiveSalesSync, getSalesSyncRun, updateSalesSyncSettings, type ActiveRun } from "@/app/actions/sales-sync";
+import { getActiveSalesSync, getSalesSyncPasswordRequired, getSalesSyncRun, updateSalesSyncSettings, type ActiveRun } from "@/app/actions/sales-sync";
 import type { SyncProgress } from "@/lib/sales-sync";
 
 export interface SyncSettingsVM { lookbackDays: number; enabled: boolean }
@@ -38,6 +38,8 @@ export function SalesSyncRunCard({ apiReady, settings: initialSettings, initialA
     ? { kind: "running", progress: initialActive.progress, startedBy: initialActive.startedBy, window: `${initialActive.fromDate} → ${initialActive.toDate}`, runId: initialActive.id }
     : { kind: "idle" });
   const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [passwordRequired, setPasswordRequired] = useState(false); // from the server: env SALES_SYNC_PASSWORD set?
   const [settings, setSettings] = useState(initialSettings);
   const [savingSettings, setSavingSettings] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -68,16 +70,19 @@ export function SalesSyncRunCard({ apiReady, settings: initialSettings, initialA
 
   useEffect(() => { if (initialActive) startPolling(initialActive.id); return stopPolling; }, [initialActive, startPolling]);
 
+  useEffect(() => { let alive = true; getSalesSyncPasswordRequired().then((r) => { if (alive) setPasswordRequired(r); }).catch(() => {}); return () => { alive = false; }; }, []);
+
   async function run() {
     setError(null);
     setPhase({ kind: "running", progress: null, startedBy: "You", window: `${from} → ${to}`, runId: null });
     startPolling(null);
     try {
-      const res = await fetch("/api/sales-sync/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from, to }) });
+      const res = await fetch("/api/sales-sync/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from, to, password }) });
       const json = await res.json();
       stopPolling();
       if (!res.ok || json.error) throw new Error(json.error || "Sync failed.");
       setPhase({ kind: "done", ok: !!json.ok, progress: json.progress ?? null, error: json.error ?? null, durationMs: json.durationMs ?? null });
+      setPassword("");
     } catch (e) {
       stopPolling();
       setPhase({ kind: "idle" });
@@ -149,7 +154,14 @@ export function SalesSyncRunCard({ apiReady, settings: initialSettings, initialA
                 className={`rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${from === f && to === t ? "border-brand-400 bg-brand-50 text-brand-700" : "border-line text-ink-600 hover:bg-surface-100"}`}>{l}</button>
             ))}
           </div>
-          <button type="button" onClick={run} disabled={running || !apiReady || !from || !to || from > to}
+          {passwordRequired && (
+            <label className="flex flex-col gap-1 text-[11.5px] font-semibold text-ink-600">Sync password
+              <input type="password" value={password} autoComplete="off" placeholder="Required" disabled={running}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !running && apiReady && from && to && from <= to && password) void run(); }}
+                className={`${INPUT} w-[150px]`} /></label>
+          )}
+          <button type="button" onClick={run} disabled={running || !apiReady || !from || !to || from > to || (passwordRequired && !password)}
             className="ml-auto rounded-[10px] bg-brand-600 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50">
             {running ? "Syncing…" : "Run sync now"}
           </button>

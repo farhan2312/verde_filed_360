@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -103,18 +103,18 @@ export function ReportBugButton() {
         title="Report a problem with this page"
         className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#E0E0E0] bg-white px-3 py-[7px] text-[12px] font-semibold text-[#616161] transition-colors hover:border-[#C62828] hover:text-[#C62828]"
       >
-        <span aria-hidden>🐞</span>
-        <span className="hidden sm:inline">Report a Bug</span>
+        <span aria-hidden>🚩</span>
+        <span className="hidden sm:inline">Report an Issue</span>
       </button>
 
       <Modal open={open} onClose={() => setOpen(false)} className="max-w-[520px]">
-        <ModalHeader eyebrow="🐞 Report a Bug" eyebrowColor="#C62828" title="Report a Bug"
-          subtitle="Tell us what went wrong — it goes straight to the admin's Bug Tracker." onClose={() => setOpen(false)} />
+        <ModalHeader eyebrow="🚩 Report an Issue" eyebrowColor="#C62828" title="Report an Issue"
+          subtitle="Tell us what went wrong — it goes straight to the admin's Issue Tracker." onClose={() => setOpen(false)} />
         <div className="px-6 py-5">
           {done ? (
             <div className="py-6 text-center">
               <div className="text-[28px]">✅</div>
-              <div className="mt-2 text-[15px] font-bold text-[#1A1C1A]">Thanks — bug reported!</div>
+              <div className="mt-2 text-[15px] font-bold text-[#1A1C1A]">Thanks — issue reported!</div>
               <div className="mt-1 text-[12.5px] text-[#9E9E9E]">The admin can now see and triage it.</div>
             </div>
           ) : (

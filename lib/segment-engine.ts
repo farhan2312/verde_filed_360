@@ -37,7 +37,7 @@ export interface RecomputeResult {
   value: Record<string, number>;
   lifecycle: Record<string, number>;
   leads: number;                         // farmers with no purchase → LEAD / NO_SPEND
-  converted: number;                     // lead → customer conversions this run
+  converted: number;                     // farmers flagged wasLead (first sale after registration) in scope
 }
 export interface RecomputeOpts {
   farmerIds?: number[];                  // scope (omit = every REAL farmer)
@@ -163,12 +163,6 @@ export async function recomputeSegments(opts: RecomputeOpts = {}): Promise<Recom
     );
   }
 
-  // Who is a LEAD right now (before we overwrite) — scoped to the target set when scoping.
-  const priorLeadRows = scoped
-    ? await prisma.$queryRawUnsafe<{ id: number }[]>(`SELECT id FROM "Farmer" WHERE source='REAL' AND "lifecycleSegment"='LEAD' AND id = ANY($1::int[])`, scoped)
-    : await prisma.$queryRawUnsafe<{ id: number }[]>(`SELECT id FROM "Farmer" WHERE source='REAL' AND "lifecycleSegment"='LEAD'`);
-  const priorLeadIds = priorLeadRows.map((r) => r.id);
-
   // ── Bulk UPDATE ... FROM (VALUES ...) in chunks ──
   const CHUNK = 2000;
   let updated = 0;
@@ -212,14 +206,34 @@ export async function recomputeSegments(opts: RecomputeOpts = {}): Promise<Recom
     );
   }
 
-  // Lead → customer conversions (sticky).
-  const converted = priorLeadIds.length
-    ? await prisma.$executeRawUnsafe(
-        `UPDATE "Farmer" SET "wasLead"=true, "leadConvertedAt"=COALESCE("leadConvertedAt","lastPurchaseAt")
-         WHERE source='REAL' AND "wasLead"=false AND "lastPurchaseAt" IS NOT NULL AND id = ANY($1::int[])`,
-        priorLeadIds,
-      )
-    : 0;
+  // Lead → customer conversions — deterministic. A genuine conversion is a farmer who was registered
+  // with NO purchase and bought LATER: their first sale is dated AFTER their registration (createdAt).
+  // Historical purchases surfaced by an ERP backfill/sync mean the farmer was already a customer (first
+  // sale predates registration — sync-created farmers get createdAt=now), so they are NOT counted.
+  // Deterministic on first-sale (over ALL of the farmer's sales, even when scoped), so no stickiness needed.
+  const scopeClause = scoped ? `AND f.id = ANY($1::int[])` : ``;
+  const saleFilter = scoped ? `AND "farmerId" = ANY($1::int[])` : ``;
+  const params = scoped ? [scoped] : [];
+  await prisma.$executeRawUnsafe(
+    `UPDATE "Farmer" f
+        SET "wasLead" = (fs.first_sale IS NOT NULL AND fs.first_sale > f."createdAt"),
+            "leadConvertedAt" = CASE WHEN fs.first_sale IS NOT NULL AND fs.first_sale > f."createdAt" THEN fs.first_sale ELSE NULL END
+       FROM (SELECT "farmerId", MIN("soldAt") first_sale FROM "Sale" WHERE "soldAt" IS NOT NULL ${saleFilter} GROUP BY "farmerId") fs
+      WHERE f.source='REAL' AND f.id = fs."farmerId" ${scopeClause}`,
+    ...params,
+  );
+  // Farmers with no dated sale can't be conversions — clear any stale flag.
+  await prisma.$executeRawUnsafe(
+    `UPDATE "Farmer" f SET "wasLead"=false, "leadConvertedAt"=NULL
+      WHERE f.source='REAL' AND f."wasLead"=true ${scopeClause}
+        AND NOT EXISTS (SELECT 1 FROM "Sale" s WHERE s."farmerId"=f.id AND s."soldAt" IS NOT NULL)`,
+    ...params,
+  );
+  const convRows = await prisma.$queryRawUnsafe<{ n: number }[]>(
+    `SELECT COUNT(*)::int n FROM "Farmer" f WHERE f.source='REAL' AND f."wasLead"=true ${scopeClause}`,
+    ...params,
+  );
+  const converted = convRows[0]?.n ?? 0;
 
   return { farmers: rows.length, value, lifecycle, leads, converted };
 }

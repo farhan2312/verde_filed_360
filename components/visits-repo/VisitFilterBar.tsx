@@ -49,14 +49,35 @@ export function VisitFilterBar({
 
   // Period pills: "all" (All Time) is a real state, NOT an absent filter — always set it explicitly,
   // or the page falls back to its "month" default and All Time can never stay selected.
+  // Choosing a period clears any explicit date search (the two are mutually exclusive).
   const setPeriod = useCallback(
     (value: string) => {
       const params = new URLSearchParams(searchParams.toString());
+      ["date", "from", "to"].forEach((k) => params.delete(k));
       params.set("period", value);
       navigate(params);
     },
     [navigate, searchParams],
   );
+
+  // Explicit visit-date search (exact day or range). Overrides the period preset (period param dropped).
+  const hasDate = !!(filter.date || filter.from || filter.to);
+  const [dateMode, setDateMode] = useState<"exact" | "range">(filter.from || filter.to ? "range" : "exact");
+  const applyDate = useCallback(
+    (patch: Record<string, string | undefined>, clear: string[]) => {
+      const params = new URLSearchParams(searchParams.toString());
+      clear.forEach((k) => params.delete(k));
+      params.delete("period");
+      for (const [k, v] of Object.entries(patch)) { if (v) params.set(k, v); else params.delete(k); }
+      navigate(params);
+    },
+    [navigate, searchParams],
+  );
+  const clearDates = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    ["date", "from", "to"].forEach((k) => params.delete(k));
+    navigate(params);
+  }, [navigate, searchParams]);
 
   // Debounced free-text search (farmer name / mobile / village / officer).
   const [q, setQ] = useState(filter.q);
@@ -87,7 +108,7 @@ export function VisitFilterBar({
 
         {/* Period pills */}
         {PERIOD_PILLS.map((p) => {
-          const active = filter.period === p.key;
+          const active = !hasDate && filter.period === p.key;
           return (
             <button
               key={p.key}
@@ -104,6 +125,35 @@ export function VisitFilterBar({
             </button>
           );
         })}
+
+        <div className="w-px h-6 bg-[#F0F0F0] mx-1" />
+
+        {/* Visit-date search: exact day OR range (mutually exclusive with the period pills) */}
+        <div className="inline-flex overflow-hidden rounded-lg border border-[#E0E0E0]">
+          {(["exact", "range"] as const).map((m) => (
+            <button key={m} type="button" onClick={() => setDateMode(m)}
+              className="px-2.5 py-[6px] text-[11px] font-semibold transition-colors"
+              style={{ background: dateMode === m ? "#5C7D22" : "#fff", color: dateMode === m ? "#fff" : "#616161" }}>
+              {m === "exact" ? "On date" : "Range"}
+            </button>
+          ))}
+        </div>
+        {dateMode === "exact" ? (
+          <input type="date" value={filter.date} aria-label="Visits on date"
+            onChange={(e) => applyDate({ date: e.target.value || undefined }, ["from", "to"])} className={SELECT_CLASS} />
+        ) : (
+          <>
+            <input type="date" value={filter.from} max={filter.to || undefined} aria-label="Visit date from"
+              onChange={(e) => applyDate({ from: e.target.value || undefined, to: filter.to || undefined }, ["date"])} className={SELECT_CLASS} />
+            <span className="text-xs text-[#9E9E9E]">→</span>
+            <input type="date" value={filter.to} min={filter.from || undefined} aria-label="Visit date to"
+              onChange={(e) => applyDate({ from: filter.from || undefined, to: e.target.value || undefined }, ["date"])} className={SELECT_CLASS} />
+          </>
+        )}
+        {hasDate && (
+          <button type="button" onClick={clearDates} title="Clear date filter"
+            className="rounded-full px-2 py-1 text-xs leading-none text-[#9E9E9E] hover:text-[#C62828]">✕</button>
+        )}
 
         <div className="w-px h-6 bg-[#F0F0F0] mx-1" />
 

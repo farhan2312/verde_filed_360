@@ -15,6 +15,9 @@ import { SalesHistoryCard } from "@/components/farmer-detail/SalesHistoryCard";
 import { VisitReportsCard } from "@/components/farmer-detail/VisitReportsCard";
 import { CropHistoryCard } from "@/components/farmer-detail/CropHistoryCard";
 import { ConcernsCard } from "@/components/farmer-detail/ConcernsCard";
+import { FarmerClustersCard } from "@/components/farmer-detail/FarmerClustersCard";
+import { ContactTimelineCard } from "@/components/farmer-detail/ContactTimelineCard";
+import { getFarmerClusters, getFarmerContactTimeline, type FarmerClusterVM, type ContactEvent } from "@/lib/farmer-360";
 import type { FarmerDetail } from "@/components/farmer-detail/types";
 
 export const dynamic = "force-dynamic";
@@ -203,6 +206,11 @@ export default async function FarmerDetailPage({
 
   const detail = buildDetail(farmer, baseBySale, storeOfficers);
 
+  // Clusters this farmer matches + their campaign contact timeline (best-effort — never block the page).
+  let clusters: FarmerClusterVM[] = [];
+  let timeline: ContactEvent[] = [];
+  try { [clusters, timeline] = await Promise.all([getFarmerClusters(id), getFarmerContactTimeline(id)]); } catch { /* keep page rendering */ }
+
   // Accurate lifetime value across ALL bills (list above is capped): base LTV from SaleLine.basic,
   // GST-inclusive total from Sale.amountNum (display only), invoice count from Sale.
   try {
@@ -258,6 +266,12 @@ export default async function FarmerDetailPage({
           <CropHistoryCard history={detail.cropHistory} />
         </div>
       )}
+
+      {/* Clusters this farmer belongs to + full campaign contact timeline */}
+      <div className="mb-[18px] grid grid-cols-1 gap-[18px] lg:grid-cols-[1fr_1.4fr]">
+        <FarmerClustersCard clusters={clusters} />
+        <ContactTimelineCard events={timeline} />
+      </div>
 
       {(detail.concerns || detail.issues.length > 0 || isAdmin) && (
         <ConcernsCard concerns={detail.concerns} issues={detail.issues} />

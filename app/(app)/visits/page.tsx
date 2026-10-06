@@ -21,8 +21,16 @@ type SearchParams = {
   review?: string;
   period?: string;
   q?: string;
+  date?: string; // exact visit date (IST)
+  from?: string; // visit date range start (IST)
+  to?: string;   // visit date range end (IST)
   page?: string;
 };
+
+const isYmd = (s: string | undefined): s is string => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
+// A YYYY-MM-DD interpreted as an IST calendar day -> its UTC start/end (visitedAt is stored in UTC).
+const istStart = (ymd: string) => new Date(`${ymd}T00:00:00.000+05:30`);
+const istEnd = (ymd: string) => new Date(`${ymd}T23:59:59.999+05:30`);
 
 const PAGE_SIZE = 50;
 
@@ -54,6 +62,9 @@ export default async function VisitRepoPage({
   const type = sp.type ?? "all";
   const review = sp.review === "reviewed" || sp.review === "pending" ? sp.review : "all";
   const period = sp.period && sp.period in PERIOD_DAYS ? sp.period : "month";
+  const exactDate = isYmd(sp.date) ? sp.date : "";
+  const fromDate = isYmd(sp.from) ? sp.from : "";
+  const toDate = isYmd(sp.to) ? sp.to : "";
   const q = (sp.q ?? "").trim();
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
@@ -117,8 +128,15 @@ export default async function VisitRepoPage({
     if (type !== "all") where.purpose = type;
     if (review === "reviewed") where.reviewedAt = { not: null };
     else if (review === "pending") where.reviewedAt = null;
-    const cutoff = periodCutoff(period);
-    if (cutoff) where.visitedAt = { gte: cutoff };
+    // Explicit date search (exact day or range, IST) overrides the period preset.
+    if (exactDate) {
+      where.visitedAt = { gte: istStart(exactDate), lte: istEnd(exactDate) };
+    } else if (fromDate || toDate) {
+      where.visitedAt = { ...(fromDate ? { gte: istStart(fromDate) } : {}), ...(toDate ? { lte: istEnd(toDate) } : {}) };
+    } else {
+      const cutoff = periodCutoff(period);
+      if (cutoff) where.visitedAt = { gte: cutoff };
+    }
     // Store filter is a SHORT name (may cover several stores); RM filter is a manager name (covers their
     // stores). Both map to store-id sets — intersect when both are set — and run in the DB.
     const storeIds = store !== "all" ? allStores.filter((s) => shortStoreName(s.name) === store).map((s) => s.id) : null;
@@ -216,7 +234,7 @@ export default async function VisitRepoPage({
       />
 
       <VisitFilterBar
-        filter={{ officer, store, rm, type, review, period, q }}
+        filter={{ officer, store, rm, type, review, period, q, date: exactDate, from: fromDate, to: toDate }}
         options={{ officers: officerOptions, stores: storeOptions, rms: rmOptions, types: typeOptions }}
         total={total}
       />

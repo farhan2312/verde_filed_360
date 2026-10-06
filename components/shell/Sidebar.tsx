@@ -48,6 +48,7 @@ export function Sidebar({
   impersonating,
   overdueActions = 0,
   pendingReviews = 0,
+  pendingGhoshti = 0,
 }: {
   role: RoleKey;
   persona: PersonaVM;
@@ -55,6 +56,7 @@ export function Sidebar({
   impersonating: RoleKey | null;
   overdueActions?: number;
   pendingReviews?: number;
+  pendingGhoshti?: number;
 }) {
   const pathname = usePathname();
   const active = activeNavHref(pathname);
@@ -79,8 +81,8 @@ export function Sidebar({
       <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
         {main.map((item) => (
           <NavLink key={item.id} item={item} active={active === item.href}
-            badge={item.id === "actionRegistry" ? overdueActions : item.id === "visitRepo" ? pendingReviews : undefined}
-            badgeTitle={item.id === "visitRepo" ? "awaiting review" : "overdue"} />
+            badge={item.id === "actionRegistry" ? overdueActions : item.id === "visitRepo" ? pendingReviews : item.id === "ghoshti" ? pendingGhoshti : undefined}
+            badgeTitle={item.id === "visitRepo" ? "awaiting review" : item.id === "ghoshti" ? "pending approval" : "overdue"} />
         ))}
 
         {showSalesGroup && (

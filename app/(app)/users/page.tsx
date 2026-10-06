@@ -98,6 +98,7 @@ async function loadUsers(): Promise<UserRow[]> {
         storeName: u.storeId != null ? storeById.get(u.storeId) ?? "—" : "—",
         zone: u.zone ?? "",
         lastActive: relTime(activeAt),
+        lastActiveAt: activeAt ? activeAt.toISOString() : null,
         visitsMtd: u.visitsMtd ?? "—",
         status: u.active ? "Active" : "Inactive",
         };

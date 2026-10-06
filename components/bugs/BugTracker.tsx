@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, useTransition } from "react";
 import { Modal, ModalHeader } from "@/components/interactive";
@@ -166,7 +166,7 @@ export function BugTracker({ bugs: initial }: { bugs: BugVM[] }) {
         <div className="rounded-[14px] border border-black/[0.03] bg-white px-6 py-16 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           <div className="text-[34px]">🐞</div>
           <div className="mt-2 text-[15px] font-bold text-[#1A1C1A]">No bugs reported yet</div>
-          <div className="mt-1 text-[12.5px] text-[#9E9E9E]">Users can file bugs from the “Report a Bug” button in the top bar.</div>
+          <div className="mt-1 text-[12.5px] text-[#9E9E9E]">Users can file issues from the "Report an Issue" button in the top bar.</div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

@@ -19,6 +19,10 @@ const TABS: { key: Tab; label: string }[] = [
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
+// Visit timestamps are real instants (server runs UTC) — always render in IST.
+const fmtVisitDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
+
 function Kpi({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
     <div className="rounded-[14px] border border-black/[0.03] bg-white px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -138,10 +142,11 @@ export function ActionRegistry({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-[14px] border border-black/[0.03] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <table className="w-full min-w-[860px] text-[12.5px]">
+          <table className="w-full min-w-[960px] text-[12.5px]">
             <thead>
               <tr className="border-b border-[#EEE] text-left text-[10.5px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">
                 <th className="px-4 py-3">Due</th><th className="px-4 py-3">Farmer</th><th className="px-4 py-3">Store</th>
+                <th className="px-4 py-3">Last visit</th>
                 <th className="px-4 py-3">Reason</th><th className="px-4 py-3">Source</th><th className="px-4 py-3">Created by</th>
                 <th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Action</th>
               </tr>
@@ -160,6 +165,7 @@ export function ActionRegistry({
                     {a.farmerVillage && <div className="text-[10.5px] text-[#9E9E9E]">{a.farmerVillage}{a.farmerMobile ? ` · ${a.farmerMobile}` : ""}</div>}
                   </td>
                   <td className="px-4 py-3 text-[#616161]">{a.storeName || <span className="text-[#BDBDBD]">Unassigned</span>}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-[#616161]">{a.lastVisit ? fmtVisitDate(a.lastVisit) : <span className="text-[#BDBDBD]">No visits</span>}</td>
                   <td className="px-4 py-3 text-[#616161]">{a.reason || "—"}{a.note && <div className="text-[10.5px] text-[#9E9E9E]">{a.note}</div>}</td>
                   <td className="px-4 py-3">
                     {a.visitId

@@ -134,6 +134,20 @@ export async function applyStoreTagBulk(storeIds: number[], tagId: number, on: b
   }
 }
 
+/** Strip ALL tags from every editable store in the list (bulk "Clear all tags"). Scope-enforced. */
+export async function clearStoreTagsBulk(storeIds: number[]): Promise<{ ok: boolean; applied: number; error?: string }> {
+  const scope = await getScope();
+  const ids = editableStoreIds(scope, [...new Set(storeIds)].filter((n) => Number.isFinite(n)));
+  if (!ids.length) return { ok: false, applied: 0, error: "You can only tag stores you manage." };
+  try {
+    await prisma.store.updateMany({ where: { id: { in: ids } }, data: { tagIds: [] } });
+    revalidatePath("/map");
+    return { ok: true, applied: ids.length };
+  } catch (e) {
+    return { ok: false, applied: 0, error: e instanceof Error ? e.message : "Save failed." };
+  }
+}
+
 /* ── Assignment — RM (own stores) / central / sysadmin ── */
 export async function setStoreTags(storeId: number, tagIds: number[]): Promise<{ ok: boolean; error?: string }> {
   const scope = await getScope();

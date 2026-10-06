@@ -18,7 +18,10 @@ function actionScope(scope: Awaited<ReturnType<typeof getScope>>): Prisma.Action
   return null; // central + sysadmin: all
 }
 
-function toVM(a: Prisma.ActionGetPayload<{ include: { farmer: { select: { id: true; name: true; mobile: true; village: true } }; store: { select: { name: true; zone: true } } } }>): ActionVM {
+function toVM(
+  a: Prisma.ActionGetPayload<{ include: { farmer: { select: { id: true; name: true; mobile: true; village: true } }; store: { select: { name: true; zone: true } } } }>,
+  lastVisit?: string | null,
+): ActionVM {
   const due = a.dueDate;
   return {
     id: a.id,
@@ -26,6 +29,7 @@ function toVM(a: Prisma.ActionGetPayload<{ include: { farmer: { select: { id: tr
     farmerName: a.farmer?.name ?? "—",
     farmerMobile: a.farmer?.mobile ?? "",
     farmerVillage: a.farmer?.village ?? "",
+    lastVisit: lastVisit ?? null,
     storeId: a.storeId,
     storeName: shortStore(a.store?.name),
     district: a.store?.zone ?? "",
@@ -59,7 +63,14 @@ export async function listActions(): Promise<ActionVM[]> {
         store: { select: { name: true, zone: true } },
       },
     });
-    return rows.map(toVM);
+    // Most-recent visit date per farmer on these rows (one bounded groupBy).
+    const farmerIds = [...new Set(rows.map((r) => r.farmerId).filter((x): x is number => x != null))];
+    const lastVisitById = new Map<number, string | null>();
+    if (farmerIds.length) {
+      const vg = await prisma.visit.groupBy({ by: ["farmerId"], where: { farmerId: { in: farmerIds } }, _max: { visitedAt: true } });
+      for (const v of vg) if (v.farmerId != null) lastVisitById.set(v.farmerId, v._max.visitedAt ? v._max.visitedAt.toISOString() : null);
+    }
+    return rows.map((r) => toVM(r, r.farmerId != null ? lastVisitById.get(r.farmerId) ?? null : null));
   } catch {
     return [];
   }

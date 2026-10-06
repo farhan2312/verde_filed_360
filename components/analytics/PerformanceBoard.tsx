@@ -45,11 +45,12 @@ export function PerformanceBoard({ kind, storeTags }: { kind: PerfKind; storeTag
   const [preset, setPreset] = useState<Preset>("fy");
   const [cf, setCf] = useState(""); const [ct, setCt] = useState("");
   const [tags, setTags] = useState<number[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [data, setData] = useState<PerfData | null>(null);
   const [loading, start] = useTransition();
   const [sel, setSel] = useState<Set<string>>(new Set()); // compare selection
 
-  const range = useMemo(() => ({ ...computeRange(preset, cf, ct), storeTags: tags.length ? tags : undefined }), [preset, cf, ct, tags]);
+  const range = useMemo(() => ({ ...computeRange(preset, cf, ct), storeTags: tags.length ? tags : undefined, storeStatus: statuses.length ? statuses : undefined }), [preset, cf, ct, tags, statuses]);
 
   useEffect(() => {
     start(async () => setData(await getPerformance(kind, range)));
@@ -82,6 +83,20 @@ export function PerformanceBoard({ kind, storeTags }: { kind: PerfKind; storeTag
         {storeTags.length > 0 && kind !== "officers" && (
           <TagFilter tags={storeTags} selected={tags} onToggle={(id) => setTags((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id])} onClear={() => setTags([])} />
         )}
+        {/* Store status filter */}
+        <div className="flex items-center gap-1">
+          {(["Active", "Inactive"] as const).map((s) => {
+            const on = statuses.includes(s);
+            return (
+              <button key={s} type="button"
+                onClick={() => setStatuses((cur) => cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s])}
+                className="rounded-[20px] px-3 py-[6px] text-[12px] font-semibold transition-colors"
+                style={{ background: on ? "#7DA02E" : "white", color: on ? "white" : "#616161", border: `1.5px solid ${on ? "#7DA02E" : "#E0E0E0"}` }}>
+                {s}
+              </button>
+            );
+          })}
+        </div>
         <div className="ml-auto text-[12px] font-medium text-[#9E9E9E]">
           {loading ? "Updating…" : `${rows.length} ${KIND_NOUN[kind].toLowerCase()}${rows.length === 1 ? "" : "s"}`}
         </div>

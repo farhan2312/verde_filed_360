@@ -11,7 +11,19 @@ import { UserDetailModal } from "./UserDetailModal";
 import type { UserRow } from "./types";
 
 const GRID =
-  "grid grid-cols-[1.35fr_0.9fr_0.9fr_0.85fr_0.75fr_0.55fr_0.5fr_120px] gap-2 px-[22px] items-center";
+  "grid grid-cols-[1.35fr_0.8fr_0.9fr_0.9fr_0.85fr_0.75fr_0.55fr_0.5fr_120px] gap-2 px-[22px] items-center";
+
+type SortKey = "name" | "employeeCode" | "role" | "store" | "territory" | "active" | "visits" | "status";
+
+/** A clickable, sort-toggling column header. */
+function SortHead({ label, k, active, dir, onSort }: { label: string; k: SortKey; active: boolean; dir: "asc" | "desc"; onSort: (k: SortKey) => void }) {
+  return (
+    <button type="button" onClick={() => onSort(k)} className="flex items-center gap-1 text-left uppercase tracking-[0.5px] hover:text-[#7DA02E]"
+      style={{ color: active ? "#7DA02E" : undefined }}>
+      {label}<span className="text-[7px] leading-none">{active ? (dir === "asc" ? "▲" : "▼") : "↕"}</span>
+    </button>
+  );
+}
 
 /** Sentinel for the "no store mapped" filter option (a real store can never be named this). */
 const NO_STORE = "__none__";
@@ -45,6 +57,11 @@ function rowColors(status: string) {
 /** Orange when the user has not been active recently (string contains "day"). */
 function lastActiveColor(s: string) {
   return /day/i.test(s) ? "#E65100" : "#757575";
+}
+
+/** Exact last-active moment in IST — the precise "date and time" for monitoring/transparency. */
+function fmtActiveIST(iso: string) {
+  return new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
 }
 
 const ROLE_CARDS: { accent: string; title: string; body: string }[] = [
@@ -106,6 +123,33 @@ export function UsersTab({
   }, [rows, q, fRole, fStore, fStatus]);
   const filtered = Boolean(q.trim() || fRole || fStore || fStatus);
   const clearAll = () => { setQ(""); setFRole(""); setFStore(""); setFStatus(""); };
+
+  // Column sorting — no key = the default role→name order the rows arrive in.
+  const [sortKey, setSortKey] = useState<SortKey | "">("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const onSort = (k: SortKey) => { if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc")); else { setSortKey(k); setSortDir("asc"); } };
+  const sorted = useMemo(() => {
+    if (!sortKey) return shown;
+    const dir = sortDir === "asc" ? 1 : -1;
+    const num = (s: string) => { const m = String(s).replace(/[^0-9.-]/g, ""); const n = parseFloat(m); return Number.isFinite(n) ? n : -1; };
+    const val = (r: UserRow): string | number => {
+      switch (sortKey) {
+        case "name": return r.name.toLowerCase();
+        case "employeeCode": return (r.employeeCode || "").toLowerCase();
+        case "role": return (r.roleLabel || "").toLowerCase();
+        case "store": return (r.storeName === "—" ? "" : r.storeName).toLowerCase();
+        case "territory": return (r.territory || r.zone || "").toLowerCase();
+        case "active": return r.lastActiveAt ? new Date(r.lastActiveAt).getTime() : 0;
+        case "visits": return num(r.visitsMtd);
+        case "status": return (r.status || "").toLowerCase();
+      }
+    };
+    return [...shown].sort((a, b) => {
+      const va = val(a), vb = val(b);
+      if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+      return String(va).localeCompare(String(vb)) * dir;
+    });
+  }, [shown, sortKey, sortDir]);
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -210,22 +254,23 @@ export function UsersTab({
         <div
           className={`${GRID} border-b border-[#F0F0F0] bg-[#FAFAFA] py-[14px] text-[10.5px] font-semibold uppercase tracking-[0.5px] text-[#9E9E9E]`}
         >
-          <div>User</div>
-          <div>Role</div>
-          <div>Store</div>
-          <div>Territory</div>
-          <div>Last Active</div>
-          <div>Visits MTD</div>
-          <div>Status</div>
+          <SortHead label="User" k="name" active={sortKey === "name"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Emp Code" k="employeeCode" active={sortKey === "employeeCode"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Role" k="role" active={sortKey === "role"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Store" k="store" active={sortKey === "store"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Territory" k="territory" active={sortKey === "territory"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Last Active" k="active" active={sortKey === "active"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Visits MTD" k="visits" active={sortKey === "visits"} dir={sortDir} onSort={onSort} />
+          <SortHead label="Status" k="status" active={sortKey === "status"} dir={sortDir} onSort={onSort} />
           <div />
         </div>
 
         {rows.length === 0 ? (
           <EmptyState title="No users yet" hint="Seed the database to see users." />
-        ) : shown.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <EmptyState title="No users match these filters" hint="Try a different role, store, or search term." />
         ) : (
-          shown.map((ur) => {
+          sorted.map((ur) => {
             const role = ROLE_META[ur.roleLabel] ?? { bg: "#F5F5F5", c: "#757575" };
             const st = USER_STATUS_META[ur.status] ?? { bg: "#F5F5F5", c: "#757575" };
             const { opacity, visitsColor } = rowColors(ur.status);
@@ -252,9 +297,11 @@ export function UsersTab({
                     <div className="truncate text-[13px] font-semibold text-[#1A1C1A]">
                       {ur.name}
                     </div>
-                    <div className="truncate text-[10.5px] text-[#BDBDBD]">{ur.email}</div>
+                    {ur.mobile && <div className="truncate text-[10.5px] text-[#BDBDBD]">{ur.mobile}</div>}
                   </div>
                 </button>
+                {/* Employee code — its own sortable column */}
+                <div className="truncate pr-2 text-[12px] font-semibold text-[#616161]" title={ur.employeeCode}>{ur.employeeCode || "—"}</div>
                 {/* Role */}
                 <div>
                   <span
@@ -271,8 +318,9 @@ export function UsersTab({
                 {/* Territory */}
                 <div className="truncate pr-2 text-[12px] text-[#616161]" title={ur.territory || ur.zone}>{ur.territory || ur.zone}</div>
                 {/* Last Active */}
-                <div className="text-[12px]" style={{ color: lastActiveColor(ur.lastActive) }}>
-                  {ur.lastActive}
+                <div title={ur.lastActiveAt ? fmtActiveIST(ur.lastActiveAt) : undefined}>
+                  <div className="text-[12px]" style={{ color: lastActiveColor(ur.lastActive) }}>{ur.lastActive}</div>
+                  {ur.lastActiveAt && <div className="text-[10px] text-[#9E9E9E]">{fmtActiveIST(ur.lastActiveAt)}</div>}
                 </div>
                 {/* Visits MTD */}
                 <div className="text-[13px] font-bold" style={{ color: visitsColor }}>

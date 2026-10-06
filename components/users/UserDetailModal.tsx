@@ -37,7 +37,9 @@ export function UserDetailModal({ user, onClose }: { user: UserRow; onClose: () 
           <Field label="Store" value={user.storeName} />
           <Field label="District / territory" value={user.territory || user.zone} />
           <Field label="Status" value={user.status} accent={user.status === "Active" ? "#7DA02E" : "#9E9E9E"} />
-          <Field label="Last active" value={user.lastActive} />
+          <Field label="Last active" value={user.lastActiveAt
+            ? `${new Date(user.lastActiveAt).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })} IST (${user.lastActive})`
+            : user.lastActive} />
           <Field label="Visits (MTD)" value={user.visitsMtd} />
         </div>
 

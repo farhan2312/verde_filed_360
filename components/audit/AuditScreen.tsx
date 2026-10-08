@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AuditTable, type AuditRowData } from "./AuditTable";
 import { EmployeeActivity } from "./EmployeeActivity";
 import { OverallDashboard } from "./OverallDashboard";
+import { AuditLogTab } from "./AuditLogTab";
+import type { AuditPage } from "@/app/actions/audit";
 
 type Tab = "overall" | "activity" | "log";
 const TABS: [Tab, string][] = [["overall", "📊 Overall"], ["activity", "👥 Employee Activity"], ["log", "📋 Audit Log"]];
 
 /** Audit page shell: overall usage dashboard + employee activity analytics + the raw audit log. */
-export function AuditScreen({ auditRows }: { auditRows: AuditRowData[] }) {
+export function AuditScreen({ auditInitial, actionTypes }: { auditInitial: AuditPage; actionTypes: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -40,7 +41,7 @@ export function AuditScreen({ auditRows }: { auditRows: AuditRowData[] }) {
           );
         })}
       </div>
-      {tab === "overall" ? <OverallDashboard /> : tab === "activity" ? <EmployeeActivity /> : <AuditTable rows={auditRows} />}
+      {tab === "overall" ? <OverallDashboard /> : tab === "activity" ? <EmployeeActivity /> : <AuditLogTab initial={auditInitial} actionTypes={actionTypes} />}
     </div>
   );
 }

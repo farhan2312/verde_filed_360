@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Modal, ModalHeader } from "@/components/interactive";
@@ -32,6 +32,27 @@ function Kpi({ label, value, color }: { label: string; value: number; color?: st
   );
 }
 
+function PageBtn({ label, disabled, onClick }: { label: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled}
+      className="rounded-[8px] border border-[#E0E0E0] bg-white px-2.5 py-1 text-[12px] font-semibold text-[#616161] hover:border-[#7DA02E] hover:text-[#7DA02E] disabled:cursor-not-allowed disabled:opacity-40">
+      {label}
+    </button>
+  );
+}
+
+/** A windowed page list with ellipses, e.g. 1 ... 4 5 [6] 7 8 ... 20. */
+function pageNumbers(cur: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: (number | "...")[] = [1];
+  const lo = Math.max(2, cur - 1), hi = Math.min(total - 1, cur + 1);
+  if (lo > 2) out.push("...");
+  for (let p = lo; p <= hi; p++) out.push(p);
+  if (hi < total - 1) out.push("...");
+  out.push(total);
+  return out;
+}
+
 export function ActionRegistry({
   initial, role, myStoreId, stores,
 }: {
@@ -42,6 +63,7 @@ export function ActionRegistry({
   const [tab, setTab] = useState<Tab>("OPEN");
   const [q, setQ] = useState("");
   const [storeFilter, setStoreFilter] = useState<number | "">("");
+  const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [completing, setCompleting] = useState<ActionVM | null>(null);
   const [doneNote, setDoneNote] = useState("");
@@ -83,6 +105,14 @@ export function ActionRegistry({
       (storeFilter === "" || a.storeId === storeFilter) &&
       (!t || `${a.farmerName} ${a.reason} ${a.farmerMobile} ${a.storeName}`.toLowerCase().includes(t)));
   }, [actions, tab, q, storeFilter]);
+
+  // Client-side pagination over the full filtered set (everything is loaded; pages just chunk it).
+  const PAGE_SIZE = 50;
+  const pageCount = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const curPage = Math.min(page, pageCount);
+  const pageRows = useMemo(() => shown.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE), [shown, curPage]);
+  // Any filter change returns to page 1.
+  useEffect(() => { setPage(1); }, [tab, q, storeFilter]);
 
   const confirmDone = () => {
     if (!completing) return;
@@ -152,7 +182,7 @@ export function ActionRegistry({
               </tr>
             </thead>
             <tbody>
-              {shown.map((a) => (
+              {pageRows.map((a) => (
                 <tr key={a.id} className="border-b border-[#F5F5F5] last:border-0 hover:bg-[#FAFBFA]">
                   <td className="whitespace-nowrap px-4 py-3">
                     <span className={a.overdue ? "font-bold text-[#C62828]" : "text-[#333]"}>{fmtDate(a.dueDate)}</span>
@@ -190,6 +220,21 @@ export function ActionRegistry({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {shown.length > PAGE_SIZE && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+          <PageBtn label="« First" disabled={curPage === 1} onClick={() => setPage(1)} />
+          <PageBtn label="‹ Prev" disabled={curPage === 1} onClick={() => setPage(curPage - 1)} />
+          {pageNumbers(curPage, pageCount).map((p, i) => p === "..."
+            ? <span key={`e${i}`} className="px-1.5 text-[12px] text-[#BDBDBD]">...</span>
+            : <button key={p} type="button" onClick={() => setPage(p as number)}
+                className="min-w-[30px] rounded-[8px] border px-2 py-1 text-[12px] font-semibold transition-colors"
+                style={p === curPage ? { background: "#7DA02E", color: "#fff", borderColor: "#7DA02E" } : { background: "#fff", color: "#616161", borderColor: "#E0E0E0" }}>{p}</button>)}
+          <PageBtn label="Next ›" disabled={curPage === pageCount} onClick={() => setPage(curPage + 1)} />
+          <PageBtn label="Last »" disabled={curPage === pageCount} onClick={() => setPage(pageCount)} />
+          <span className="ml-2 text-[11.5px] text-[#9E9E9E]">{shown.length.toLocaleString("en-IN")} total · page {curPage} / {pageCount}</span>
         </div>
       )}
 

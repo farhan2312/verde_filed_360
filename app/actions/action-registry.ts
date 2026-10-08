@@ -48,7 +48,10 @@ function toVM(
   };
 }
 
-/** Every action in the viewer's scope (newest-due open first, then done). */
+/** Every action in the viewer's scope - OPEN first (earliest/overdue due dates), then DONE.
+ *  Loads the full scoped set (high safety cap, not a low one) so the client store/status/search
+ *  filters and pagination always operate on complete data - a low cap previously truncated the
+ *  all-stores view before those filters ran. */
 export async function listActions(): Promise<ActionVM[]> {
   const scope = await getScope();
   const sw = actionScope(scope);
@@ -56,18 +59,20 @@ export async function listActions(): Promise<ActionVM[]> {
   try {
     const rows = await prisma.action.findMany({
       where: sw ?? undefined,
-      orderBy: [{ status: "asc" }, { dueDate: "asc" }],
-      take: 2000,
+      orderBy: [{ status: "desc" }, { dueDate: "asc" }], // "OPEN" > "DONE" -> open first, by due date
+      take: 50000, // safety cap far above the real total; loads everything in scope
       include: {
         farmer: { select: { id: true, name: true, mobile: true, village: true } },
         store: { select: { name: true, zone: true } },
       },
     });
-    // Most-recent visit date per farmer on these rows (one bounded groupBy).
+    // Most-recent visit date per farmer on exactly the rows being returned. The full scoped set can
+    // span thousands of farmers, so run the groupBy in bounded chunks to keep each `IN` list small.
     const farmerIds = [...new Set(rows.map((r) => r.farmerId).filter((x): x is number => x != null))];
     const lastVisitById = new Map<number, string | null>();
-    if (farmerIds.length) {
-      const vg = await prisma.visit.groupBy({ by: ["farmerId"], where: { farmerId: { in: farmerIds } }, _max: { visitedAt: true } });
+    const CHUNK = 2000;
+    for (let i = 0; i < farmerIds.length; i += CHUNK) {
+      const vg = await prisma.visit.groupBy({ by: ["farmerId"], where: { farmerId: { in: farmerIds.slice(i, i + CHUNK) } }, _max: { visitedAt: true } });
       for (const v of vg) if (v.farmerId != null) lastVisitById.set(v.farmerId, v._max.visitedAt ? v._max.visitedAt.toISOString() : null);
     }
     return rows.map((r) => toVM(r, r.farmerId != null ? lastVisitById.get(r.farmerId) ?? null : null));

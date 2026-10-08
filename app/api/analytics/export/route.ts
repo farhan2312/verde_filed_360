@@ -76,10 +76,12 @@ async function writeSalesSheets(
   const fyLine = fyw ? Prisma.sql`AND ${fyw}` : Prisma.empty;
   // Optional soldAt date window — bounds the sale-lines dump so it isn't "everything since day 0".
   const sFrom = ymd(f.salesFrom), sTo = ymd(f.salesTo, true);
-  const dateLine = Prisma.join([
+  const dateParts = [
     ...(sFrom ? [Prisma.sql`AND sl."soldAt" >= ${sFrom}`] : []),
     ...(sTo ? [Prisma.sql`AND sl."soldAt" <= ${sTo}`] : []),
-  ], " ");
+  ];
+  // Prisma.join throws on an empty array - fall back to no extra condition when no date range is set.
+  const dateLine = dateParts.length ? Prisma.join(dateParts, " ") : Prisma.empty;
   const V = [...VALUE_SEGMENTS], L = [...LIFECYCLE_SEGMENTS];
   const combos = V.flatMap((v) => L.map((l) => [v, l] as const));
 

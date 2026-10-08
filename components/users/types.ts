@@ -51,7 +51,10 @@ export interface StoreMgmtRow {
   status: string;
   zone: string;
   address: string;
+  /** Display label: the managers' names, comma-joined (or an unverified imported name). */
   regionalManager: string;
+  /** REGIONAL user ids managing this store — a store may have several. */
+  rmUserIds: number[];
   lat: number | null;
   lng: number | null;
   hasGps: boolean;

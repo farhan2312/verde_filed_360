@@ -130,7 +130,7 @@ async function loadStoreMgmt(): Promise<StoreMgmtData> {
         orderBy: [{ status: "asc" }, { name: "asc" }],
         select: {
           id: true, code: true, name: true, status: true, zone: true,
-          address: true, regionalManager: true, lat: true, lng: true,
+          address: true, regionalManager: true, rmUserIds: true, lat: true, lng: true,
         },
       }),
       prisma.user.findMany({
@@ -193,6 +193,7 @@ async function loadStoreMgmt(): Promise<StoreMgmtData> {
         zone: s.zone ?? "",
         address: s.address ?? "",
         regionalManager: s.regionalManager ?? "",
+        rmUserIds: s.rmUserIds ?? [],
         lat: s.lat,
         lng: s.lng,
         hasGps: s.lat != null && s.lng != null,

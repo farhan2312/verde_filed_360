@@ -22,10 +22,35 @@ export interface StoreFormInput {
   status: string;
   zone: string;
   address: string;
+  /** REGIONAL user ids managing this store. A store may have several (its BDM plus the ASM above). */
+  rmUserIds: number[];
+  /** An imported manager name with no matching account, kept so the import isn't silently lost. */
   regionalManager: string;
   /** Form strings, parsed + validated server-side. */
   lat: string;
   lng: string;
+}
+
+/**
+ * Resolve the submitted manager ids to REGIONAL accounts and build the row's manager fields.
+ * `regionalManager` is the denormalised display label (names comma-joined) that reports, filters and
+ * the store screens read without a join; the free-text fallback survives only while no account is set.
+ */
+async function resolveManagers(
+  rmUserIds: number[],
+  freeText: string,
+): Promise<{ rmUserIds: number[]; regionalManager: string | null }> {
+  const ids = [...new Set(rmUserIds.filter((n) => Number.isInteger(n) && n > 0))];
+  if (!ids.length) return { rmUserIds: [], regionalManager: freeText.trim() || null };
+  const users = await prisma.user.findMany({
+    where: { id: { in: ids }, role: "REGIONAL" },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+  return {
+    rmUserIds: users.map((u) => u.id),
+    regionalManager: users.map((u) => u.name.trim()).filter(Boolean).join(", ") || null,
+  };
 }
 
 /** Parse the optional lat/lng pair (both-or-neither, valid ranges). */
@@ -64,13 +89,14 @@ export async function createStoreAction(input: StoreFormInput): Promise<Result> 
         status: input.status.trim() || "Active",
         zone: input.zone.trim() || null,
         address: input.address.trim() || null,
-        regionalManager: input.regionalManager.trim() || null,
+        ...(await resolveManagers(input.rmUserIds ?? [], input.regionalManager)),
         lat: gps.lat,
         lng: gps.lng,
         source: "REAL",
       },
     });
     revalidatePath("/users");
+    revalidatePath("/stores");
     return { ok: true };
   } catch (e) {
     return fail(e, "Create failed");
@@ -100,12 +126,13 @@ export async function updateStoreAction(input: StoreFormInput & { id: number }):
         status: input.status.trim() || "Active",
         zone: input.zone.trim() || null,
         address: input.address.trim() || null,
-        regionalManager: input.regionalManager.trim() || null,
+        ...(await resolveManagers(input.rmUserIds ?? [], input.regionalManager)),
         lat: gps.lat,
         lng: gps.lng,
       },
     });
     revalidatePath("/users");
+    revalidatePath("/stores");
     return { ok: true };
   } catch (e) {
     return fail(e, "Save failed");

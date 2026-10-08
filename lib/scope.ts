@@ -18,15 +18,23 @@ export interface Scope {
 }
 
 /**
- * The stores a Regional Manager actually manages — the STORES whose `regionalManager` is this RM (by
- * name). This is the authoritative RM↔store link (an RM's stores can span multiple districts, and a
- * district contains stores managed by OTHER RMs), so it — not `User.zone` — is the real scope axis.
+ * The stores a Regional Manager actually manages. A store can have SEVERAL managers (its BDM plus the
+ * ASM above them), and a manager can hold many stores, so the authoritative link is `Store.rmUserIds`
+ * — not `User.zone`, and not the district (an RM's stores can span districts, and a district contains
+ * stores managed by other RMs).
+ *
+ * The `regionalManager` name is still matched as a fallback so a store imported with a manager name
+ * but not yet linked to an account keeps working.
  */
-async function managedStoreIdsFor(name: string): Promise<number[]> {
+async function managedStoreIdsFor(userId: number, name: string): Promise<number[]> {
   const n = name.trim();
-  if (!n) return [];
   const rows = await prisma.store.findMany({
-    where: { regionalManager: { equals: n, mode: "insensitive" } },
+    where: {
+      OR: [
+        { rmUserIds: { has: userId } },
+        ...(n ? [{ regionalManager: { equals: n, mode: "insensitive" as const } }] : []),
+      ],
+    },
     select: { id: true },
   });
   return rows.map((s) => s.id);
@@ -36,7 +44,7 @@ export async function getScope(): Promise<Scope> {
   const [role, session] = await Promise.all([getRole(), getSession()]);
   if (!session) return { role, userId: null, storeId: null, zone: null, managedStoreIds: null };
   const u = await prisma.user.findUnique({ where: { id: session.userId }, select: { name: true, storeId: true, zone: true } });
-  const managedStoreIds = role === "regional" ? await managedStoreIdsFor(u?.name ?? "") : null;
+  const managedStoreIds = role === "regional" ? await managedStoreIdsFor(session.userId, u?.name ?? "") : null;
   return { role, userId: session.userId, storeId: u?.storeId ?? null, zone: u?.zone ?? null, managedStoreIds };
 }
 

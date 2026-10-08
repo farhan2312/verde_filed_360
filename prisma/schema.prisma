@@ -65,7 +65,13 @@ model Store {
   zone            String? // district / zone
   address         String?
   empCode         String?
+  /// Display label for the store's managers: the names in `rmUserIds`, comma-joined, maintained by
+  /// the store actions. Kept denormalised so reports/filters can show an RM without a join, and so an
+  /// imported manager name with no matching account is still preserved.
   regionalManager String?
+  /// The REGIONAL users who manage this store — the authoritative RM link. A store can have several
+  /// (e.g. its BDM plus the ASM above them), and one manager can hold many stores.
+  rmUserIds       Int[]      @default([])
   lat             Float?
   lng             Float?
   tagIds          Int[]      @default([]) // StoreTag ids assigned to this store (RM/admin managed) — many-to-many
@@ -81,6 +87,7 @@ model Store {
 
   @@index([zone])
   @@index([tagIds], type: Gin)
+  @@index([rmUserIds], type: Gin) // RM scoping: stores where a manager's user id appears
 }
 
 /// A tag a store can be labelled with (e.g. "Priority", "Border"). Catalog edited by sysadmin in

@@ -131,20 +131,18 @@ async function main() {
   }
   console.log(`Store: ${DHANSURA.code} ${DHANSURA.name} (${DHANSURA.zone}) — temporary code, replace when the ERP issues one`);
 
-  // ── Regional manager per centre: deputed BDM, else ASM, else none ──
-  console.log("\nStore.regionalManager");
-  const rmByCentre = new Map<string, string | null>();
-  for (const s of staff) if (!rmByCentre.has(s.centre)) rmByCentre.set(s.centre, s.bdm ?? s.asm ?? null);
-  let cleared = 0;
-  for (const [centre, rm] of [...rmByCentre.entries()].sort()) {
-    const code = CENTRE_TO_STORE[centre];
-    if (!code) { console.log(`  !! ${centre}: no store mapping — skipped`); continue; }
-    const via = rm ? (staff.find((s) => s.centre === centre)!.bdm ? "BDM" : "ASM") : "none (ASM slot vacant)";
-    console.log(`  ${centre.padEnd(12)} ${code.padEnd(13)} ${(rm ?? "—").padEnd(20)} ${via}`);
-    if (rm == null) cleared++;
-    if (!DRY) await prisma.store.update({ where: { code }, data: { regionalManager: rm } }).catch(() => {});
+  // ── Managers per centre ──
+  // A store can have SEVERAL managers: its deputed BDM AND the ASM above them. Both go into
+  // Store.rmUserIds (the scope axis), with `regionalManager` kept as the comma-joined display label.
+  // Linking is deferred to the end of this script, because it needs the login ids created below.
+  const managersByCentre = new Map<string, string[]>();
+  for (const s of staff) {
+    const cur = managersByCentre.get(s.centre) ?? [];
+    for (const n of [s.bdm, s.asm].filter(Boolean) as string[]) {
+      if (!cur.some((x) => key(x) === key(n))) cur.push(n);
+    }
+    managersByCentre.set(s.centre, cur);
   }
-  console.log(`  (${cleared} centre(s) left without an RM until the vacant ASM slot is filled)`);
 
   // ── Employees: staff list is authoritative; keep ERP store contacts only if not the same person ──
   const storeRows = await prisma.store.findMany({ select: { id: true, code: true } });
@@ -249,6 +247,31 @@ async function main() {
   }
   console.log(`  ${made} login(s) created/updated`);
   if (skipped.length) console.log(`  NOT created (no EMP ID): ${skipped.join("; ")}`);
+
+  // ── Link managers to stores (needs the login ids created above) ──
+  console.log("\nStore managers — rmUserIds (deputed BDM + the ASM above them)");
+  const rmAccounts = await prisma.user.findMany({ where: { role: "REGIONAL" }, select: { id: true, name: true } });
+  const rmIdByName = new Map(rmAccounts.map((u) => [key(u.name), u.id]));
+  let noManager = 0;
+  for (const [centre, names] of [...managersByCentre.entries()].sort()) {
+    const code = CENTRE_TO_STORE[centre];
+    if (!code) { console.log(`  !! ${centre}: no store mapping — skipped`); continue; }
+    const ids: number[] = [];
+    const resolved: string[] = [];
+    const missing: string[] = [];
+    for (const n of names) {
+      const id = rmIdByName.get(key(n));
+      if (id == null) missing.push(n);
+      else { ids.push(id); resolved.push(n); }
+    }
+    if (!ids.length) noManager++;
+    const label = resolved.join(", ");
+    console.log(`  ${centre.padEnd(12)} ${code.padEnd(13)} ${(label || "—").padEnd(36)}${missing.length ? ` (no account: ${missing.join(", ")})` : ""}`);
+    if (!DRY) {
+      await prisma.store.update({ where: { code }, data: { rmUserIds: ids, regionalManager: label || null } }).catch(() => {});
+    }
+  }
+  console.log(`  (${noManager} centre(s) have no manager account — the second ASM slot is vacant)`);
 
   if (!DRY) {
     const [stores, emps, users, asrs] = await Promise.all([

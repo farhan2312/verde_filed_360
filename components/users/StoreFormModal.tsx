@@ -27,15 +27,19 @@ export function StoreFormModal({
   const [name, setName] = useState(store?.name ?? "");
   const [status, setStatus] = useState(store?.status || "Active");
   const [zone, setZone] = useState(store?.zone ?? "");
-  // The stored RM is a free-text name that may (case/space-insensitively) match an
-  // approved regional-manager account, or be an imported "unverified" name. Canonicalise
-  // to the account's exact name when it matches so the <select> value lines up with an option.
-  const rmMatch = regionals.find(
-    (r) => r.name.trim().toUpperCase() === (store?.regionalManager ?? "").trim().toUpperCase(),
-  );
-  const [regionalManager, setRM] = useState(
-    rmMatch ? rmMatch.name : store?.regionalManager ?? "",
-  );
+  // A store can have SEVERAL managers (its BDM plus the ASM above them). `rmUserIds` is the real
+  // link; a legacy store may instead carry only an imported manager NAME, so seed the selection by
+  // matching those names (case/space-insensitively) against the approved accounts.
+  const [rmIds, setRmIds] = useState<number[]>(() => {
+    if (store?.rmUserIds?.length) return [...store.rmUserIds];
+    const names = (store?.regionalManager ?? "")
+      .split(",")
+      .map((n) => n.trim().toUpperCase())
+      .filter(Boolean);
+    return regionals.filter((r) => names.includes(r.name.trim().toUpperCase())).map((r) => r.id);
+  });
+  const toggleRm = (id: number) =>
+    setRmIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const [address, setAddress] = useState(store?.address ?? "");
   const [lat, setLat] = useState(store?.lat != null ? String(store.lat) : "");
   const [lng, setLng] = useState(store?.lng != null ? String(store.lng) : "");
@@ -51,6 +55,7 @@ export function StoreFormModal({
   // <option> for the whole edit session (derived from the INITIAL value, not the live selection),
   // so picking a real manager can always be undone without silently dropping the imported name.
   const initialUnverifiedRM = useMemo(() => {
+    if (store?.rmUserIds?.length) return "";
     const raw = (store?.regionalManager ?? "").trim();
     return raw && !rmNormSet.has(raw.toUpperCase()) ? raw : "";
   }, [store, rmNormSet]);
@@ -58,7 +63,13 @@ export function StoreFormModal({
   function submit() {
     setErr(null);
     start(async () => {
-      const payload = { code, name, status, zone, address, regionalManager, lat, lng };
+      // Keep the unverified imported name only while no real account is selected.
+      const payload = {
+        code, name, status, zone, address,
+        rmUserIds: rmIds,
+        regionalManager: rmIds.length ? "" : initialUnverifiedRM,
+        lat, lng,
+      };
       const res = isEdit
         ? await updateStoreAction({ id: store!.id, ...payload })
         : await createStoreAction(payload);
@@ -100,24 +111,37 @@ export function StoreFormModal({
               {zones.map((z) => <option key={z} value={z} />)}
             </datalist>
           </div>
-          <div>
-            <label className={labelCls}>Regional Manager</label>
-            <select className={inputCls} value={regionalManager} onChange={(e) => setRM(e.target.value)}>
-              <option value="">— Unassigned —</option>
-              {initialUnverifiedRM && (
-                <option value={initialUnverifiedRM}>{initialUnverifiedRM} — keep (unverified)</option>
-              )}
-              {regionals.map((r) => (
-                <option key={r.id} value={r.name}>
-                  {r.zone ? `${r.name} · ${r.zone}` : r.name}
-                </option>
-              ))}
-            </select>
-            {regionals.length === 0 && (
-              <div className="mt-1 text-[10.5px] text-ink-muted">
+          <div className="col-span-2">
+            <label className={labelCls}>
+              Regional Managers{rmIds.length > 0 && <span className="ml-1 font-normal normal-case tracking-normal text-brand-700">· {rmIds.length} selected</span>}
+            </label>
+            {regionals.length === 0 ? (
+              <div className="rounded-[10px] border border-line bg-surface-50 px-3 py-2.5 text-[11.5px] text-ink-muted">
                 No approved regional-manager accounts yet — approve one in the Users tab to assign it here.
               </div>
+            ) : (
+              <div className="max-h-[150px] overflow-y-auto rounded-[10px] border border-line bg-white p-1">
+                {regionals.map((r) => {
+                  const on = rmIds.includes(r.id);
+                  return (
+                    <label
+                      key={r.id}
+                      className={`flex cursor-pointer items-center gap-2.5 rounded-[7px] px-2.5 py-[7px] text-[12.5px] ${on ? "bg-brand-50 text-brand-700" : "text-ink hover:bg-surface-100"}`}
+                    >
+                      <input type="checkbox" checked={on} onChange={() => toggleRm(r.id)} className="accent-[#7DA02E]" />
+                      <span className="font-semibold">{r.name}</span>
+                      {r.zone && <span className="text-ink-muted">· {r.zone}</span>}
+                    </label>
+                  );
+                })}
+              </div>
             )}
+            <div className="mt-1 text-[10.5px] text-ink-muted">
+              A store can have more than one — e.g. its BDM plus the ASM above them. Each selected manager sees this store in their scope.
+              {initialUnverifiedRM && !rmIds.length && (
+                <> Currently showing the imported name <b>{initialUnverifiedRM}</b>, which has no account yet.</>
+              )}
+            </div>
           </div>
           <div className="col-span-2">
             <label className={labelCls}>Address</label>

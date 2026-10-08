@@ -85,7 +85,7 @@ export function UserFormModal({
               className={inputCls}
               value={employeeCode}
               onChange={(e) => setEmployeeCode(e.target.value)}
-              placeholder="e.g. VERDE1234"
+              placeholder="e.g. VER074"
             />
           </div>
           <div>

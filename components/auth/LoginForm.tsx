@@ -6,6 +6,14 @@ import Link from "next/link";
 import { loginAction } from "@/app/actions/auth";
 import { inputClass, Field, EyeToggle } from "./fields";
 
+/** Every Verde login is VER<number>; the form supplies the prefix so only the number is typed. */
+export const VER_PREFIX = "VER";
+export function withVerPrefix(raw: string): string {
+  const v = raw.trim().toUpperCase().replace(/\s+/g, "");
+  if (!v) return "";
+  return v.startsWith(VER_PREFIX) ? v : VER_PREFIX + v;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -16,6 +24,9 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
+    // The field shows a fixed "VER" prefix and people type only their number, so re-attach it here.
+    // A pasted full code ("VER074") is tolerated — the prefix is never doubled.
+    fd.set("employeeCode", withVerPrefix(String(fd.get("employeeCode") ?? "")));
     start(async () => {
       const res = await loginAction(fd);
       if (res.error) setError(res.error);
@@ -37,15 +48,25 @@ export function LoginForm() {
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <Field label="Employee Code">
-          <input
-            name="employeeCode"
-            type="text"
-            required
-            autoComplete="username"
-            autoCapitalize="characters"
-            placeholder="e.g. VERDE1234"
-            className={`${inputClass} uppercase placeholder:normal-case`}
-          />
+          <div className="relative">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-[13px] font-bold tracking-[0.5px] text-ink-500"
+            >
+              {VER_PREFIX}
+            </span>
+            <input
+              name="employeeCode"
+              type="text"
+              inputMode="numeric"
+              required
+              autoComplete="username"
+              autoCapitalize="characters"
+              placeholder="074"
+              aria-label="Employee code number, without the VER prefix"
+              className={`${inputClass} pl-[42px] uppercase placeholder:normal-case`}
+            />
+          </div>
         </Field>
 
         <Field label="Password">

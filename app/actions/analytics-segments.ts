@@ -831,7 +831,7 @@ export async function getNewFarmerAcquisition(): Promise<NewFarmerAcq> {
   if (!rows.length) return empty;
 
   // Resolve store ids → short names; no store → "Unassigned".
-  const UNASSIGNED = "Unassigned", OTHER = "Other";
+  const UNASSIGNED = "Unassigned";
   const ids = [...new Set(rows.map((r) => r.sid).filter((x): x is number => x != null))];
   const stores = ids.length ? await prisma.store.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }) : [];
   const nameById = new Map(stores.map((s) => [s.id, shortStore(s.name) || s.name]));
@@ -840,10 +840,10 @@ export async function getNewFarmerAcquisition(): Promise<NewFarmerAcq> {
   const storeTotal = new Map<string, number>();
   for (const r of rows) { const k = nameOf(r.sid); storeTotal.set(k, (storeTotal.get(k) ?? 0) + r.n); }
   const distinct = [...storeTotal.keys()].filter((k) => k !== UNASSIGNED).length;
-  // Top-20 stores; the rest → Other; no store → Unassigned (kept separate, shown last).
-  const top = [...storeTotal.entries()].filter(([k]) => k !== UNASSIGNED).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([k]) => k);
-  const topSet = new Set(top);
-  const bucket = (k: string) => (k === UNASSIGNED ? UNASSIGNED : topSet.has(k) ? k : OTHER);
+  // Every store is named — Verde has ~25, few enough to label individually, so nothing is folded
+  // into an "Other" bucket. No store → Unassigned (kept separate, shown last).
+  const top = [...storeTotal.entries()].filter(([k]) => k !== UNASSIGNED).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const bucket = (k: string) => k;
 
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const byYm = new Map<string, { ym: string; label: string; total: number; counts: Record<string, number> }>();
@@ -854,15 +854,14 @@ export async function getNewFarmerAcquisition(): Promise<NewFarmerAcq> {
     const ym = `${y}-${String(m).padStart(2, "0")}`;
     byYm.set(ym, { ym, label: `${MONTHS[m - 1]} '${String(y).slice(2)}`, total: 0, counts: {} });
   }
-  let hasOther = false, hasUnassigned = false, total = 0;
+  let hasUnassigned = false, total = 0;
   for (const r of rows) {
     const b = bucket(nameOf(r.sid));
-    if (b === OTHER) hasOther = true;
     if (b === UNASSIGNED) hasUnassigned = true;
     const mo = byYm.get(r.ym)!;
     mo.counts[b] = (mo.counts[b] ?? 0) + r.n; mo.total += r.n; total += r.n;
   }
-  const keys = [...top, ...(hasOther ? [OTHER] : []), ...(hasUnassigned ? [UNASSIGNED] : [])];
+  const keys = [...top, ...(hasUnassigned ? [UNASSIGNED] : [])];
   return { keys, months: [...byYm.values()], total, distinct };
 }
 

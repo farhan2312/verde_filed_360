@@ -27,7 +27,7 @@ const money = (x: number) => (x >= 1e7 ? `₹${(x / 1e7).toFixed(2)} Cr` : x >= 
 const fyStartOfYm = (ym: string) => { const [y, m] = ym.split("-").map(Number); return m >= 4 ? y : y - 1; };
 const fyLabel = (y: number) => `FY ${y}–${String((y + 1) % 100).padStart(2, "0")}`; // FY 2024–25
 
-export function AnalyticsWorkbench({ initial, facets, canChain = false, canExport = false }: { initial: WbData; facets: WbFacets; canChain?: boolean; canExport?: boolean }) {
+export function AnalyticsWorkbench({ initial, facets, canChain = false, canExport = false, newFarmersSlot }: { initial: WbData; facets: WbFacets; canChain?: boolean; canExport?: boolean; /** Server-rendered "New customers from sales" chart, slotted under the crop trend. */ newFarmersSlot?: React.ReactNode }) {
   const [filters, setFilters] = useState<WbFilters>({ lens: "sales" });
   const [perfTab, setPerfTab] = useState<PerfKind | null>(null); // null = segmentation (Sales/Visits); else a performance board
   const [data, setData] = useState(initial);
@@ -276,6 +276,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false, canExpor
       <div className="flex flex-col gap-[14px]">
         <LeadConversionsCard />
         <CropTrendCard crops={filters.crops ?? []} years={years} />
+        {newFarmersSlot}
 
         <div className="grid grid-cols-1 gap-[14px] lg:grid-cols-2">
           <DonutCard title={`${VALUE_TITLE} share`} slices={data.valueDist} />

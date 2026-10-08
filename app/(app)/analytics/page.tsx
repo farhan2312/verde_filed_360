@@ -50,12 +50,15 @@ export default async function AnalyticsPage() {
   return (
     <div className="animate-fadeUp">
       {overview && <ScopedDashboard data={overview} name={persona.name} />}
-      {newFarmers.months.length > 0 && (
-        <div className="mt-6"><NewFarmersChart data={newFarmers} /></div>
-      )}
       <div className="mt-6">
         <div className="mb-3 text-[14px] font-bold text-[#1A1C1A]">Explore — filter, drill in, save as a cluster</div>
-        <AnalyticsWorkbench initial={data} facets={facets} canChain={canManage(scope.role)} canExport={scope.role === "sysadmin"} />
+        <AnalyticsWorkbench
+          initial={data}
+          facets={facets}
+          canChain={canManage(scope.role)}
+          canExport={scope.role === "sysadmin"}
+          newFarmersSlot={newFarmers.months.length > 0 ? <NewFarmersChart data={newFarmers} /> : null}
+        />
       </div>
     </div>
   );

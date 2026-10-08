@@ -60,7 +60,7 @@ export function RegisterForm() {
             name="employeeCode"
             required
             autoCapitalize="characters"
-            placeholder="e.g. VERDE1234"
+            placeholder="e.g. VER074"
             className={`${inputClass} uppercase placeholder:normal-case`}
           />
         </Field>

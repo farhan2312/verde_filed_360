@@ -7,23 +7,23 @@ const n = (x: number) => x.toLocaleString("en-IN");
 // it is not pushed off-screen. The header still states the full range and full total.
 const MAX_MONTHS = 12;
 
-// One colour per store (top 20), drawn from Verde's green scale plus the info-blue and accent-gold
-// families, ordered so that stores adjacent in a stack (and in the legend) alternate hue and
-// lightness instead of sitting as near-identical pale tints. Largest stores get the strongest colours.
-// "Other" / "Unassigned" use neutral greys.
+// One colour per store — every store is named, so the palette covers the full estate (~25 today),
+// drawn from Verde's green scale plus the info-blue, accent-gold and teal/plum families. Ordered so
+// that stores adjacent in a stack (and in the legend) alternate hue and lightness instead of sitting
+// as near-identical pale tints; the largest stores get the strongest colours. "Unassigned" is grey.
 const PALETTE = [
   "#7DA02E", "#1565C0", "#EDA942", "#3F5A17", "#6FA8E0", "#BDD67F", "#8A5A0B", "#A4C954", "#0D3F7A", "#F4CE8E",
   "#66852A", "#9CC0EA", "#CCE09A", "#C7821F", "#2F6EB5", "#DBE9B4", "#556B20", "#CFE0F3", "#B8741A", "#F9E4BF",
+  "#00695C", "#7B1FA2", "#4DB6AC", "#CE93D8", "#AD1457", "#4527A0", "#F06292", "#9575CD",
 ];
-const OTHER_COLOR = "#9AA392", UNASSIGNED_COLOR = "#D9DDD3";
+const UNASSIGNED_COLOR = "#D9DDD3";
 
 function colorOf(key: string, idx: number): string {
-  if (key === "Other") return OTHER_COLOR;
   if (key === "Unassigned") return UNASSIGNED_COLOR;
   return PALETTE[idx % PALETTE.length];
 }
 
-const labelOf = (key: string) => (key === "Unassigned" ? "Unassigned (no store)" : key === "Other" ? "Other stores" : key);
+const labelOf = (key: string) => (key === "Unassigned" ? "Unassigned (no store)" : key);
 
 /**
  * New customers created from a sale (no prior registration — code FARM-C-*), by first-purchase month,
@@ -63,7 +63,7 @@ export function NewFarmersChart({ data }: { data: NewFarmerAcq }) {
           <b className="text-[#66852A]">{n(data.total)}</b> farmers · {n(data.distinct)} stores · {first} – {last}
           {unassignedN > 0 && <> · {n(unassignedN)} with no store on file</>}
           {truncated && <> · showing latest {months.length} months ({n(shownTotal)} farmers)</>}
-          {" "}· by first-purchase month, stacked by store (top 20)
+          {" "}· by first-purchase month, stacked by store
         </div>
       </div>
 

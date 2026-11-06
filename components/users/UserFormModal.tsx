@@ -6,6 +6,7 @@ import { ADMIN_ROLE_CHOICES } from "@/lib/roles";
 import { createUserAction, saveUser } from "@/app/actions/users";
 import { listAssignableCampaigns, getCampaignerCampaignIds, setCampaignerCampaigns, type AssignableCampaign } from "@/app/actions/campaigners";
 import type { UserRow } from "./types";
+import { checkEmail } from "@/lib/email-validate";
 
 const labelCls =
   "block text-[11px] font-semibold uppercase tracking-[0.5px] text-ink-muted mb-1.5";
@@ -29,6 +30,7 @@ export function UserFormModal({
   const [roleKey, setRoleKey] = useState(user?.roleKey || "officer");
   const [mobile, setMobile] = useState(user?.mobile ?? "");
   const [workEmail, setWorkEmail] = useState(user?.workEmail ?? "");
+  const emailCheck = checkEmail(workEmail); // live hint; the server re-validates (and checks duplicates)
   const [territory, setTerritory] = useState(user?.territory ?? "");
   const [active, setActive] = useState((user?.status ?? "Active") === "Active");
   const [password, setPassword] = useState("");
@@ -124,7 +126,18 @@ export function UserFormModal({
           </div>
           <div className="col-span-2">
             <label className={labelCls}>Work Email</label>
-            <input className={inputCls} value={workEmail} onChange={(e) => setWorkEmail(e.target.value)} />
+            <input className={inputCls} value={workEmail} onChange={(e) => setWorkEmail(e.target.value)} placeholder="name@verdeagrotech.com — used for review reports & digests" />
+            {emailCheck.error && (
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold text-[#C62828]">
+                {emailCheck.error}
+                {emailCheck.suggestion && (
+                  <button type="button" onClick={() => setWorkEmail(emailCheck.suggestion!)}
+                    className="rounded-md border border-[#7DA02E] px-2 py-0.5 text-[11px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">
+                    Use {emailCheck.suggestion}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="col-span-2">
             <label className={labelCls}>Territory / Zone</label>

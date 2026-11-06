@@ -9,6 +9,7 @@ import { EditPencil } from "./EditPencil";
 import { UserFormModal } from "./UserFormModal";
 import { UserDetailModal } from "./UserDetailModal";
 import type { UserRow } from "./types";
+import { checkEmail } from "@/lib/email-validate";
 
 const GRID =
   "grid grid-cols-[1.35fr_0.8fr_0.9fr_0.9fr_0.85fr_0.75fr_0.55fr_0.5fr_120px] gap-2 px-[22px] items-center";
@@ -27,6 +28,9 @@ function SortHead({ label, k, active, dir, onSort }: { label: string; k: SortKey
 
 /** Sentinel for the "no store mapped" filter option (a real store can never be named this). */
 const NO_STORE = "__none__";
+/** Roles that receive review digests / weekly reports / SLA alerts by email. */
+const REVIEWER_ROLES = new Set(["regional", "central", "sysadmin"]);
+type EmailHealth = { status: "missing" | "problem" | "ok"; reason: string };
 
 /** Role filter chips — same order as the default sort (admins → officers). */
 const ROLE_FILTERS: { key: string; label: string }[] = [
@@ -105,6 +109,25 @@ export function UsersTab({
   const [fRole, setFRole] = useState("");
   const [fStore, setFStore] = useState("");
   const [fStatus, setFStatus] = useState("");
+  const [fEmail, setFEmail] = useState<"" | "bad" | "missing" | "problem" | "reviewers">("");
+
+  // Work-email health per user: missing / problem (invalid, placeholder, typo, or shared with someone else) / ok.
+  const emailInfo = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const r of rows) { const n = r.workEmail.trim().toLowerCase(); if (n) seen.set(n, (seen.get(n) ?? 0) + 1); }
+    return new Map<number, EmailHealth>(rows.map((r): [number, EmailHealth] => {
+      if (!r.workEmail.trim()) return [r.id, { status: "missing", reason: "" }];
+      const c = checkEmail(r.workEmail);
+      if (!c.ok) return [r.id, { status: "problem", reason: c.error ?? "" }];
+      if ((seen.get(c.normalized) ?? 0) > 1) return [r.id, { status: "problem", reason: "Same address is on another user" }];
+      return [r.id, { status: "ok", reason: "" }];
+    }));
+  }, [rows]);
+  // Active RMs / Central / Admins who can't get review digests & reports by email.
+  const reviewersUnreachable = useMemo(
+    () => rows.filter((r) => r.status === "Active" && REVIEWER_ROLES.has(r.roleKey) && emailInfo.get(r.id)?.status !== "ok").length,
+    [rows, emailInfo],
+  );
 
   const storeOptions = useMemo(
     () => [...new Set(rows.map((r) => r.storeName).filter((s) => s && s !== "—"))].sort((a, b) => a.localeCompare(b)),
@@ -117,12 +140,15 @@ export function UsersTab({
       // NO_STORE is the audit case: "which officers aren't mapped to a store?"
       (!fStore || (fStore === NO_STORE ? r.storeName === "—" : r.storeName === fStore)) &&
       (!fStatus || r.status === fStatus) &&
+      (!fEmail || (fEmail === "bad" ? emailInfo.get(r.id)?.status !== "ok"
+        : fEmail === "reviewers" ? REVIEWER_ROLES.has(r.roleKey) && emailInfo.get(r.id)?.status !== "ok"
+        : emailInfo.get(r.id)?.status === fEmail)) &&
       (!needle ||
-        [r.name, r.employeeCode, r.storeName, r.territory, r.zone, r.mobile, r.roleLabel]
+        [r.name, r.employeeCode, r.storeName, r.territory, r.zone, r.mobile, r.roleLabel, r.workEmail]
           .some((v) => v?.toLowerCase().includes(needle))));
-  }, [rows, q, fRole, fStore, fStatus]);
-  const filtered = Boolean(q.trim() || fRole || fStore || fStatus);
-  const clearAll = () => { setQ(""); setFRole(""); setFStore(""); setFStatus(""); };
+  }, [rows, q, fRole, fStore, fStatus, fEmail, emailInfo]);
+  const filtered = Boolean(q.trim() || fRole || fStore || fStatus || fEmail);
+  const clearAll = () => { setQ(""); setFRole(""); setFStore(""); setFStatus(""); setFEmail(""); };
 
   // Column sorting — no key = the default role→name order the rows arrive in.
   const [sortKey, setSortKey] = useState<SortKey | "">("");
@@ -179,6 +205,14 @@ export function UsersTab({
         )}
       </div>
 
+      {reviewersUnreachable > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-[#F5CE8E] bg-[#FFF8E1] px-4 py-2.5 text-[12.5px] text-[#8D6E00]">
+          <span>⚠ <b>{reviewersUnreachable}</b> active Regional Manager{reviewersUnreachable > 1 ? "s" : ""} / Central / Admin users have a missing or wrong Work email — they won’t get review digests and weekly reports by email.</span>
+          <button type="button" onClick={() => { setFEmail("reviewers"); setFStatus("Active"); setFRole(""); }}
+            className="rounded-full border border-[#E65100] px-3 py-0.5 text-[11.5px] font-semibold text-[#E65100] hover:bg-[#FFF3E0]">Show them</button>
+        </div>
+      )}
+
       {/* Search + filters */}
       <div className="mb-4 flex flex-col gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
@@ -231,6 +265,17 @@ export function UsersTab({
             <option value="">All statuses</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
+          </select>
+          <select
+            value={fEmail}
+            onChange={(e) => setFEmail(e.target.value as typeof fEmail)}
+            className="rounded-xl border-[1.5px] border-[#E0E0E0] bg-white px-3 py-[7px] text-[12.5px] text-[#424242] outline-none focus:border-[#7DA02E]"
+          >
+            <option value="">All emails</option>
+            <option value="reviewers">RM / Central / Admin — missing or wrong</option>
+            <option value="bad">Missing or wrong email</option>
+            <option value="missing">No email</option>
+            <option value="problem">Email has a problem</option>
           </select>
           <span className="text-[12px] text-[#9E9E9E]">
             {shown.length.toLocaleString("en-IN")} of {rows.length.toLocaleString("en-IN")} users
@@ -298,6 +343,11 @@ export function UsersTab({
                       {ur.name}
                     </div>
                     {ur.mobile && <div className="truncate text-[10.5px] text-[#BDBDBD]">{ur.mobile}</div>}
+                    {(() => {
+                      const e = emailInfo.get(ur.id)!;
+                      if (e.status === "missing") return REVIEWER_ROLES.has(ur.roleKey) ? <div className="truncate text-[10.5px] font-semibold text-[#E65100]">No work email</div> : null;
+                      return <div className={`truncate text-[10.5px] ${e.status === "ok" ? "text-[#9E9E9E]" : "font-semibold text-[#C62828]"}`} title={e.reason || ur.workEmail}>{e.status === "ok" ? ur.workEmail : `⚠ ${ur.workEmail}`}</div>;
+                    })()}
                   </div>
                 </button>
                 {/* Employee code — its own sortable column */}

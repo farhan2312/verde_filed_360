@@ -64,7 +64,7 @@ export function Sidebar({
   const { main, sales, admin, showSalesGroup, showAdminGroup } = visibleNav(role);
 
   return (
-    <nav className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col text-white shadow-sidebar bg-gradient-to-b from-brand-900 to-brand-950 lg:flex">
+    <nav className="no-print fixed inset-y-0 left-0 z-20 hidden w-64 flex-col text-white shadow-sidebar bg-gradient-to-b from-brand-900 to-brand-950 lg:flex">
       {/* Brand */}
       <div className="flex items-center gap-3.5 border-b border-white/[0.08] px-[22px] pt-6 pb-5">
         <img
@@ -82,8 +82,8 @@ export function Sidebar({
       <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
         {main.map((item) => (
           <NavLink key={item.id} item={item} active={active === item.href}
-            badge={item.id === "actionRegistry" ? overdueActions : item.id === "visitRepo" ? pendingReviews : item.id === "ghoshti" ? pendingGhoshti : undefined}
-            badgeTitle={item.id === "visitRepo" ? "awaiting review" : item.id === "ghoshti" ? "pending approval" : "overdue"} />
+            badge={item.id === "actionRegistry" ? overdueActions : item.id === "visitReviews" ? pendingReviews : item.id === "ghoshti" ? pendingGhoshti : undefined}
+            badgeTitle={item.id === "visitReviews" ? "awaiting review" : item.id === "ghoshti" ? "pending approval" : "overdue"} />
         ))}
 
         {showSalesGroup && (

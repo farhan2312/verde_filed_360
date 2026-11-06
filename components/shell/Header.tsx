@@ -9,6 +9,7 @@ import { canAccess } from "@/lib/roles";
 import { SyncBadge } from "../ui";
 import { PlusIcon, ShieldIcon } from "../icons";
 import { ReportBugButton } from "./ReportBugButton";
+import { NotificationBell } from "./NotificationBell";
 
 export interface HeaderCounts {
   farmers: number;
@@ -17,7 +18,7 @@ export interface HeaderCounts {
   activeProjects: number;
 }
 
-export function Header({ role, counts }: { role: RoleKey; counts: HeaderCounts }) {
+export function Header({ role, counts, unreadNotifications }: { role: RoleKey; counts: HeaderCounts; unreadNotifications: number }) {
   const pathname = usePathname();
   const view = routeToView(pathname);
   let [title, subtitle] = viewTitle(view, role, {
@@ -37,7 +38,7 @@ export function Header({ role, counts }: { role: RoleKey; counts: HeaderCounts }
   const isAdmin = role === "sysadmin";
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-line-warm bg-white px-4 lg:px-8">
+    <header className="no-print sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-line-warm bg-white px-4 lg:px-8">
       <div className="min-w-0">
         <div className="truncate text-lg font-bold text-ink lg:text-xl">{title}</div>
         {subtitle && <div className="mt-px truncate text-[11.5px] text-ink-muted">{subtitle}</div>}
@@ -58,6 +59,8 @@ export function Header({ role, counts }: { role: RoleKey; counts: HeaderCounts }
         </Link>
 
         <ReportBugButton />
+
+        <NotificationBell initialUnread={unreadNotifications} />
 
         {isAdmin && (
           <span className="inline-flex items-center gap-1.5 rounded-[20px] border border-gold-200 bg-orange-50 px-2.5 py-1.5 text-[11px] font-semibold text-orange lg:px-3.5">

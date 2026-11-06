@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { checkEmail } from "@/lib/email-validate";
 import {
   KEY_TO_PRISMA,
   ROLE_GRAD,
@@ -96,6 +97,23 @@ export interface UserFormInput {
   password: string;
 }
 
+/**
+ * Validate a Work email (it's where review digests / reports are sent). Blank is fine. Rejects broken,
+ * placeholder (noemail@…) and typo-domain (gamil.com) addresses, and an address already on another user
+ * — a shared address would send one person's reports to someone else. Returns the normalised value.
+ */
+async function validateWorkEmail(raw: string, selfId?: number): Promise<{ ok: true; value: string | null } | { ok: false; error: string }> {
+  const chk = checkEmail(raw);
+  if (!chk.ok) return { ok: false, error: `Work email: ${chk.error}${chk.suggestion ? ` Did you mean ${chk.suggestion}?` : ""}` };
+  if (!chk.normalized) return { ok: true, value: null };
+  const dup = await prisma.user.findFirst({
+    where: { workEmail: { equals: chk.normalized, mode: "insensitive" }, ...(selfId ? { NOT: { id: selfId } } : {}) },
+    select: { name: true, employeeCode: true },
+  });
+  if (dup) return { ok: false, error: `Work email ${chk.normalized} is already on ${dup.name}${dup.employeeCode ? ` (${dup.employeeCode})` : ""}. Each person needs their own address.` };
+  return { ok: true, value: chk.normalized };
+}
+
 /** Create a login-ready account (approved, forced password change on first login). */
 export async function createUserAction(
   input: UserFormInput,
@@ -113,6 +131,8 @@ export async function createUserAction(
     if (clash) return { ok: false, error: clash.active
       ? `Employee code ${code} already exists (${clash.name}).`
       : `Employee code ${code} belongs to a deactivated account (${clash.name}). Find them in the Users list (set the status filter to Inactive), then reactivate and edit that account instead of creating a new one.` };
+    const em = await validateWorkEmail(input.workEmail);
+    if (!em.ok) return { ok: false, error: em.error };
     const [gradA, gradB] = ROLE_GRAD[key];
     const passwordHash = await bcrypt.hash(input.password.trim() || mobile || "verde@123", 10);
     const created = await prisma.user.create({
@@ -125,7 +145,7 @@ export async function createUserAction(
         gradA,
         gradB,
         mobile: mobile || null,
-        workEmail: input.workEmail.trim() || null,
+        workEmail: em.value,
         territory: input.territory.trim() || null,
         passwordHash,
         mustChangePassword: true,
@@ -186,11 +206,13 @@ export async function saveUser(
         ? `Employee code ${code} is already used by someone else (${clash.name}).`
         : `Employee code ${code} belongs to a deactivated account (${clash.name}). Reactivate that account instead of reusing the code here.` };
     }
+    const em = await validateWorkEmail(input.workEmail, input.id);
+    if (!em.ok) return { ok: false, error: em.error };
     const data: Prisma.UserUpdateInput = {
       name,
       employeeCode: code || null,
       mobile: input.mobile.replace(/\D/g, "") || null,
-      workEmail: input.workEmail.trim() || null,
+      workEmail: em.value,
       territory: input.territory.trim() || null,
       active: input.active,
       // Reactivating here must also clear a REJECTED approval flag - login refuses REJECTED accounts

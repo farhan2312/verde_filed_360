@@ -19,6 +19,8 @@ import { DEFAULT_LOOKBACK_DAYS, getSyncSettings } from "@/lib/sales-sync";
 import { getActiveSalesSync } from "@/app/actions/sales-sync";
 import { getRole } from "@/lib/session";
 import { SalesSyncRunCard, type LastRunVM } from "@/components/sales-sync/SalesSyncRunCard";
+import { getReviewSettingsState, type ReviewSettingsState } from "@/app/actions/review-settings";
+import { ReviewsReportsTab } from "@/components/settings/ReviewsReportsTab";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +114,10 @@ export default async function SettingsPage() {
     } catch { /* DB unavailable */ }
   }
 
+  // Reviews & Reports (SLA, report/digest schedule, Resend email) — null for non-admins.
+  let reviewState: ReviewSettingsState | null = null;
+  try { reviewState = await getReviewSettingsState(); } catch { /* DB unavailable */ }
+
   // WhatsApp template manager (create/submit/track approval via the Business Management API).
   let tplInit: { ready: boolean; missing: string[]; templates: WaTemplate[] } = { ready: false, missing: [], templates: [] };
   try {
@@ -171,6 +177,14 @@ export default async function SettingsPage() {
             />
           ),
         },
+        ...(reviewState
+          ? [{
+              key: "reviews",
+              label: "Reviews & Reports",
+              icon: "📋",
+              content: <ReviewsReportsTab initial={reviewState} />,
+            }]
+          : []),
         {
           key: "store-tags",
           label: "Store Tags",

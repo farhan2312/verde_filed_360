@@ -1,7 +1,7 @@
 ﻿import { canAccess, type RoleKey } from "./roles";
 
 export type NavId =
-  | "dashboard" | "newVisit" | "visitRepo" | "actionRegistry" | "farmers" | "stores" | "mapView"
+  | "dashboard" | "newVisit" | "visitRepo" | "visitReviews" | "weeklyReports" | "actionRegistry" | "farmers" | "stores" | "mapView"
   | "farmerCluster" | "analytics" | "actions" | "projects" | "campaigns" | "ghoshti"
   | "products" | "movement"
   | "users" | "salesImport" | "settings" | "audit" | "bugs" | "whatsappInbox";
@@ -19,6 +19,8 @@ export const MAIN_NAV: NavItem[] = [
   { id: "analytics", label: "Analytics", href: "/analytics" },
   { id: "newVisit", label: "New Visit", href: "/visits/new" },
   { id: "visitRepo", label: "Visit Repo", href: "/visits" },
+  { id: "visitReviews", label: "Visit Reviews", href: "/visit-reviews" },
+  { id: "weeklyReports", label: "Weekly Reports", href: "/reports" },
   { id: "actionRegistry", label: "Action Registry", href: "/action-registry" },
   { id: "farmers", label: "Farmer 360", href: "/farmers" },
   { id: "stores", label: "Store 360", href: "/stores" },
@@ -74,6 +76,8 @@ export function activeNavHref(pathname: string): string | null {
 
 /** Map a pathname to a view id (drives header title/subtitle). */
 export function routeToView(pathname: string): ViewId {
+  if (pathname.startsWith("/visit-reviews")) return "visitReviews";
+  if (pathname.startsWith("/reports")) return "weeklyReports";
   if (pathname.startsWith("/visits/new")) return "newVisit";
   if (/^\/visits\/[^/]+/.test(pathname)) return "visitDetail";
   if (pathname.startsWith("/visits")) return "visitRepo";

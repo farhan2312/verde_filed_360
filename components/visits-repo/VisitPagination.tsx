@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 
 /** Prev / page-of / Next pager for the Visit Repository. Preserves all active filters + search. */
-export function VisitPagination({ page, pageCount, total, pageSize, shown }: {
-  page: number; pageCount: number; total: number; pageSize: number; shown: number;
+export function VisitPagination({ page, pageCount, total, pageSize, shown, basePath = "/visits" }: {
+  page: number; pageCount: number; total: number; pageSize: number; shown: number; basePath?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -13,7 +13,7 @@ export function VisitPagination({ page, pageCount, total, pageSize, shown }: {
     const params = new URLSearchParams(searchParams.toString());
     if (p <= 1) params.delete("page"); else params.set("page", String(p));
     const qs = params.toString();
-    router.push(qs ? `/visits?${qs}` : "/visits");
+    router.push(qs ? `${basePath}?${qs}` : basePath);
     router.refresh();
   };
 

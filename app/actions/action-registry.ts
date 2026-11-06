@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getScope, getActor, canSignOff, farmerScopeWhere } from "@/lib/scope";
 import { FOLLOWUP_REASONS, startOfToday, type ActionVM, type FarmerPick } from "@/lib/action-constants";
+import { resolveReviewFlagsForAction, reopenReviewFlagsForAction } from "@/lib/visit-review-flag";
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 const shortStore = (s?: string | null) => (s ? s.replace(/\s*\(.*?\)\s*/g, "").trim() || s : "");
@@ -171,7 +172,10 @@ export async function completeAction(id: number, note?: string): Promise<{ ok: b
         completionNote: closing.slice(0, 2000),
       },
     });
+    // If this action came from a visit review "Needs follow-up" flag, signing it off resolves the flag.
+    await resolveReviewFlagsForAction(id, actor, scope.role);
     revalidatePath("/action-registry");
+    revalidatePath("/visits");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Update failed." };
@@ -224,7 +228,9 @@ export async function reopenAction(id: number): Promise<{ ok: boolean }> {
   if (actionScope(scope) === "none") return { ok: false };
   try {
     await prisma.action.update({ where: { id }, data: { status: "OPEN", completedAt: null, completedByName: null, completedByCode: null, completionNote: null } });
+    await reopenReviewFlagsForAction(id, await getActor(), scope.role); // re-raise a resolved review flag
     revalidatePath("/action-registry");
+    revalidatePath("/visits");
     return { ok: true };
   } catch { return { ok: false }; }
 }

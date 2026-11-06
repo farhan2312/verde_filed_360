@@ -59,6 +59,16 @@
   }
 }
 
+/* Print / "Save as PDF" (weekly reports): drop the app chrome, keep cards whole across pages. */
+@media print {
+  .no-print { display: none !important; }
+  .print-flat { margin-left: 0 !important; }
+  .print-flat main { padding: 0 !important; overflow: visible !important; }
+  .print-avoid { break-inside: avoid; }
+  body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { margin: 12mm; }
+}
+
 /* Leaflet container default sizing (map view) */
 .leaflet-container {
   height: 100%;

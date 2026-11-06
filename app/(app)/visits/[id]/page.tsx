@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getScope, visitScopeWhere, getActor, canReviewVisit } from "@/lib/scope";
-import { roleLabel } from "@/lib/roles";
+import { getScope, visitScopeWhere, getActor } from "@/lib/scope";
 import { initials, avatarColor } from "@/lib/format";
 import { shortStoreName, storeColor } from "@/lib/store-utils";
 import {
@@ -16,6 +15,7 @@ import {
   recommendationsFor,
 } from "@/lib/visit-types";
 import { VisitDetailView, type VisitDetailData } from "@/components/visit-detail/VisitDetailView";
+import { loadReviewState } from "@/lib/visit-review-state";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +35,10 @@ type VisitRow = {
   reviewedByName: string | null;
   reviewedByCode: string | null;
   reviewedByRole: string | null;
+  reviewRating: number | null;
+  reviewFlagged: boolean;
+  reviewFlagActionId: number | null;
+  reviewFlagResolvedAt: Date | null;
   createdAt: Date;
   visitMode: string | null;
   gpsLat: number | null;
@@ -111,10 +115,11 @@ function emptyDetail(id: number, justCreated: boolean): VisitDetailData {
   return {
     vid: `VIS-${String(id).padStart(4, "0")}`,
     visitId: id,
-    reviewed: false,
-    reviewNote: "",
-    reviewedBy: "",
-    canReview: false,
+    review: {
+      reviewed: false, note: "", rating: null, reviewedBy: "", canReview: false,
+      flag: { open: false, actionId: null, due: "", resolvedAt: "" },
+      defaultFlagDue: "", history: null,
+    },
     date: "",
     followUpDate: "",
     purpose: "",
@@ -212,6 +217,10 @@ export default async function VisitDetailPage({
         reviewedByName: true,
         reviewedByCode: true,
         reviewedByRole: true,
+        reviewRating: true,
+        reviewFlagged: true,
+        reviewFlagActionId: true,
+        reviewFlagResolvedAt: true,
         createdAt: true,
         visitMode: true,
         gpsLat: true,
@@ -281,20 +290,14 @@ export default async function VisitDetailPage({
     visit.landHoldingUnit ||
     (visit.farmer?.land != null ? `${visit.farmer.land} acres` : "");
 
-  // Review / sign-off: can the current user review this visit? (recorder / managing RM / admin)
+  // Review / sign-off state (eligibility, flag, history) — shared with the review-queue drawer.
   const actor = await getActor();
-  const canReview = canReviewVisit(scope, actor.code, { storeId: visit.storeId ?? visit.store?.id ?? null, byCode: visit.recordedByCode });
-  const reviewedBy = visit.reviewedByName
-    ? `${visit.reviewedByName}${visit.reviewedByCode ? ` (${visit.reviewedByCode})` : ""}${visit.reviewedByRole ? ` · ${roleLabel(visit.reviewedByRole as never)}` : ""}${visit.reviewedAt ? ` · ${visit.reviewedAt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })}` : ""}`
-    : "";
+  const review = await loadReviewState({ ...visit, storeId: visit.storeId ?? visit.store?.id ?? null }, scope, actor.code);
 
   const data: VisitDetailData = {
     vid: `VIS-${String(visit.id).padStart(4, "0")}`,
     visitId: visit.id,
-    reviewed: visit.reviewedAt != null,
-    reviewNote: visit.reviewNote ?? "",
-    reviewedBy,
-    canReview,
+    review,
     date: displayDate(visit.date, visit.visitedAt),
     followUpDate: visit.followUpDate
       ? (() => { const d = new Date(`${visit.followUpDate}T00:00:00`); return Number.isNaN(d.getTime()) ? visit.followUpDate! : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }); })()

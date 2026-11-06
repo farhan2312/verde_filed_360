@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 /** Keys for the system-configuration block, stored as `Setting` rows. */
 export const CONFIG_KEYS = [
@@ -16,6 +17,8 @@ export type ConfigKey = (typeof CONFIG_KEYS)[number];
 /** Upsert a single config Setting row and revalidate the settings route. */
 export async function updateSettingAction(key: ConfigKey, value: string) {
   if (!(CONFIG_KEYS as readonly string[]).includes(key)) return;
+  // Server actions are callable by any signed-in user — the Settings page being admin-only isn't enough.
+  if (!(await getSession())?.isAdmin) return;
   try {
     await prisma.setting.upsert({
       where: { key },

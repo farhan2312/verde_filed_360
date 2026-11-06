@@ -5,6 +5,7 @@ import { getHeaderCounts } from "@/lib/stats";
 import { countOverdueActions } from "@/app/actions/action-registry";
 import { pendingReviewCount } from "@/app/actions/visit-review";
 import { countPendingGhoshtiApprovals } from "@/app/actions/ghoshti";
+import { getUnreadNotificationCount } from "@/app/actions/notifications";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { MobileNav } from "@/components/shell/MobileNav";
 import { Header } from "@/components/shell/Header";
@@ -17,13 +18,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getSession();
   if (!session) redirect("/login"); // belt-and-suspenders (middleware also guards)
 
-  const [role, persona, counts, overdueActions, pendingReviews, pendingGhoshti] = await Promise.all([
+  const [role, persona, counts, overdueActions, pendingReviews, pendingGhoshti, unreadNotifications] = await Promise.all([
     getRole(),
     getPersona(),
     getHeaderCounts(),
     countOverdueActions(),
     pendingReviewCount(),
     countPendingGhoshtiApprovals(),
+    getUnreadNotificationCount(),
   ]);
 
   const isAdmin = session.isAdmin;
@@ -49,8 +51,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         the whole page — mobile browsers then render it zoomed out. overflow-x-clip on <main> is
         the safety net. Wide content must scroll inside its own overflow-x-auto wrapper.
       */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-64">
-        <Header role={role} counts={counts} />
+      <div className="print-flat flex min-h-screen min-w-0 flex-1 flex-col lg:ml-64">
+        <Header role={role} counts={counts} unreadNotifications={unreadNotifications} />
         <main className="flex-1 overflow-x-clip px-4 py-5 pb-24 lg:px-8 lg:py-7 lg:pb-7">{children}</main>
       </div>
       <MobileNav

@@ -26,7 +26,7 @@ export interface Scope {
  * The `regionalManager` name is still matched as a fallback so a store imported with a manager name
  * but not yet linked to an account keeps working.
  */
-async function managedStoreIdsFor(userId: number, name: string): Promise<number[]> {
+export async function managedStoreIdsFor(userId: number, name: string): Promise<number[]> {
   const n = name.trim();
   const rows = await prisma.store.findMany({
     where: {

@@ -21,6 +21,8 @@ const SHORT: Record<NavId, string> = {
   dashboard: "Home",
   newVisit: "New",
   visitRepo: "Visits",
+  visitReviews: "Reviews",
+  weeklyReports: "Reports",
   actionRegistry: "Actions",
   farmers: "Farmers",
   stores: "Stores",
@@ -72,7 +74,7 @@ export function MobileNav({
     <>
       {/* Full-nav slide-up sheet */}
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
+        <div className="no-print fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
           <div className="absolute inset-x-0 bottom-0 flex max-h-[82vh] flex-col overflow-hidden rounded-t-2xl bg-gradient-to-b from-brand-900 to-brand-950 text-white shadow-modal animate-[fadeUp_0.22s_ease-out]">
             <div className="flex items-center justify-between px-5 pb-1 pt-4">
@@ -114,7 +116,7 @@ export function MobileNav({
 
       {/* Bottom tab bar */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-line bg-white shadow-[0_-1px_10px_rgba(0,0,0,0.06)] lg:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-line bg-white shadow-[0_-1px_10px_rgba(0,0,0,0.06)] lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {tabs.map((item) => {

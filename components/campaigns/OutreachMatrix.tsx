@@ -8,10 +8,12 @@ import {
   APPROACH_TILES, UNREACHABLE_TILE, statusOf, rank, digits10, OutreachProgress,
   ScriptPanel, ResponsePicker, ResponseBadge, useOutreach, type CommTemplateVM, type CropOption,
 } from "@/components/campaigns/CampaignsScreen";
+import { ClusterMultiSelect } from "@/components/campaigns/ClusterMultiSelect";
 
 const CARD = "rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
 const n = (x: number) => x.toLocaleString("en-IN");
 const PAGE = 50;
+const NO_STORE = 0; // filter id for farmers enrolled without a store
 
 /** Shared row grid — farmer | phone | outcome (response + channel) | note | save. */
 const GRID = "grid grid-cols-[1.3fr_0.8fr_auto_1.2fr_auto] items-center gap-3";
@@ -19,13 +21,26 @@ const GRID = "grid grid-cols-[1.3fr_0.8fr_auto_1.2fr_auto] items-center gap-3";
 /**
  * Full-page outreach matrix: every farmer on ONE line — outcome tiles, note and save together.
  * Reached/unreachable rows sink to the bottom; un-contacted stay on top.
+ * Central/system admins also get a store filter, which narrows both the list and the progress bar.
  */
-export function OutreachMatrix({ campaign, initial, scripts = [], crops = [] }: { campaign: CampaignListItem; initial: CampaignMemberVM[]; scripts?: CommTemplateVM[]; crops?: CropOption[] }) {
+export function OutreachMatrix({ campaign, initial, scripts = [], crops = [], canFilterStores = false }: { campaign: CampaignListItem; initial: CampaignMemberVM[]; scripts?: CommTemplateVM[]; crops?: CropOption[]; canFilterStores?: boolean }) {
   const [members, setMembers] = useState(initial);
   const [page, setPage] = useState(0);
+  const [storeIds, setStoreIds] = useState<number[]>([]);
   const patch = (u: CampaignMemberVM) => setMembers((list) => list.map((x) => (x.id === u.id ? u : x)));
 
-  const sorted = [...members].sort((a, b) => rank(a) - rank(b));
+  // Filter options come from this campaign's own farmers, with each store's count; "No store" goes last.
+  const storeOpts = new Map<number, { id: number; name: string; count: number }>();
+  for (const m of members) {
+    const id = m.storeId ?? NO_STORE;
+    const o = storeOpts.get(id);
+    if (o) o.count++;
+    else storeOpts.set(id, { id, name: id === NO_STORE ? "No store" : m.store || `Store #${id}`, count: 1 });
+  }
+  const storeOptions = [...storeOpts.values()].sort((a, b) => (a.id === NO_STORE ? 1 : b.id === NO_STORE ? -1 : a.name.localeCompare(b.name)));
+
+  const visible = storeIds.length ? members.filter((m) => storeIds.includes(m.storeId ?? NO_STORE)) : members;
+  const sorted = [...visible].sort((a, b) => rank(a) - rank(b));
   const pages = Math.max(1, Math.ceil(sorted.length / PAGE));
   const p = Math.min(page, pages - 1);
   const slice = sorted.slice(p * PAGE, p * PAGE + PAGE);
@@ -59,7 +74,14 @@ export function OutreachMatrix({ campaign, initial, scripts = [], crops = [] }: 
         {/* Right: progress + matrix */}
         <div className="min-w-0 flex-1">
           <div className={`${CARD} p-4`}>
-            <OutreachProgress members={members} />
+            {canFilterStores && (
+              <div className="mb-3 max-w-[420px]">
+                <div className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Filter by store</div>
+                <ClusterMultiSelect options={storeOptions} value={storeIds} onChange={(ids) => { setStoreIds(ids); setPage(0); }}
+                  noun="stores" emptyLabel={`All stores (${storeOptions.length})`} allLabel={`All ${storeOptions.length} stores selected`} />
+              </div>
+            )}
+            <OutreachProgress members={visible} />
           </div>
 
           <div className={`${CARD} mt-3 overflow-hidden`}>

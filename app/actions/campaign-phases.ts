@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getScope, canManage, getActor } from "@/lib/scope";
+import { campaignFieldAccess } from "@/lib/campaign-team";
 import { shortStoreName } from "@/lib/store-utils";
 import { segMeta } from "@/lib/campaign-segments";
 import {
@@ -123,7 +124,7 @@ export interface RoundStatus {
 }
 
 export async function getRoundStatus(campaignId: number): Promise<RoundStatus | null> {
-  const { role, storeId, zone } = await getScope();
+  const { role } = await getScope();
   const camp = await prisma.campaign.findUnique({
     where: { id: campaignId },
     include: { phases: { orderBy: { ordinal: "asc" } } },
@@ -136,8 +137,13 @@ export async function getRoundStatus(campaignId: number): Promise<RoundStatus | 
 
   const where: Prisma.CampaignMemberWhereInput = { campaignId, group: "TEST" };
   const base = { campaignId, rounds: camp.phases.map((p) => ({ ordinal: p.ordinal, name: p.name })), currentOrdinal: ord, roundName: round.name, windowStart: iso(round.defaultStart), windowEnd: iso(round.defaultEnd), hasNext: ord < maxOrd, nextRoundName: ord < maxOrd ? (camp.phases.find((p) => p.ordinal === ord + 1)?.name ?? null) : null, canManage: canManage(role), purchaseSplit };
-  if (role === "officer") { if (storeId == null) return { ...base, memberCount: 0, purchasedCount: 0, notPurchasedCount: 0, advancedByName: null, advancedAt: null }; where.storeId = storeId; }
-  else if (role === "regional") { if (zone == null) return { ...base, memberCount: 0, purchasedCount: 0, notPurchasedCount: 0, advancedByName: null, advancedAt: null }; where.zone = zone; }
+  if (role === "officer" || role === "regional") { // same access as the farmer list (own stores / picked team / helper grant)
+    const access = await campaignFieldAccess(campaignId);
+    if (access !== "all") {
+      if (!access.length) return { ...base, memberCount: 0, purchasedCount: 0, notPurchasedCount: 0, advancedByName: null, advancedAt: null };
+      where.storeId = { in: access };
+    }
+  }
 
   const members = await prisma.campaignMember.findMany({ where, select: { farmerId: true } });
   let purchasedCount = 0;
@@ -196,7 +202,7 @@ export interface PhaseOutreach {
 }
 
 export async function getPhaseOutreach(campaignId: number): Promise<PhaseOutreach | null> {
-  const { role, storeId, zone } = await getScope();
+  const { role } = await getScope();
   const camp = await prisma.campaign.findUnique({
     where: { id: campaignId },
     include: { phases: { orderBy: { ordinal: "asc" } } },
@@ -209,8 +215,13 @@ export async function getPhaseOutreach(campaignId: number): Promise<PhaseOutreac
   const purchaseSplit = ord >= 2;
 
   const where: Prisma.CampaignMemberWhereInput = { campaignId, group: "TEST" };
-  if (role === "officer") { if (storeId == null) return null; where.storeId = storeId; }
-  else if (role === "regional") { if (zone == null) return null; where.zone = zone; }
+  if (role === "officer" || role === "regional") { // same access as the farmer list (own stores / picked team / helper grant)
+    const access = await campaignFieldAccess(campaignId);
+    if (access !== "all") {
+      if (!access.length) return null;
+      where.storeId = { in: access };
+    }
+  }
 
   const members = await prisma.campaignMember.findMany({ where, orderBy: { id: "asc" } });
   const farmerIds = members.map((m) => m.farmerId);

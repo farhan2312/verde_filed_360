@@ -11,13 +11,17 @@ import { BroadcastPanel } from "./BroadcastPanel";
 import { BroadcastHistory } from "./BroadcastHistory";
 import { PhasesPanel } from "./phases/PhasesPanel";
 import { PhaseOutreachPanel } from "./phases/PhaseOutreachPanel";
+import { HelpersModal } from "./HelpersModal";
+import { ClusterMultiSelect } from "./ClusterMultiSelect";
+import { TeamPicker, type TeamValue } from "./TeamPicker";
+import type { TeamOfficer, TeamCampaigner } from "@/lib/campaign-team";
 import { WA_VAR_TOKENS, SAMPLE_VARS, fillNamedTemplate, countDltVars, fillDltTemplate } from "@/lib/campaign-vars";
 import { listTemplates, type WaTemplate } from "@/app/actions/whatsapp-templates";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { cropLabel } from "@/lib/crops";
 import { inr } from "@/lib/format";
 import {
-  saveCommTemplate, createCommTemplate, deleteCommTemplate, createCampaign, getCampaignTracker, extendCampaign, updateCampaignCommPlans, deleteCampaign, getCampaignMembers, markCampaignMember, getCampaignAnalytics, exportCampaignAudienceXlsx, exportCampaignTrackerXlsx, getSmsTemplates,
+  saveCommTemplate, createCommTemplate, deleteCommTemplate, createCampaign, previewCampaignAudience, getTeamCandidates, getCampaignTeam, setCampaignTeam, getCampaignTracker, extendCampaign, updateCampaignCommPlans, deleteCampaign, getCampaignMembers, markCampaignMember, getCampaignAnalytics, exportCampaignAudienceXlsx, exportCampaignTrackerXlsx, getSmsTemplates,
   type CampaignListItem, type CampaignTracker, type ProjectVM, type CampaignMemberVM, type CampaignAnalytics, type SmsTemplateVM, type TrackerScope, type SegRow, type MatchView,
 } from "@/app/actions/campaigns";
 import { downloadB64 } from "@/lib/download";
@@ -503,8 +507,15 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
   const [creating, setCreating] = useState(canManage && initialProject != null);
   const [name, setName] = useState("");
   const [projectId, setProjectId] = useState<number | null>(defaultProject?.id ?? null);
-  const [clusterId, setClusterId] = useState<number | null>(null); // null = whole project
+  const [clusterIds, setClusterIds] = useState<number[]>(() => defaultProject?.clusters.map((c) => c.id) ?? []); // all = whole project
+  const [preview, setPreview] = useState<{ key: string; audience: number; already: number; storeIds: number[] } | null>(null);
   const [commPlans, setCommPlans] = useState<string[]>([]); // every campaign must be tagged with ≥1 comm plan (by name)
+  const [testPct, setTestPct] = useState(75); // % of the audience that goes into the contacted TEST group (rest = control)
+  // Who works it: officers of the audience's stores are ticked by default; the maker adds/removes people.
+  const [cands, setCands] = useState<{ officers: TeamOfficer[]; campaigners: TeamCampaigner[] } | null>(null);
+  const [offAdded, setOffAdded] = useState<number[]>([]);
+  const [offRemoved, setOffRemoved] = useState<number[]>([]);
+  const [camPicked, setCamPicked] = useState<number[]>([]);
   const [startDate, setStart] = useState(defaultProject?.startDate ?? "");
   const [endDate, setEnd] = useState(defaultProject?.endDate ?? "");
   const [pending, start] = useTransition();
@@ -526,16 +537,44 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
   const [editOf, setEditOf] = useState<CampaignListItem | null>(null);
   const [phasesOf, setPhasesOf] = useState<CampaignListItem | null>(null); // manager phase setup/board
   const [phaseOutreachOf, setPhaseOutreachOf] = useState<CampaignListItem | null>(null); // phase-routed outreach (all roles)
+  const [helpersOf, setHelpersOf] = useState<CampaignListItem | null>(null); // manager: lend officers/RMs to this campaign
 
   // The comm-plan scripts tagged to the open campaign (by name) — shown as the outreach left panel.
   const scripts = membersOf ? templates.filter((t) => membersOf.commPlans.includes(t.name)) : [];
 
   const project = projects.find((p) => p.id === projectId) ?? null;
-  const audience = clusterId ? project?.clusters.find((c) => c.id === clusterId)?.count ?? 0 : project?.audienceCount ?? 0;
+  const wholeProject = !!project && clusterIds.length === project.clusters.length;
+  // Exact de-duplicated audience for the chosen set (debounced server count); whole project is known up front.
+  const previewKey = `${projectId}:${[...clusterIds].sort((a, b) => a - b).join(",")}`;
+  useEffect(() => {
+    if (!creating || !projectId || !clusterIds.length) return;
+    const t = setTimeout(() => {
+      previewCampaignAudience(projectId, clusterIds).then((r) => { if (r.ok) setPreview({ key: previewKey, audience: r.audience ?? 0, already: r.already ?? 0, storeIds: r.storeIds ?? [] }); });
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewKey, creating]);
+  const fresh = preview?.key === previewKey ? preview : null;
+  const audience = !clusterIds.length ? 0 : fresh ? fresh.audience : wholeProject ? project?.audienceCount ?? 0 : null;
+
+  useEffect(() => {
+    if (creating && !cands) getTeamCandidates().then((r) => { if (r.ok) setCands({ officers: r.officers ?? [], campaigners: r.campaigners ?? [] }); });
+  }, [creating, cands]);
+  const audienceStores = preview?.storeIds ?? []; // last known (avoids the team flickering while a new count loads)
+  const storeSet = new Set(audienceStores);
+  const defaultOfficerIds = (cands?.officers ?? []).filter((o) => o.storeId != null && storeSet.has(o.storeId)).map((o) => o.id);
+  const removedSet = new Set(offRemoved);
+  const team = { officerIds: [...new Set([...defaultOfficerIds.filter((id) => !removedSet.has(id)), ...offAdded])], campaignerIds: camPicked };
+  const setTeam = (v: { officerIds: number[]; campaignerIds: number[] }) => {
+    const def = new Set(defaultOfficerIds), sel = new Set(v.officerIds);
+    setOffAdded(v.officerIds.filter((id) => !def.has(id)));
+    setOffRemoved(defaultOfficerIds.filter((id) => !sel.has(id)));
+    setCamPicked(v.campaignerIds);
+  };
 
   const pickProject = (id: number) => {
     const p = projects.find((x) => x.id === id) ?? null;
-    setProjectId(id); setClusterId(null);
+    setProjectId(id); setClusterIds(p?.clusters.map((c) => c.id) ?? []);
     setStart(p?.startDate ?? ""); setEnd(p?.endDate ?? "");
   };
 
@@ -545,15 +584,18 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
   const submit = () => {
     if (!projectId) { setMsg("Pick a project first."); return; }
     if (!name.trim()) { setMsg("Name the campaign."); return; }
+    if (clusterIds.length === 0) { setMsg("Pick at least one cluster."); return; }
     if (commPlans.length === 0) { setMsg("Tag at least one comm plan."); return; }
+    if (!fresh || !cands) { setMsg("Still working out the audience and team - try again in a moment."); return; }
+    if (!team.officerIds.length && !team.campaignerIds.length) { setMsg("Pick at least one person to work this campaign."); return; }
     setMsg(null);
     start(async () => {
-      const res = await createCampaign({ name, startDate, endDate, projectId, clusterId, commPlans });
+      const res = await createCampaign({ name, startDate, endDate, projectId, clusterIds: wholeProject ? [] : clusterIds, commPlans, testPct, team });
       if (res.ok) {
         setMsg(`Created "${name}" · ${n(res.members ?? 0)} enrolled${res.skipped ? ` · ${n(res.skipped)} skipped (already in another campaign of this project)` : ""}.`);
         // Close + reset the form, then soft-refresh so the new campaign appears in the list.
         setCreating(false);
-        setName(""); setClusterId(null); setCommPlans([]);
+        setName(""); setClusterIds(project?.clusters.map((c) => c.id) ?? []); setCommPlans([]); setTestPct(75); setOffAdded([]); setOffRemoved([]); setCamPicked([]);
         // Drop ?forProject= — otherwise the chain deep link re-opens the form on refresh.
         if (initialProjectId != null) router.replace("/campaigns");
         router.refresh();
@@ -570,7 +612,7 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
       <div className="mb-3 flex items-center justify-between">
         <div className="text-[13px] text-[#757575]">
           {canManage
-            ? "Run a campaign on a project (all its clusters) or one cluster inside it. Farmers already in another campaign of the same project are skipped — no double-contact."
+            ? "Run a campaign on a project — all its clusters, or any set of them you pick. Farmers already in another campaign of the same project are skipped — no double-contact."
             : "Your campaigns — showing only the farmers enrolled from your store / district."}
         </div>
         {canManage && <button type="button" onClick={() => setCreating((v) => !v)} disabled={projects.length === 0} className="rounded-[10px] bg-[#7DA02E] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{creating ? "Close" : "+ New campaign"}</button>}
@@ -597,11 +639,8 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
               </select>
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Scope</label>
-              <select className="mt-1 w-full rounded-lg border border-[#E0E0E0] bg-white px-2.5 py-2 text-[13px]" value={clusterId ?? ""} onChange={(e) => setClusterId(e.target.value ? Number(e.target.value) : null)}>
-                <option value="">Whole project ({project.clusters.length} clusters)</option>
-                {project.clusters.map((c) => <option key={c.id} value={c.id}>{c.name} · {n(c.count)}</option>)}
-              </select>
+              <label className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Scope — clusters</label>
+              <ClusterMultiSelect options={project.clusters} value={clusterIds} onChange={setClusterIds} />
             </div>
           </div>
           <div className="mt-2 text-[11px] text-[#9E9E9E]">Campaign dates must fall within the project window{project.endDate ? ` (${project.startDate} → ${project.endDate})` : ""}. To run past the project end, extend the project first.</div>
@@ -627,10 +666,40 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
             {commPlans.length > 0 && <div className="mt-1 text-[11px] text-[#7DA02E]">{commPlans.length} tagged</div>}
           </div>
           <div className="mt-3 flex items-center justify-between rounded-[10px] bg-[#F5F7F5] px-4 py-3">
-            <div className="text-[12px] text-[#616161]">Audience {clusterId ? "(cluster)" : "(project, de-duplicated)"} · before cross-campaign de-dup</div>
-            <div className="text-[18px] font-bold text-[#7DA02E]">{n(audience)}</div>
+            <div className="text-[12px] text-[#616161]">
+              Audience ({wholeProject ? "whole project" : `${clusterIds.length} cluster${clusterIds.length === 1 ? "" : "s"}`}, de-duplicated)
+              {fresh && fresh.already > 0 && <div className="text-[11px] text-[#8D6E00]">{n(fresh.already)} already in another campaign of this project — they'll be skipped (~{n(fresh.audience - fresh.already)} enrolled)</div>}
+            </div>
+            <div className="text-[18px] font-bold text-[#7DA02E]">{audience == null ? "…" : n(audience)}</div>
           </div>
-          <button type="button" onClick={submit} disabled={pending || !name.trim() || commPlans.length === 0} className="mt-4 rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{pending ? "Creating…" : "Create & enrol"}</button>
+          {/* Test / Control split — the maker chooses how much of the audience is contacted (test) vs held back (control) */}
+          <div className="mt-3 rounded-[10px] bg-[#F5F7F5] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Test / Control split</label>
+              <div className="flex items-center gap-3">
+                <input type="range" min={0} max={100} step={5} value={testPct} onChange={(e) => setTestPct(Number(e.target.value))}
+                  style={{ background: `linear-gradient(to right, #7DA02E 0%, #7DA02E ${testPct}%, #C62828 ${testPct}%, #C62828 100%)` }}
+                  className="h-[6px] w-[220px] cursor-pointer appearance-none rounded-full outline-none [&::-webkit-slider-thumb]:h-[16px] [&::-webkit-slider-thumb]:w-[16px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#1A1C1A] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow [&::-moz-range-thumb]:h-[16px] [&::-moz-range-thumb]:w-[16px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#1A1C1A] [&::-moz-range-thumb]:bg-white" />
+                <span className="whitespace-nowrap text-[12px] font-semibold tabular-nums"><span className="text-[#7DA02E]">Test {testPct}%</span> <span className="text-[#BDBDBD]">/</span> <span className="text-[#C62828]">Control {100 - testPct}%</span></span>
+              </div>
+            </div>
+            <div className="mt-1.5 flex justify-between text-[11px]">
+              <span className="font-semibold text-[#7DA02E]">~{audience == null ? "…" : n(Math.round(audience * testPct / 100))} contacted (test)</span>
+              <span className="font-semibold text-[#C62828]">~{audience == null ? "…" : n(audience - Math.round(audience * testPct / 100))} holdout (control)</span>
+            </div>
+            <div className="mt-1 text-[10.5px] text-[#9E9E9E]">The <b>test</b> group is contacted; <b>control</b> is held back as the no-contact baseline for uplift. 100/0 = contact everyone (no control); 0/100 = hold everyone back. Default 75 / 25.</div>
+          </div>
+          {/* Who works this campaign — the picked team (officers of the audience's stores pre-ticked) */}
+          <div className="mt-3 rounded-[10px] bg-[#F5F7F5] px-4 py-3">
+            <label className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Who works this campaign?</label>
+            {!cands || !preview ? (
+              <div className="mt-1.5 text-[12px] text-[#9E9E9E]">Loading officers and campaigners…</div>
+            ) : (
+              <TeamPicker officers={cands.officers} campaigners={cands.campaigners} storeIds={audienceStores}
+                value={team} onChange={setTeam} defaultOfficerIds={defaultOfficerIds} />
+            )}
+          </div>
+          <button type="button" onClick={submit} disabled={pending || !name.trim() || commPlans.length === 0 || !fresh || !cands} className="mt-4 rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{pending ? "Creating…" : "Create & enrol"}</button>
         </div>
       )}
       {msg && <div className="mb-3 rounded-[10px] border border-[#DBE9B4] bg-[#F5F9EA] px-3.5 py-2.5 text-[12.5px] font-medium text-[#7DA02E]">{msg}</div>}
@@ -641,7 +710,11 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
         ) : list.map((c) => (
           <div key={c.id} className="flex flex-wrap items-center gap-3 border-b border-[#F5F5F5] px-4 py-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-bold text-[#1A1C1A]">{c.name}</div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[13.5px] font-bold text-[#1A1C1A]">{c.name}</span>
+                {c.workedBy === "CAMPAIGNERS" && <span className="rounded-full bg-[#E0F7FA] px-2 py-0.5 text-[10px] font-semibold text-[#00838F]">📞 Campaigners only</span>}
+                {c.workedBy === "BOTH" && <span className="rounded-full bg-[#F3E5F5] px-2 py-0.5 text-[10px] font-semibold text-[#6A1B9A]">Officers + campaigners</span>}
+              </div>
               <div className="text-[11.5px] text-[#9E9E9E]">{c.startDate} → {c.endDate} · {c.target}</div>
               {c.commPlans.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -658,6 +731,7 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
             {canManage && <button type="button" onClick={() => setPhasesOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#E65100] hover:bg-[#FFF3E0]">⚙ Round setup</button>}
             {canManage && <button type="button" onClick={() => openTracker(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#7DA02E] hover:bg-[#F5F9EA]">Campaign Tracker</button>}
             {canManage && <button type="button" onClick={() => setEditOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#455A64] hover:bg-[#ECEFF1]">✎ Edit</button>}
+            {canManage && <button type="button" onClick={() => setHelpersOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#00838F] hover:bg-[#E0F7FA]">👥 Helpers</button>}
             {canManage && <button type="button" onClick={() => setExtendOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#6A1B9A] hover:bg-[#F3E5F5]">Extend</button>}
             {canManage && <button type="button" onClick={() => setHistoryOf(c)} className="rounded-[8px] bg-[#F5F7F5] px-3 py-1.5 text-[12px] font-semibold text-[#0B8A3D] hover:bg-[#F5F9EA]">📣 Broadcasts</button>}
           </div>
@@ -779,6 +853,9 @@ function CampaignsTab({ campaigns, projects, canManage, initialProjectId, commPl
       {phaseOutreachOf && (
         <PhaseOutreachPanel campaignId={phaseOutreachOf.id} campaignName={phaseOutreachOf.name} onClose={() => setPhaseOutreachOf(null)} />
       )}
+      {helpersOf && (
+        <HelpersModal campaignId={helpersOf.id} campaignName={helpersOf.name} onClose={() => setHelpersOf(null)} />
+      )}
       {broadcasting && membersOf && (
         <BroadcastPanel campaignId={membersOf.id} campaignName={membersOf.name} commPlans={membersOf.commPlans ?? []} templates={templates} onClose={() => { setBroadcasting(false); setBcReload((k) => k + 1); }} />
       )}
@@ -823,6 +900,19 @@ function ExtendModal({ campaign, project, onClose }: { campaign: CampaignListIte
 /** Edit which comm plans a campaign is tagged with — add/remove by toggling; must keep at least one. */
 function EditCommPlansModal({ campaign, commPlanNames, onClose }: { campaign: CampaignListItem; commPlanNames: string[]; onClose: () => void }) {
   const [selected, setSelected] = useState<string[]>(campaign.commPlans ?? []);
+  // Team: loaded on open (legacy campaigns come back reconstructed from the old store rule).
+  const [teamData, setTeamData] = useState<{ officers: TeamOfficer[]; campaigners: TeamCampaigner[]; storeIds: number[]; initial: TeamValue } | null>(null);
+  const [teamVal, setTeamVal] = useState<TeamValue | null>(null);
+  useEffect(() => {
+    Promise.all([getTeamCandidates(), getCampaignTeam(campaign.id)]).then(([c, t]) => {
+      if (!c.ok || !t.ok) return;
+      const initial = { officerIds: t.officerIds ?? [], campaignerIds: t.campaignerIds ?? [] };
+      setTeamData({ officers: c.officers ?? [], campaigners: c.campaigners ?? [], storeIds: t.storeIds ?? [], initial });
+      setTeamVal(initial);
+    });
+  }, [campaign.id]);
+  const sameSet = (a: number[], b: number[]) => a.length === b.length && a.every((x) => b.includes(x));
+  const teamChanged = !!teamData && !!teamVal && (!sameSet(teamVal.officerIds, teamData.initial.officerIds) || !sameSet(teamVal.campaignerIds, teamData.initial.campaignerIds));
   const [saving, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -841,12 +931,17 @@ function EditCommPlansModal({ campaign, commPlanNames, onClose }: { campaign: Ca
     setErr(null);
     start(async () => {
       const res = await updateCampaignCommPlans(campaign.id, selected);
-      if (res.ok) location.reload(); else setErr(res.error ?? "Failed");
+      if (!res.ok) { setErr(res.error ?? "Failed"); return; }
+      if (teamChanged && teamVal) {
+        const w = await setCampaignTeam(campaign.id, teamVal.officerIds, teamVal.campaignerIds);
+        if (!w.ok) { setErr(w.error ?? "Failed to update who works it"); return; }
+      }
+      location.reload();
     });
   };
   return (
-    <Modal open onClose={onClose} className="max-w-[520px]">
-      <ModalHeader eyebrow="Edit campaign · comm plans" eyebrowColor="#455A64" title={campaign.name} subtitle="Add or remove the comm plans this campaign is tagged with" onClose={onClose} />
+    <Modal open onClose={onClose} className="max-w-[640px]">
+      <ModalHeader eyebrow="Edit campaign" eyebrowColor="#455A64" title={campaign.name} subtitle="Comm plans and who works this campaign" onClose={onClose} />
       <div className="px-5 py-4">
         <label className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Comm plans <span className="normal-case text-[#C62828]">*</span> — tag one or more</label>
         {options.length === 0 ? (
@@ -866,10 +961,23 @@ function EditCommPlansModal({ campaign, commPlanNames, onClose }: { campaign: Ca
           </div>
         )}
         <div className="mt-1 text-[11px] text-[#7DA02E]">{selected.length} tagged</div>
+
+        <div className="mt-4">
+          <label className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Who works this campaign?</label>
+          {!teamData || !teamVal ? (
+            <div className="mt-1.5 text-[12px] text-[#9E9E9E]">Loading the team…</div>
+          ) : (
+            <>
+              {!campaign.team && <div className="mt-1 text-[11px] text-[#8D6E00]">This campaign uses the old "{campaign.workedBy === "CAMPAIGNERS" ? "campaigners only" : campaign.workedBy === "BOTH" ? "both" : "store officers"}" rule — shown here as the people it currently reaches. Change anyone below and it switches to a picked team.</div>}
+              <TeamPicker officers={teamData.officers} campaigners={teamData.campaigners} storeIds={teamData.storeIds} value={teamVal} onChange={setTeamVal}
+                defaultOfficerIds={teamData.officers.filter((o) => o.storeId != null && teamData.storeIds.includes(o.storeId)).map((o) => o.id)} />
+            </>
+          )}
+        </div>
         {err && <div className="mt-2 text-[12px] text-[#C62828]">{err}</div>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[10px] border border-[#E0E0E0] px-4 py-2 text-[13px] font-semibold text-[#616161]">Cancel</button>
-          <button type="button" onClick={save} disabled={saving || selected.length === 0} className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save comm plans"}</button>
+          <button type="button" onClick={save} disabled={saving || selected.length === 0 || (!!teamVal && !teamVal.officerIds.length && !teamVal.campaignerIds.length)} className="rounded-[10px] bg-[#7DA02E] px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save changes"}</button>
         </div>
 
         {/* Danger zone — delete the whole campaign (two-step confirm) */}
@@ -1545,11 +1653,83 @@ function SegStoreMatrix({ valueCols, lifecycleCols, matrix, total }: { valueCols
   );
 }
 
-function AnalyticsBody({ a, campaign }: { a: CampaignAnalytics; campaign: CampaignListItem }) {
+/** Per-centre outreach: Reached + how (Call/WA/SMS/In-person) + still-pending, one row per store. */
+function CallByStoreTable({ rows }: { rows: CampaignAnalytics["callByStore"] }) {
+  const tot = rows.reduce((t, r) => ({
+    test: t.test + r.test, reached: t.reached + r.reached, call: t.call + r.call,
+    whatsapp: t.whatsapp + r.whatsapp, sms: t.sms + r.sms, inPerson: t.inPerson + r.inPerson, pending: t.pending + r.pending,
+  }), { test: 0, reached: 0, call: 0, whatsapp: 0, sms: 0, inPerson: 0, pending: 0 });
+  const pct = (r: number, t: number) => (t > 0 ? Math.round((r / t) * 100) : 0);
+  const HEAD = "px-2.5 py-1.5 text-right text-[10.5px] font-semibold uppercase tracking-[0.3px] text-[#757575]";
+  const CELL = "px-2.5 py-1.5 text-right text-[12px] tabular-nums text-[#424242]";
+  return (
+    <div className={`${CARD} p-4`}>
+      <div className="mb-1 flex items-center justify-between">
+        <div className="text-[13px] font-bold text-[#1A1C1A]">Call stats by centre</div>
+        <span className="text-[11px] text-[#9E9E9E]">test group · reached &amp; how</span>
+      </div>
+      <div className="mb-2 text-[11px] text-[#9E9E9E]">A farmer reached by more than one approach counts under each, so Call/WA/SMS/Visit can exceed Reached.</div>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b border-[#ECECEC]">
+              <th className="px-2.5 py-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.3px] text-[#757575]">Centre</th>
+              <th className={HEAD}>Test</th>
+              <th className={HEAD}>Reached</th>
+              <th className={HEAD}>Call</th>
+              <th className={HEAD}>WhatsApp</th>
+              <th className={HEAD}>SMS</th>
+              <th className={HEAD}>In-person</th>
+              <th className={HEAD}>Pending</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.store} className="border-b border-[#F5F5F5]">
+                <td className="px-2.5 py-1.5 text-left text-[12px] font-semibold text-[#1A1C1A]" title={r.store}>{r.store}</td>
+                <td className={CELL}>{n(r.test)}</td>
+                <td className="px-2.5 py-1.5 text-right text-[12px] tabular-nums font-semibold text-[#7DA02E]">{n(r.reached)} <span className="text-[10px] font-normal text-[#9E9E9E]">({pct(r.reached, r.test)}%)</span></td>
+                <td className={CELL}>{n(r.call)}</td>
+                <td className={CELL}>{n(r.whatsapp)}</td>
+                <td className={CELL}>{n(r.sms)}</td>
+                <td className={CELL}>{n(r.inPerson)}</td>
+                <td className="px-2.5 py-1.5 text-right text-[12px] tabular-nums text-[#C62828]">{n(r.pending)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-[#E0E0E0] font-semibold">
+              <td className="px-2.5 py-1.5 text-left text-[12px] text-[#1A1C1A]">All centres</td>
+              <td className={CELL}>{n(tot.test)}</td>
+              <td className="px-2.5 py-1.5 text-right text-[12px] tabular-nums font-bold text-[#7DA02E]">{n(tot.reached)} <span className="text-[10px] font-normal text-[#9E9E9E]">({pct(tot.reached, tot.test)}%)</span></td>
+              <td className={CELL}>{n(tot.call)}</td>
+              <td className={CELL}>{n(tot.whatsapp)}</td>
+              <td className={CELL}>{n(tot.sms)}</td>
+              <td className={CELL}>{n(tot.inPerson)}</td>
+              <td className="px-2.5 py-1.5 text-right text-[12px] tabular-nums text-[#C62828]">{n(tot.pending)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsBody({ a: initial, campaign }: { a: CampaignAnalytics; campaign: CampaignListItem }) {
+  const [rms, setRms] = useState<number[]>([]); // chosen RM user ids (never names — a store can have several RMs)
+  const [data, setData] = useState<CampaignAnalytics>(initial);
+  const [reloading, startReload] = useTransition();
   const [exporting, setExporting] = useState(false);
+
+  // No RM filter → parent's already-loaded data; otherwise refetch scoped to the chosen RM(s)' stores.
+  useEffect(() => {
+    if (!rms.length) { setData(initial); return; }
+    startReload(async () => setData(await getCampaignAnalytics(campaign.id, rms)));
+  }, [rms, initial, campaign.id]);
+
   const doExport = () => {
     setExporting(true);
-    exportCampaignAudienceXlsx(campaign.id, campaign.name)
+    exportCampaignAudienceXlsx(campaign.id, campaign.name, rms.length ? rms : undefined)
       .then((res) => {
         if (res.ok && res.b64 && res.filename) downloadB64(res.b64, res.filename);
         else alert(res.error ?? "Export failed.");
@@ -1557,39 +1737,77 @@ function AnalyticsBody({ a, campaign }: { a: CampaignAnalytics; campaign: Campai
       .catch(() => alert("Export failed."))
       .finally(() => setExporting(false));
   };
-  if (a.total === 0) return <div className="py-8 text-center text-[13px] text-[#9E9E9E]">No enrolled farmers in your scope for this campaign.</div>;
+
+  if (initial.total === 0) return <div className="py-8 text-center text-[13px] text-[#9E9E9E]">No enrolled farmers in your scope for this campaign.</div>;
+  const a = data; // render from the (possibly RM-filtered) data
+  const rmOptions = initial.rmOptions; // options stay the full set regardless of the active filter
   const cropData = a.byCrop.map((c, i) => ({ label: c.label, count: c.count, color: CHART_PALETTE[i % CHART_PALETTE.length] }));
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-[22px] font-bold text-[#00838F]">{n(a.total)}</span>
-          <span className="text-[13px] text-[#757575]">enrolled farmers</span>
+          <span className="text-[13px] text-[#757575]">enrolled farmers{reloading ? " · updating…" : ""}</span>
         </div>
-        <button type="button" onClick={doExport} disabled={exporting}
-          className="rounded-[8px] border border-[#00838F] px-3 py-1.5 text-[12px] font-semibold text-[#00838F] hover:bg-[#E0F7FA] disabled:opacity-40">
-          {exporting ? "Exporting…" : "⬇ Export to Excel"}
-        </button>
+        <div className="flex items-center gap-2">
+          {rmOptions.length > 0 && <RmPicker options={rmOptions} selected={rms} onChange={setRms} />}
+          <button type="button" onClick={doExport} disabled={exporting}
+            className="rounded-[8px] border border-[#00838F] px-3 py-1.5 text-[12px] font-semibold text-[#00838F] hover:bg-[#E0F7FA] disabled:opacity-40">
+            {exporting ? "Exporting…" : "⬇ Export to Excel"}
+          </button>
+        </div>
       </div>
 
-      {/* Two independent segment dimensions: value tier + lifecycle */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <PieCard title="By value segment" data={a.byValue.map((s) => ({ label: s.label, count: s.count, color: s.color }))} total={a.total} />
-        <PieCard title="By lifecycle" data={a.byLifecycle.map((s) => ({ label: s.label, count: s.count, color: s.color }))} total={a.total} />
-      </div>
+      {a.total === 0 ? (
+        <div className="rounded-[12px] border border-dashed border-[#E0E0E0] py-8 text-center text-[13px] text-[#9E9E9E]">No farmers for the selected RM — clear the filter to see all.</div>
+      ) : (<>
+        {/* Centre-wise call stats — the per-store outreach breakdown (BDM/RM view) */}
+        {a.callByStore.length > 0 && <CallByStoreTable rows={a.callByStore} />}
 
-      {/* Crop bars (crops overlap across farmers, so a bar reads clearer than a pie) */}
-      <HBarCard title="By crop (top)" data={cropData} total={a.total} note="% = share of enrolled farmers; a farmer may grow several crops, so these overlap." />
+        {/* Two independent segment dimensions: value tier + lifecycle */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <PieCard title="By value segment" data={a.byValue.map((s) => ({ label: s.label, count: s.count, color: s.color }))} total={a.total} />
+          <PieCard title="By lifecycle" data={a.byLifecycle.map((s) => ({ label: s.label, count: s.count, color: s.color }))} total={a.total} />
+        </div>
 
-      {/* Decomposition treemaps: store + village */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <TreemapCard title="By store" rows={a.byStore} total={a.total} />
-        <TreemapCard title="By village (top)" rows={a.byVillage} total={a.total} />
-      </div>
+        {/* Crop bars (crops overlap across farmers, so a bar reads clearer than a pie) */}
+        <HBarCard title="By crop (top)" data={cropData} total={a.total} note="% = share of enrolled farmers; a farmer may grow several crops, so these overlap." />
 
-      {/* Store × Value + Lifecycle matrix (replaces the farmer list) */}
-      <SegStoreMatrix valueCols={a.valueCols} lifecycleCols={a.lifecycleCols} matrix={a.matrix} total={a.total} />
+        {/* Decomposition treemaps: store + village */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <TreemapCard title="By store" rows={a.byStore} total={a.total} />
+          <TreemapCard title="By village (top)" rows={a.byVillage} total={a.total} />
+        </div>
+
+        {/* Store × Value + Lifecycle matrix (replaces the farmer list) */}
+        <SegStoreMatrix valueCols={a.valueCols} lifecycleCols={a.lifecycleCols} matrix={a.matrix} total={a.total} />
+      </>)}
     </div>
+  );
+}
+
+/** Compact RM multi-select for the campaign Analytics modal. Values are RM user ids: a store can have
+    several managers, so the comma-joined `Store.regionalManager` label is never used as the key. */
+function RmPicker({ options, selected, onChange }: { options: CampaignAnalytics["rmOptions"]; selected: number[]; onChange: (v: number[]) => void }) {
+  const first = options.find((o) => o.userId === selected[0])?.name ?? "";
+  const text = selected.length === 0 ? "All RMs" : selected.length === 1 ? first : `${selected.length} RMs`;
+  const toggle = (id: number) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  return (
+    <details className="group relative">
+      <summary className="flex w-[160px] cursor-pointer list-none items-center justify-between gap-1.5 rounded-lg border border-[#E0E0E0] bg-white px-2.5 py-1.5 text-[12px] text-[#424242]">
+        <span className={`truncate ${selected.length ? "font-semibold text-[#00838F]" : ""}`}>{text}</span>
+        <span className="shrink-0 text-[10px] text-[#9E9E9E] transition-transform group-open:rotate-180">▾</span>
+      </summary>
+      <div className="absolute right-0 z-30 mt-1 max-h-[300px] w-[240px] overflow-y-auto rounded-lg border border-[#E0E0E0] bg-white p-1 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
+        <button type="button" onClick={() => onChange([])} className="w-full rounded px-2 py-1.5 text-left text-[12.5px] font-semibold hover:bg-[#F5F7F5]" style={selected.length === 0 ? { color: "#00838F" } : { color: "#616161" }}>All RMs</button>
+        {options.map((o) => (
+          <label key={o.userId} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[12.5px] text-[#424242] hover:bg-[#F5F7F5]">
+            <input type="checkbox" checked={selected.includes(o.userId)} onChange={() => toggle(o.userId)} style={{ accentColor: "#00838F" }} />
+            <span className="truncate" title={o.name}>{o.name}</span>
+          </label>
+        ))}
+      </div>
+    </details>
   );
 }
 

@@ -10,12 +10,17 @@ import {
   parseCriteria, resolveClusterCount, resolveClusterIds, scopedCriteriaWhere,
   hasConditions, type ClusterCriteria,
 } from "@/lib/cluster-rules";
+import { clusterCampaignLock, clusterCampaignLocks } from "@/lib/cluster-locks";
+import { explicitClusterIds, resolveCampaignClusters } from "@/lib/campaign-clusters";
+import { applyCampaignTeam, readCampaignTeam, teamCandidates, campaignFieldAccess, type TeamOfficer, type TeamCampaigner } from "@/lib/campaign-team";
 import { getScope, canManage, getActor, farmerScopeWhere } from "@/lib/scope";
+import { allRmStores } from "@/lib/rm-stores";
 import { asCoupons } from "@/lib/campaign-phases";
 import { logAudit } from "@/lib/audit";
 import { getSession } from "@/lib/auth";
 import { cropLabel } from "@/lib/crops";
 import { buildWorkbookB64, type Cell } from "@/lib/xlsx-export";
+import { buildStyledWorkbookB64 } from "@/lib/xlsx-styled";
 import { sendSms, zapConfig, listSmsTemplates, type SmsTemplate } from "@/lib/zapsms";
 import { sendWhatsApp, waConfig, waCreateTemplate } from "@/lib/whatsapp";
 import { SAMPLE_VARS, resolveVars, fillDltTemplate, fillWaTemplate, positionalParams, countDltVars, VAR_LABEL, type FarmerVarSource } from "@/lib/campaign-vars";
@@ -72,6 +77,9 @@ export interface ClusterVM {
   createdBy: string;
   createdByCode: string;
   createdAt: string; // ISO — when the cluster was created
+  criteria: ClusterCriteria | null; // the parsed filter rule (for the edit modal; null = legacy/unparseable)
+  locked: boolean; // frozen — feeds a live (non-CLOSED) campaign, so it can't be edited or deleted
+  lockedBy: string | null; // name of a campaign holding the lock (for the UI message)
 }
 
 /** All saved clusters with LIVE counts (dynamic clusters re-resolve their rule). */
@@ -88,6 +96,8 @@ export async function listClustersWithCounts(): Promise<ClusterVM[]> {
     take: 100,
     select: { id: true, name: true, description: true, criteria: true, mode: true, origin: true, farmerIds: true, createdBy: true, createdByCode: true, createdAt: true },
   });
+  // Which of these clusters are frozen by a live campaign (so the UI hides Edit/Delete). One query.
+  const locks = await clusterCampaignLocks(clusters.map((c) => c.id));
   const rows = await mapLimit(clusters, 8, async (c) => {
     const crit = c.mode === "dynamic" ? parseCriteria(c.criteria) : null;
     const base: Prisma.FarmerWhereInput = crit ? scopedCriteriaWhere(crit) : { source: "REAL", id: { in: c.farmerIds } };
@@ -106,6 +116,9 @@ export async function listClustersWithCounts(): Promise<ClusterVM[]> {
       createdBy: c.createdBy ?? "",
       createdByCode: c.createdByCode ?? "",
       createdAt: c.createdAt.toISOString(),
+      criteria: parseCriteria(c.criteria), // full parsed rule (any mode) so the edit modal can prefill
+      locked: locks.has(c.id),
+      lockedBy: locks.get(c.id) ?? null,
     };
   });
   return fScope ? rows.filter((r) => r.count > 0) : rows;
@@ -119,6 +132,9 @@ export async function previewClusterCount(criteria: ClusterCriteria): Promise<nu
 
 export async function deleteCluster(id: number): Promise<{ ok: boolean; error?: string }> {
   const perm = await requireManager(); if (!perm.ok) return perm; // RMs/officers may view clusters, not delete them
+  // A cluster feeding a live campaign is frozen — deleting it would leave the campaign pointing at nothing.
+  const lock = await clusterCampaignLock(id);
+  if (lock) return { ok: false, error: `This cluster is used by the active campaign "${lock}". Close that campaign before deleting the cluster.` };
   try {
     await prisma.cluster.delete({ where: { id } });
     revalidatePath("/campaigns");
@@ -192,6 +208,28 @@ export async function listProjects(): Promise<ProjectVM[]> {
     startDate: iso(p.startDate), endDate: iso(p.endDate),
     clusters: p.clusters.map((c) => ({ id: c.id, name: c.name, count: countById.get(c.id) ?? 0 })),
   }));
+}
+
+/**
+ * Live audience for a campaign being set up on a chosen set of a project's clusters (empty = all):
+ * `audience` = de-duplicated union; `already` = of those, farmers already in another campaign of this
+ * project (createCampaign skips them).
+ */
+export async function previewCampaignAudience(projectId: number, clusterIds: number[]): Promise<{ ok: boolean; audience?: number; already?: number; storeIds?: number[]; error?: string }> {
+  const perm = await requireManager(); if (!perm.ok) return perm;
+  const project = await prisma.project.findUnique({ where: { id: projectId }, include: { clusters: { select: CLUSTER_SELECT } } });
+  if (!project) return { ok: false, error: "Project not found." };
+  const picked = new Set(clusterIds);
+  const chosen = picked.size ? project.clusters.filter((c) => picked.has(c.id)) : project.clusters;
+  if (!chosen.length) return { ok: true, audience: 0, already: 0, storeIds: [] };
+  const union: Prisma.FarmerWhereInput = { OR: chosen.map(clusterWhere) };
+  const enrolled = await prisma.campaignMember.findMany({ where: { campaign: { projectId } }, select: { farmerId: true }, distinct: ["farmerId"] });
+  const [audience, already, stores] = await Promise.all([
+    prisma.farmer.count({ where: union }),
+    enrolled.length ? prisma.farmer.count({ where: { AND: [union, { id: { in: enrolled.map((e) => e.farmerId) } }] } }) : Promise.resolve(0),
+    prisma.farmer.groupBy({ by: ["storeId"], where: { AND: [union, { storeId: { not: null } }] } }), // drives the default team
+  ]);
+  return { ok: true, audience, already, storeIds: stores.map((s) => s.storeId!).filter((x) => x != null) };
 }
 
 export async function createProject(name: string, clusterIds: number[], startDate?: string, endDate?: string): Promise<{ ok: boolean; id?: number; error?: string }> {
@@ -313,9 +351,11 @@ export interface CreateCampaignInput {
   startDate: string; // ISO date
   endDate: string;
   projectId: number; // Step 3: campaign runs on a project…
-  clusterId?: number | null; // …or one specific cluster within it (null = whole project)
+  clusterIds?: number[]; // …or any set of its clusters (empty / every cluster = whole project)
   commPlans: string[]; // comm-plan names this campaign is tagged with (1+ required)
   testPct?: number;
+  workedBy?: "STORE" | "CAMPAIGNERS" | "BOTH"; // legacy rule (only when no `team` is given)
+  team?: { officerIds: number[]; campaignerIds: number[] }; // the picked "who works this campaign" team
 }
 
 const CLUSTER_SELECT = { id: true, name: true, criteria: true, mode: true, farmerIds: true } as const;
@@ -343,17 +383,14 @@ export async function createCampaign(input: CreateCampaignInput): Promise<{ ok: 
     if (project.startDate && cs < project.startDate) return { ok: false, error: `Campaign can't start before the project (${iso(project.startDate)}).` };
     if (project.endDate && ce > project.endDate) return { ok: false, error: `Campaign can't end after the project (${iso(project.endDate)}). Extend the project first.` };
 
-    // Resolve the audience id-set — a single segment, or the union of the project's segments.
-    let ids: number[];
-    if (input.clusterId) {
-      const c = project.clusters.find((x) => x.id === input.clusterId);
-      if (!c) return { ok: false, error: "That cluster is not part of the selected project." };
-      ids = await clusterIdsOf(c);
-    } else {
-      if (!project.clusters.length) return { ok: false, error: "This project has no clusters." };
-      const sets = await Promise.all(project.clusters.map((c) => clusterIdsOf(c)));
-      ids = [...new Set(sets.flat())]; // de-duplicate farmers shared across segments
-    }
+    // Resolve the audience id-set — the union of the chosen clusters (or all of the project's).
+    if (!project.clusters.length) return { ok: false, error: "This project has no clusters." };
+    const picked = [...new Set(input.clusterIds ?? [])];
+    if (picked.some((id) => !project.clusters.some((c) => c.id === id))) return { ok: false, error: "A selected cluster is not part of this project." };
+    const wholeProject = picked.length === 0 || picked.length === project.clusters.length;
+    const chosen = wholeProject ? project.clusters : project.clusters.filter((c) => picked.includes(c.id));
+    const sets = await mapLimit(chosen, 4, (c) => clusterIdsOf(c));
+    let ids = [...new Set(sets.flat())]; // de-duplicate farmers shared across clusters
     if (!ids.length) return { ok: false, error: "The selected audience is empty right now." };
 
     // Cross-campaign de-dup: never enrol a farmer already in ANOTHER campaign of this project
@@ -370,11 +407,14 @@ export async function createCampaign(input: CreateCampaignInput): Promise<{ ok: 
     if (ids.length >= ENROLL_CAP) return { ok: false, error: `Audience is too large to enrol in one campaign (${ENROLL_CAP.toLocaleString("en-IN")}+). Narrow the project first.` };
 
     const camp = await prisma.campaign.create({
-      data: { name: input.name.trim(), startDate: cs, endDate: ce, projectId: input.projectId, clusterId: input.clusterId ?? null, commPlans, testPct: input.testPct ?? 75, status: "ACTIVE" },
+      data: { name: input.name.trim(), startDate: cs, endDate: ce, projectId: input.projectId,
+        clusterIds: wholeProject ? [] : chosen.map((c) => c.id), clusterId: !wholeProject && chosen.length === 1 ? chosen[0].id : null, commPlans, testPct: input.testPct ?? 75, status: "ACTIVE", workedBy: ["STORE", "CAMPAIGNERS", "BOTH"].includes(input.workedBy ?? "") ? input.workedBy! : "STORE" },
     });
 
-    // Enrol snapshot; store/zone denormalized so officers/RMs see only their own farmers. 75/25 test/control.
-    const controlEvery = Math.max(2, Math.round(100 / (100 - (input.testPct ?? 75)))); // ~4 for 75/25
+    // Enrol snapshot; store/zone denormalized so officers/RMs see only their own farmers.
+    // Test/control split chosen by the maker: ~testPct% of the audience is TEST (contacted), the rest
+    // control. Deterministic by farmer id mod 100 → an even split that holds for any ratio (not just 75/25).
+    const testPct = Math.min(100, Math.max(0, Math.round(input.testPct ?? 75))); // 0 = all control, 100 = all test
     let total = 0;
     for (let i = 0; i < ids.length; i += 5000) {
       const slice = ids.slice(i, i + 5000);
@@ -383,12 +423,16 @@ export async function createCampaign(input: CreateCampaignInput): Promise<{ ok: 
         campaignId: camp.id, farmerId: f.id, segment: f.campaignSegment ?? "OTHER",
         valueSegment: f.valueSegment, lifecycleSegment: f.lifecycleSegment,
         crop: f.cropTags[0] ?? null, storeId: f.storeId ?? null, zone: f.zone ?? null,
-        group: f.id % controlEvery === 0 ? "CONTROL" : "TEST",
+        group: (f.id % 100) < testPct ? "TEST" : "CONTROL",
       }));
       const res = await prisma.campaignMember.createMany({ data: members, skipDuplicates: true });
       total += res.count;
     }
-    await logAudit("Campaign", "CREATE", `Created campaign "${camp.name}" — ${total} farmers enrolled${skipped ? `, ${skipped} skipped` : ""}`);
+    if (input.team) {
+      const err = await applyCampaignTeam(camp.id, input.team.officerIds ?? [], input.team.campaignerIds ?? [], await getActor());
+      if (err) return { ok: false, id: camp.id, members: total, error: `Campaign created, but the team wasn't saved: ${err} Fix it from the campaign's Edit.` };
+    }
+    await logAudit("Campaign", "CREATE", `Created campaign "${camp.name}" — ${total} farmers enrolled${skipped ? `, ${skipped} skipped` : ""}${input.team ? ` · team: ${input.team.officerIds.length} officers, ${input.team.campaignerIds.length} campaigners` : ""}`);
     revalidatePath("/campaigns");
     return { ok: true, id: camp.id, members: total, skipped };
   } catch (e) {
@@ -453,6 +497,48 @@ export async function updateCampaignCommPlans(campaignId: number, commPlans: str
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "Update failed" }; }
 }
 
+/** Everyone who can be put on a campaign team: active Agri Officers (with their store) and Campaigners. Manager-only. */
+export async function getTeamCandidates(): Promise<{ ok: boolean; officers?: TeamOfficer[]; campaigners?: TeamCampaigner[]; error?: string }> {
+  const perm = await requireManager(); if (!perm.ok) return perm;
+  return { ok: true, ...(await teamCandidates()) };
+}
+
+/** A campaign's current team (legacy campaigns: reconstructed from the old store rule). Manager-only. */
+export async function getCampaignTeam(campaignId: number): Promise<{ ok: boolean; officerIds?: number[]; campaignerIds?: number[]; storeIds?: number[]; error?: string }> {
+  const perm = await requireManager(); if (!perm.ok) return perm;
+  const t = await readCampaignTeam(Number(campaignId));
+  return t ? { ok: true, officerIds: t.officerIds, campaignerIds: t.campaignerIds, storeIds: t.storeIds } : { ok: false, error: "Campaign not found." };
+}
+
+/** Replace who works a campaign (picked officers + campaigners). Manager-only. */
+export async function setCampaignTeam(campaignId: number, officerIds: number[], campaignerIds: number[]): Promise<{ ok: boolean; error?: string }> {
+  const perm = await requireManager(); if (!perm.ok) return perm;
+  const camp = await prisma.campaign.findUnique({ where: { id: Number(campaignId) }, select: { id: true, name: true } });
+  if (!camp) return { ok: false, error: "Campaign not found." };
+  if (!officerIds.length && !campaignerIds.length) return { ok: false, error: "Pick at least one person to work this campaign." };
+  try {
+    const err = await applyCampaignTeam(camp.id, officerIds, campaignerIds, await getActor());
+    if (err) return { ok: false, error: err };
+    await logAudit("Campaign", "UPDATE", `Set the team for "${camp.name}": ${officerIds.length} officers, ${campaignerIds.length} campaigners`);
+    revalidatePath("/campaigns");
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "Update failed" }; }
+}
+
+/** Change who works a campaign — STORE (officers/RMs), CAMPAIGNERS (hidden from officers), or BOTH. Manager-only. */
+export async function setCampaignWorkedBy(campaignId: number, workedBy: string): Promise<{ ok: boolean; error?: string }> {
+  const perm = await requireManager(); if (!perm.ok) return perm;
+  if (!["STORE", "CAMPAIGNERS", "BOTH"].includes(workedBy)) return { ok: false, error: "Invalid option." };
+  const camp = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { name: true } });
+  if (!camp) return { ok: false, error: "Campaign not found." };
+  try {
+    await prisma.campaign.update({ where: { id: campaignId }, data: { workedBy } });
+    await logAudit("Campaign", "UPDATE", `Set who works "${camp.name}" to ${workedBy}`);
+    revalidatePath("/campaigns");
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "Update failed" }; }
+}
+
 /**
  * Delete a campaign and everything scoped to it: members, phases, phase-advances and caller
  * assignments cascade at the DB; broadcasts (+ their recipients) are cleared explicitly since they
@@ -476,6 +562,8 @@ export interface CampaignListItem {
   id: number; name: string; status: string; startDate: string; endDate: string;
   target: string; members: number;
   commPlans: string[]; // comm-plan names the campaign is tagged with
+  workedBy: string; // STORE | CAMPAIGNERS | BOTH — who sees + works this campaign
+  team: boolean; // true = a picked team (CampaignWorker / CampaignCaller) decides who works it
 }
 
 /** Member `where` for the current user's scope (officer→their store, RM→their managed stores). null = see all. */
@@ -498,35 +586,95 @@ async function campaignerAssignedIds(): Promise<number[] | null> {
   return rows.map((r) => r.campaignId);
 }
 
+/**
+ * Member `where` for the current user on ONE campaign (see campaignFieldAccess). null = see all (central/
+ * sysadmin/campaigner — campaigner gated separately — or an officer added to the whole campaign);
+ * "none" = see nothing.
+ */
+async function campaignMemberScope(campaignId: number): Promise<Prisma.CampaignMemberWhereInput | null | "none"> {
+  const { role } = await getScope();
+  if (role === "officer" || role === "regional") {
+    const access = await campaignFieldAccess(campaignId);
+    if (access === "all") return null;
+    return access.length ? { storeId: { in: access } } : "none";
+  }
+  return null; // central / sysadmin / campaigner
+}
+
 export async function listCampaigns(): Promise<CampaignListItem[]> {
-  const assigned = await campaignerAssignedIds();
-  if (assigned && assigned.length === 0) return []; // campaigner with no campaigns assigned yet
-  const scope = await memberScopeWhere();
-  if (scope === "none") return []; // officer/RM with no store/zone → nothing to show
+  const { role, userId, storeId, managedStoreIds } = await getScope();
+
+  // Per-role campaign filter + member-count filter (same rules as campaignFieldAccess). RMs see campaigns
+  // that reach the stores they manage (Store.rmUserIds -> scope.managedStoreIds; a store may have several
+  // managers); officers see legacy campaigns reaching their store or the picked-team campaigns they're on;
+  // both also see any campaign they've been lent to as a helper (named stores).
+  let where: Prisma.CampaignWhereInput | undefined;
+  let countWhere: Prisma.CampaignMemberWhereInput | undefined; // undefined = count every member
+  let wholeIds = new Set<number>(); // officer added to the whole campaign — count every member
+
+  if (role === "campaigner") {
+    const rows = userId != null ? await prisma.campaignCaller.findMany({ where: { userId }, select: { campaignId: true } }) : [];
+    const assigned = rows.map((r) => r.campaignId);
+    if (!assigned.length) return []; // campaigner with nothing assigned yet
+    where = { id: { in: assigned } };
+  } else if (role === "officer" || role === "regional") {
+    const ownStores = role === "officer" ? (storeId != null ? [storeId] : []) : (managedStoreIds ?? []);
+    const helperRows = userId != null
+      ? await prisma.campaignHelper.findMany({ where: { userId }, select: { campaignId: true, storeIds: true } })
+      : [];
+    const helperIds = helperRows.map((r) => r.campaignId);
+    const helperStores = [...new Set(helperRows.flatMap((r) => r.storeIds))];
+    const allStores = [...new Set([...ownStores, ...helperStores])];
+    const workerRows = role === "officer" && userId != null
+      ? await prisma.campaignWorker.findMany({ where: { userId }, select: { campaignId: true, allStores: true } })
+      : [];
+    wholeIds = new Set(workerRows.filter((r) => r.allStores).map((r) => r.campaignId));
+    if (!allStores.length && !helperIds.length && !workerRows.length) return []; // no store, no grant, no team spot → nothing
+    const or: Prisma.CampaignWhereInput[] = [];
+    const reachesOwn: Prisma.CampaignWhereInput = { members: { some: { storeId: { in: ownStores } } } };
+    if (ownStores.length) {
+      if (role === "regional") or.push({ ...reachesOwn, OR: [{ teamExplicit: true }, { workedBy: { in: ["STORE", "BOTH"] } }] });
+      else or.push({ ...reachesOwn, teamExplicit: false, workedBy: { in: ["STORE", "BOTH"] } }); // legacy store rule
+    }
+    if (workerRows.length) or.push({ id: { in: workerRows.map((r) => r.campaignId) } }); // picked into the team
+    if (helperIds.length) or.push({ id: { in: helperIds } }); // explicit helper grant overrides workedBy
+    where = or.length ? { OR: or } : { id: { in: [] } };
+    countWhere = { storeId: { in: allStores.length ? allStores : [-1] } }; // count only members they can see
+  } // central / sysadmin: where + countWhere stay undefined (everything)
+
   const camps = await prisma.campaign.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,
-    where: assigned
-      ? { id: { in: assigned } } // campaigner: only the campaigns assigned to them
-      : scope ? { members: { some: scope } } : undefined, // officer/RM: campaigns that reach my store/zone
-    include: { _count: { select: { members: scope ? { where: scope } : true } } }, // scoped member count
+    where,
+    include: { _count: { select: { members: countWhere ? { where: countWhere } : true } } }, // scoped member count
   });
+  if (wholeIds.size) { // whole-campaign team members see (and count) every member
+    const full = await prisma.campaignMember.groupBy({ by: ["campaignId"], where: { campaignId: { in: [...wholeIds] } }, _count: { _all: true } });
+    const fullBy = new Map(full.map((f) => [f.campaignId, f._count._all]));
+    for (const c of camps) if (fullBy.has(c.id)) c._count.members = fullBy.get(c.id)!;
+  }
   // Batch-resolve target names (loose ids — campaigns don't relation-load project/cluster).
   const projIds = [...new Set(camps.map((c) => c.projectId).filter((x): x is number => x != null))];
-  const clusIds = [...new Set(camps.map((c) => c.clusterId).filter((x): x is number => x != null))];
+  const clusIds = [...new Set(camps.flatMap((c) => explicitClusterIds(c) ?? []))];
   const [projs, clus] = await Promise.all([
     projIds.length ? prisma.project.findMany({ where: { id: { in: projIds } }, select: { id: true, title: true } }) : Promise.resolve([]),
     clusIds.length ? prisma.cluster.findMany({ where: { id: { in: clusIds } }, select: { id: true, name: true } }) : Promise.resolve([]),
   ]);
   const pName = new Map(projs.map((p) => [p.id, p.title]));
   const cName = new Map(clus.map((c) => [c.id, c.name]));
+  const clusterLabel = (ids: number[]) => {
+    const names = ids.map((id) => cName.get(id) ?? "removed");
+    return ids.length === 1 ? `Cluster · ${names[0]}` : `${ids.length} clusters · ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` +${names.length - 3} more` : ""}`;
+  };
   return camps.map((c) => ({
     id: c.id, name: c.name, status: c.status,
     startDate: c.startDate.toISOString().slice(0, 10),
     endDate: c.endDate.toISOString().slice(0, 10),
     commPlans: c.commPlans,
-    target: c.clusterId
-      ? `Cluster · ${cName.get(c.clusterId) ?? "removed"}`
+    workedBy: c.workedBy,
+    team: c.teamExplicit,
+    target: explicitClusterIds(c)
+      ? clusterLabel(explicitClusterIds(c)!)
       : c.projectId
         ? `Project · ${pName.get(c.projectId) ?? "removed"}`
         : c.targetSegments.map((s) => segMeta(s).label).join(", ") || "—", // legacy segment campaigns
@@ -536,7 +684,7 @@ export async function listCampaigns(): Promise<CampaignListItem[]> {
 
 /** Scoped enrolled-farmer list for a campaign — TEST group only (the CONTROL holdout is never contacted). */
 export interface CampaignMemberVM {
-  id: number; name: string; mobile: string | null; village: string | null; store: string | null;
+  id: number; name: string; mobile: string | null; village: string | null; storeId: number | null; store: string | null;
   segment: string; valueSegment: string | null; reached: boolean; mediums: string[]; comment: string | null; reachedAt: string | null;
   reachedBy: string | null; reachedByCode: string | null;
   response: string | null; responseCrop: string | null; // interest outcome + the crop when OTHER_CROP
@@ -547,7 +695,7 @@ export interface CampaignMemberVM {
 export async function getCampaignMembers(campaignId: number, limit = 25000): Promise<CampaignMemberVM[]> {
   const assigned = await campaignerAssignedIds();
   if (assigned && !assigned.includes(campaignId)) return []; // campaigner may only open assigned campaigns
-  const scope = await memberScopeWhere();
+  const scope = await campaignMemberScope(campaignId); // own store/zone + any helper grant on this campaign
   if (scope === "none") return [];
   const members = await prisma.campaignMember.findMany({
     where: { campaignId, group: "TEST", ...(scope ?? {}) }, // officers/RMs contact only the TEST group
@@ -565,7 +713,7 @@ export async function getCampaignMembers(campaignId: number, limit = 25000): Pro
     const f = fMap.get(m.farmerId);
     return {
       id: m.id, name: f?.name ?? `Farmer #${m.farmerId}`, mobile: f?.mobile ?? null, village: f?.village ?? null,
-      store: m.storeId != null ? sMap.get(m.storeId) ?? null : null,
+      storeId: m.storeId, store: m.storeId != null ? sMap.get(m.storeId) ?? null : null,
       segment: m.segment, valueSegment: m.valueSegment, reached: m.reached, mediums: m.mediums, comment: m.comment, reachedAt: iso(m.reachedAt),
       reachedBy: m.reachedBy, reachedByCode: m.reachedByCode, response: m.response, responseCrop: m.responseCrop,
       broadcastMediums: m.broadcastMediums,
@@ -590,7 +738,7 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
 
   const [farmers, stores, phases, smsLogs, waLogs, camp] = await Promise.all([
     prisma.farmer.findMany({ where: { id: { in: members.map((m) => m.farmerId) } }, select: { id: true, name: true, mobile: true, village: true } }),
-    prisma.store.findMany({ select: { id: true, name: true, regionalManager: true } }),
+    prisma.store.findMany({ select: { id: true, code: true, name: true, regionalManager: true } }),
     prisma.campaignPhase.findMany({ where: { campaignId }, orderBy: { ordinal: "asc" }, select: { ordinal: true, name: true, type: true, defaultStart: true, defaultEnd: true, coupons: true } }),
     prisma.smsLog.findMany({ where: { campaignId, memberId: { not: null } }, select: { memberId: true, createdAt: true } }),
     prisma.whatsAppLog.findMany({ where: { campaignId, memberId: { not: null } }, select: { memberId: true, createdAt: true } }),
@@ -599,6 +747,7 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
   const fMap = new Map(farmers.map((f) => [f.id, f]));
   const sMap = new Map(stores.map((s) => [s.id, shortStoreName(s.name) || s.name]));
   const rmMap = new Map(stores.map((s) => [s.id, (s.regionalManager ?? "").trim()]));
+  const codeMap = new Map(stores.map((s) => [s.id, s.code]));
 
   const MED: Record<string, string> = { CALL: "Call", WHATSAPP: "WhatsApp", SMS: "SMS", IN_PERSON: "In-person", UNREACHABLE: "Unreachable" };
   const RESP: Record<string, string> = { INTERESTED: "Interested", NOT_INTERESTED: "Not interested", OTHER_CROP: "Other crop" };
@@ -606,6 +755,7 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
   const fmtDay = (d: Date) => new Date(d.getTime() + 330 * 60_000).toISOString().slice(0, 10);
   const store = (id: number | null) => (id != null ? sMap.get(id) ?? "" : "");
   const rm = (id: number | null) => (id != null ? rmMap.get(id) ?? "" : "");
+  const storeCode = (id: number | null) => (id != null ? codeMap.get(id) ?? "" : "");
 
   // Round attribution for timestamped sends: which phase window contains a send/date.
   const roundOf = (d: Date): number | null => phases.find((p) => d >= p.defaultStart && d <= p.defaultEnd)?.ordinal ?? null;
@@ -745,6 +895,7 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
     const memMeta = new Map(members.map((m) => [m.farmerId, {
       group: m.group ?? "",
       vseg: m.valueSegment ? segMeta(m.valueSegment).label : (m.segment ? segMeta(m.segment).label : ""),
+      lseg: m.lifecycleSegment ? segMeta(m.lifecycleSegment).label : "",
       reached: m.reached ? "Yes" : "No",
     }]));
     const TXN_CAP = 100000;
@@ -762,14 +913,14 @@ export async function exportCampaignTrackerXlsx(campaignId: number, campaignName
     // Test rows first, then control (stable sort keeps farmer/date order within each group; autofilter slices either way).
     const grpRank = (fid: number | null) => (fid != null && memMeta.get(fid)?.group === "TEST" ? 0 : 1);
     txns.sort((a, b) => grpRank(a.farmerId) - grpRank(b.farmerId));
-    const txnHeader = ["Group", "Reached", "Farmer", "Mobile", "Store", "RM", "Value segment", "Date", "Order No", "Item", "Crop", "Qty", "UOM", "Base value (₹)", "Coupon"];
+    const txnHeader = ["Group", "Reached", "Farmer", "Mobile", "Store code", "Store", "RM", "Value segment", "Lifecycle", "Date", "Order No", "Item", "Crop", "Qty", "UOM", "Base value (₹)", "Coupon"];
     const txnRows: (string | number)[][] = txns.map((r) => {
       const f = r.farmerId != null ? fMap.get(r.farmerId) : undefined;
       const meta = r.farmerId != null ? memMeta.get(r.farmerId) : undefined;
       // Verde ingest already stores NULL for the "no coupon" placeholders, so either column is a real code.
       const coupon = r.couponCode || r.invoiceCouponCode || "";
       return [
-        meta?.group ?? "", meta?.reached ?? "", f?.name ?? (r.farmerId != null ? `Farmer #${r.farmerId}` : "—"), f?.mobile ?? "", store(r.storeId), rm(r.storeId), meta?.vseg ?? "",
+        meta?.group ?? "", meta?.reached ?? "", f?.name ?? (r.farmerId != null ? `Farmer #${r.farmerId}` : "—"), f?.mobile ?? "", storeCode(r.storeId), store(r.storeId), rm(r.storeId), meta?.vseg ?? "", meta?.lseg ?? "",
         r.soldAt ? fmtDay(r.soldAt) : "", r.orderNo ?? "", r.itemRaw ?? "", r.cropTag ? cropLabel(r.cropTag) : "",
         r.qty ?? 0, r.uom ?? "", Math.round(r.basic ?? 0), coupon,
       ];
@@ -881,9 +1032,18 @@ export interface CampaignAnalytics {
   lifecycleCols: SegCol[];  // matrix lifecycle columns
   /** Merged Store × (Value | Lifecycle) matrix — both count-sets sum to `total` per store. */
   matrix: { store: string; value: Record<string, number>; lifecycle: Record<string, number>; total: number }[];
+  /** Per-centre (store) outreach breakdown over the TEST group: reached + how (Call/WA/SMS/In-person).
+   *  Scoped like everything else (an RM's centres come from Store.rmUserIds), so an RM sees only their
+   *  own centres. A farmer reached by more than one approach counts under each, so the approach columns
+   *  can exceed `reached`. */
+  callByStore: { store: string; test: number; reached: number; call: number; whatsapp: number; sms: number; inPerson: number; pending: number }[];
+  /** Regional managers with members in this campaign (within the caller's scope) — drives the RM filter.
+   *  Keyed by USER ID, never by name: `Store.regionalManager` is a comma-joined display label and a store
+   *  can have several RMs, so a store legitimately appears under more than one option here. */
+  rmOptions: { userId: number; name: string }[];
 }
 
-const EMPTY_ANALYTICS: CampaignAnalytics = { total: 0, byValue: [], byLifecycle: [], byStore: [], byVillage: [], byCrop: [], valueCols: [], lifecycleCols: [], matrix: [] };
+const EMPTY_ANALYTICS: CampaignAnalytics = { total: 0, byValue: [], byLifecycle: [], byStore: [], byVillage: [], byCrop: [], valueCols: [], lifecycleCols: [], matrix: [], callByStore: [], rmOptions: [] };
 const colOf = (k: string): SegCol => { const m = segMeta(k); return { key: k, label: m.label, color: m.color, bg: m.bg }; };
 
 /**
@@ -891,23 +1051,39 @@ const colOf = (k: string): SegCol => { const m = segMeta(k); return { key: k, la
  * Scoped like the other member views (officer→store, RM→zone, central→all). Counts every enrolled
  * member (TEST + CONTROL). Returns single-dimension breakdowns + a Segment × Store cross-tab.
  */
-export async function getCampaignAnalytics(campaignId: number): Promise<CampaignAnalytics> {
+export async function getCampaignAnalytics(campaignId: number, rmUserIds?: number[]): Promise<CampaignAnalytics> {
   const scope = await memberScopeWhere();
   if (scope === "none") return EMPTY_ANALYTICS;
-  const members = await prisma.campaignMember.findMany({
+  const allMembers = await prisma.campaignMember.findMany({
     where: { campaignId, ...(scope ?? {}) },
-    select: { farmerId: true, segment: true, valueSegment: true, lifecycleSegment: true, storeId: true },
+    select: { farmerId: true, segment: true, valueSegment: true, lifecycleSegment: true, storeId: true, group: true, reached: true, mediums: true },
     take: 40000, // realistic campaigns are far below this; guards a pathological audience
   });
-  if (!members.length) return EMPTY_ANALYTICS;
+  if (!allMembers.length) return EMPTY_ANALYTICS;
 
-  const farmerIds = [...new Set(members.map((m) => m.farmerId))];
-  const [farmers, stores] = await Promise.all([
+  const farmerIds = [...new Set(allMembers.map((m) => m.farmerId))];
+  const [farmers, stores, rmStores] = await Promise.all([
     prisma.farmer.findMany({ where: { id: { in: farmerIds } }, select: { id: true, village: true, cropTags: true } }),
     prisma.store.findMany({ select: { id: true, name: true } }),
+    allRmStores(), // REGIONAL accounts → their stores, by Store.rmUserIds (legacy name as fallback)
   ]);
   const fMap = new Map(farmers.map((f) => [f.id, f]));
   const sMap = new Map(stores.map((s) => [s.id, shortStoreName(s.name)]));
+
+  // RM options = every RM whose stores hold members of this campaign (within scope), computed BEFORE
+  // the filter. A store with two managers appears under both — that is correct, not double counting.
+  const present = new Set(allMembers.map((m) => m.storeId).filter((x): x is number => x != null));
+  const rmOptions = rmStores
+    .filter((r) => r.storeIds.some((id) => present.has(id)))
+    .map((r) => ({ userId: r.userId, name: r.name }));
+  // Apply the optional RM filter in-memory (keeps it to one members query): a member is kept when its
+  // store is managed by any of the chosen RMs.
+  const pickedRms = new Set(rmUserIds ?? []);
+  const pickedStores = pickedRms.size
+    ? new Set(rmStores.filter((r) => pickedRms.has(r.userId)).flatMap((r) => r.storeIds))
+    : null;
+  const members = pickedStores ? allMembers.filter((m) => m.storeId != null && pickedStores.has(m.storeId)) : allMembers;
+  if (!members.length) return { ...EMPTY_ANALYTICS, rmOptions };
 
   const vcount: Record<string, number> = {}, lcount: Record<string, number> = {};
   const store: Record<string, number> = {};
@@ -915,9 +1091,22 @@ export async function getCampaignAnalytics(campaignId: number): Promise<Campaign
   const crop: Record<string, number> = {};
   // Store → { value → count, lifecycle → count } cross-tab (both sum to the store's member count).
   const cross = new Map<string, { value: Record<string, number>; lifecycle: Record<string, number>; total: number }>();
+  // Centre-wise outreach (TEST group only): per store → reached + approach counts.
+  type CallAcc = { test: number; reached: number; call: number; whatsapp: number; sms: number; inPerson: number };
+  const callMap = new Map<string, CallAcc>();
   for (const m of members) {
     const f = fMap.get(m.farmerId);
     const storeName = m.storeId != null ? sMap.get(m.storeId) ?? "—" : "—";
+    if (m.group === "TEST") {
+      const cs = callMap.get(storeName) ?? callMap.set(storeName, { test: 0, reached: 0, call: 0, whatsapp: 0, sms: 0, inPerson: 0 }).get(storeName)!;
+      cs.test += 1;
+      if (m.reached) cs.reached += 1;
+      const meds = m.mediums ?? [];
+      if (meds.includes("CALL")) cs.call += 1;
+      if (meds.includes("WHATSAPP")) cs.whatsapp += 1;
+      if (meds.includes("SMS")) cs.sms += 1;
+      if (meds.includes("IN_PERSON")) cs.inPerson += 1;
+    }
     // Fall back to deriving from the legacy collapsed snapshot for pre-split members.
     const v = m.valueSegment ?? (VALUE_SEGMENTS.includes(m.segment as never) ? m.segment : "REGULAR");
     const l = m.lifecycleSegment ?? (LIFECYCLE_SEGMENTS.includes(m.segment as never) ? m.segment : "LAPSED");
@@ -944,6 +1133,10 @@ export async function getCampaignAnalytics(campaignId: number): Promise<Campaign
     valueCols: [...VALUE_SEGMENTS].map(colOf),
     lifecycleCols: [...LIFECYCLE_SEGMENTS].map(colOf),
     matrix,
+    callByStore: [...callMap.entries()]
+      .map(([store, c]) => ({ store, ...c, pending: Math.max(0, c.test - c.reached) }))
+      .sort((a, b) => b.test - a.test),
+    rmOptions,
   };
 }
 
@@ -951,45 +1144,43 @@ export async function getCampaignAnalytics(campaignId: number): Promise<Campaign
  * Export a campaign's audience to Excel — same two-sheet format as the analytics-page export, scoped
  * to this campaign's enrolled farmers: sheet 1 = the Segment × Store matrix, sheet 2 = the farmer list.
  */
-export async function exportCampaignAudienceXlsx(campaignId: number, campaignName: string): Promise<{ ok: boolean; filename?: string; b64?: string; error?: string }> {
-  const scope = await memberScopeWhere();
-  if (scope === "none") return { ok: false, error: "No store or region is assigned to your account." };
-  const members = await prisma.campaignMember.findMany({
-    where: { campaignId, ...(scope ?? {}) },
-    select: { farmerId: true, segment: true, valueSegment: true, lifecycleSegment: true, storeId: true, group: true },
-    take: 100000,
-  });
-  if (!members.length) return { ok: false, error: "No enrolled farmers in your scope for this campaign." };
+export async function exportCampaignAudienceXlsx(campaignId: number, campaignName: string, rmUserIds?: number[]): Promise<{ ok: boolean; filename?: string; b64?: string; error?: string }> {
+  const a = await getCampaignAnalytics(campaignId, rmUserIds);
+  if (!a.total) return { ok: false, error: "No enrolled farmers in your scope for this campaign." };
 
-  const stores = await prisma.store.findMany({ select: { id: true, name: true, regionalManager: true } });
-  const sMap = new Map(stores.map((s) => [s.id, shortStoreName(s.name)]));
+  // Store → RM label for the required Store + RM columns (callByStore / matrix are keyed by short store
+  // name). The label is the denormalised comma-joined `Store.regionalManager`, i.e. ALL of a store's
+  // managers — display only; the RM filter above keys off rmUserIds.
+  const stores = await prisma.store.findMany({ select: { name: true, regionalManager: true } });
   const rmByName = new Map(stores.map((s) => [shortStoreName(s.name), (s.regionalManager ?? "").trim()]));
+  const pct = (r: number, t: number) => (t ? Math.round((r / t) * 100) : 0);
 
-  const V = [...VALUE_SEGMENTS], L = [...LIFECYCLE_SEGMENTS];
-  const vseg = (m: { valueSegment: string | null; segment: string }) => m.valueSegment ?? (V.includes(m.segment as never) ? m.segment : "REGULAR");
-  const lseg = (m: { lifecycleSegment: string | null; segment: string }) => m.lifecycleSegment ?? (L.includes(m.segment as never) ? m.segment : "LAPSED");
-  // Merged Store × (Value | Lifecycle) cross-tab (both count-sets sum to the store total).
-  const cross = new Map<string, { value: Record<string, number>; lifecycle: Record<string, number>; total: number }>();
-  const vTot: Record<string, number> = {}, lTot: Record<string, number> = {};
-  for (const m of members) {
-    const storeName = m.storeId != null ? sMap.get(m.storeId) ?? "—" : "—";
-    const v = vseg(m), l = lseg(m);
-    const row = cross.get(storeName) ?? cross.set(storeName, { value: {}, lifecycle: {}, total: 0 }).get(storeName)!;
-    row.value[v] = (row.value[v] ?? 0) + 1; row.lifecycle[l] = (row.lifecycle[l] ?? 0) + 1; row.total += 1;
-    vTot[v] = (vTot[v] ?? 0) + 1; lTot[l] = (lTot[l] ?? 0) + 1;
-  }
-  const mrows = [...cross.entries()].map(([store, c]) => ({ store, ...c })).sort((a, b) => b.total - a.total);
-
-  const matrixSheet: (string | number)[][] = [
-    ["Store", "RM", ...V.map((s) => segMeta(s).label), "Segment Total", ...L.map((s) => segMeta(s).label), "Lifecycle Total"],
-    ["All stores", "", ...V.map((k) => vTot[k] ?? 0), members.length, ...L.map((k) => lTot[k] ?? 0), members.length],
-    ...mrows.map((r) => [r.store, rmByName.get(r.store) ?? "", ...V.map((k) => r.value[k] ?? 0), r.total, ...L.map((k) => r.lifecycle[k] ?? 0), r.total]),
+  // Sheet 1 — Call stats by centre (mirrors the on-screen table, TEST group).
+  const cbs = a.callByStore;
+  const tot = cbs.reduce((t, s) => ({ test: t.test + s.test, reached: t.reached + s.reached, call: t.call + s.call, whatsapp: t.whatsapp + s.whatsapp, sms: t.sms + s.sms, inPerson: t.inPerson + s.inPerson, pending: t.pending + s.pending }),
+    { test: 0, reached: 0, call: 0, whatsapp: 0, sms: 0, inPerson: 0, pending: 0 });
+  const callSheet: (string | number)[][] = [
+    ["Centre", "RM", "Test farmers", "Reached", "Reached %", "Call", "WhatsApp", "SMS", "In-person", "Pending"],
+    ["All centres", "", tot.test, tot.reached, pct(tot.reached, tot.test), tot.call, tot.whatsapp, tot.sms, tot.inPerson, tot.pending],
+    ...cbs.map((s) => [s.store, rmByName.get(s.store) ?? "", s.test, s.reached, pct(s.reached, s.test), s.call, s.whatsapp, s.sms, s.inPerson, s.pending]),
   ];
-  const safe = (campaignName || "campaign").replace(/[\\/?*[\]:]/g, " ").trim().slice(0, 60) || "campaign";
-  const b64 = buildWorkbookB64([
-    { name: "Value + Lifecycle x Store", rows: matrixSheet },
+
+  // Sheet 2 — Value + Lifecycle × Store composition matrix.
+  const V = a.valueCols, L = a.lifecycleCols;
+  const vTot: Record<string, number> = {}, lTot: Record<string, number> = {};
+  for (const r of a.matrix) { for (const c of V) vTot[c.key] = (vTot[c.key] ?? 0) + (r.value[c.key] ?? 0); for (const c of L) lTot[c.key] = (lTot[c.key] ?? 0) + (r.lifecycle[c.key] ?? 0); }
+  const matrixSheet: (string | number)[][] = [
+    ["Store", "RM", ...V.map((c) => c.label), "Segment Total", ...L.map((c) => c.label), "Lifecycle Total"],
+    ["All stores", "", ...V.map((c) => vTot[c.key] ?? 0), a.total, ...L.map((c) => lTot[c.key] ?? 0), a.total],
+    ...a.matrix.map((r) => [r.store, rmByName.get(r.store) ?? "", ...V.map((c) => r.value[c.key] ?? 0), r.total, ...L.map((c) => r.lifecycle[c.key] ?? 0), r.total]),
+  ];
+
+  const safe = (campaignName || "campaign").replace(/[\/?*[\]:]/g, " ").trim().slice(0, 60) || "campaign";
+  const b64 = await buildStyledWorkbookB64([
+    { name: "Call stats by centre", rows: callSheet, leftCols: [0, 1], boldRows: [1] }, // Centre, RM text; totals row bold
+    { name: "Value + Lifecycle x Store", rows: matrixSheet, leftCols: [0, 1], boldRows: [1] },
   ]);
-  return { ok: true, filename: `${safe} - audience.xlsx`, b64 };
+  return { ok: true, filename: `${safe} - analytics.xlsx`, b64 };
 }
 
 const CONTACT_MEDIA = new Set(["CALL", "WHATSAPP", "SMS", "IN_PERSON"]); // a channel ⇒ reached
@@ -1008,13 +1199,17 @@ export async function markCampaignMember(
   memberId: number,
   patch: { mediums?: string[] | null; comment?: string | null; response?: string | null; responseCrop?: string | null },
 ): Promise<{ ok: boolean; error?: string }> {
-  const { role, storeId, managedStoreIds, userId } = await getScope();
+  const { role, userId } = await getScope(); // the store axis now comes from campaignFieldAccess
   const member = await prisma.campaignMember.findUnique({ where: { id: memberId }, select: { storeId: true, zone: true, group: true, mediums: true, response: true, campaignId: true } });
   if (!member) return { ok: false, error: "Member not found." };
   // Officers/RMs may only touch members in their own store / managed stores; campaigners only their
-  // assigned campaigns; central/sysadmin may touch any.
-  if (role === "officer") { if (storeId == null || member.storeId !== storeId) return { ok: false, error: "This farmer isn't in your store." }; }
-  else if (role === "regional") { if (member.storeId == null || !(managedStoreIds ?? []).includes(member.storeId)) return { ok: false, error: "This farmer isn't in a store you manage." }; }
+  // assigned campaigns; central/sysadmin any. campaignFieldAccess is the one rule: own / managed stores
+  // (an RM's via Store.rmUserIds), the picked team, plus any helper grant.
+  if (role === "officer" || role === "regional") {
+    const access = await campaignFieldAccess(member.campaignId);
+    if (access !== "all" && (member.storeId == null || !access.includes(member.storeId)))
+      return { ok: false, error: role === "officer" ? "This farmer isn't in your store." : "This farmer isn't in a store you manage." };
+  }
   else if (role === "campaigner") {
     const assigned = userId != null ? await prisma.campaignCaller.count({ where: { userId, campaignId: member.campaignId } }) : 0;
     if (!assigned) return { ok: false, error: "This campaign isn't assigned to you." };
@@ -1300,12 +1495,8 @@ export async function getCampaignTracker(campaignId: number): Promise<CampaignTr
   const camp = await prisma.campaign.findUnique({ where: { id: campaignId } });
   if (!camp) return null;
 
-  // Resolve the campaign's segment criteria (one cluster, or every cluster in its project).
-  let clusterIds: number[] = camp.clusterId ? [camp.clusterId] : [];
-  if (!clusterIds.length && camp.projectId) {
-    const proj = await prisma.project.findUnique({ where: { id: camp.projectId }, include: { clusters: { select: { id: true } } } });
-    clusterIds = proj?.clusters.map((c) => c.id) ?? [];
-  }
+  // Resolve the campaign's segment criteria (its chosen clusters, or every cluster in its project).
+  const clusterIds = (await resolveCampaignClusters([camp])).get(camp) ?? [];
   const clusterRows = clusterIds.length ? await prisma.cluster.findMany({ where: { id: { in: clusterIds } }, select: { criteria: true } }) : [];
   const criteria = clusterRows.map((c) => parseCriteria(c.criteria)).filter((x): x is ClusterCriteria => !!x);
   const pf = productFilterOf(criteria);

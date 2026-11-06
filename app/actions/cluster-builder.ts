@@ -22,6 +22,7 @@ import {
   resolveClusterIds,
   type ClusterCriteria,
 } from "@/lib/cluster-rules";
+import { clusterCampaignLock } from "@/lib/cluster-locks";
 
 /** Only the central team / sysadmin may CREATE clusters; RMs get a read-only, region-scoped view. */
 async function requireClusterAuthor(): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -195,6 +196,60 @@ export async function createClusterFromCriteria(input: {
     return { ok: true, count, id: cluster.id };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed to create cluster" };
+  }
+}
+
+/**
+ * Full edit of an existing cluster's rule (name + every filter the builder manages). Blocked while the
+ * cluster feeds a LIVE campaign — editing its rule would retarget a running campaign's audience. A static
+ * (hand-picked) cluster keeps its frozen snapshot, refreshed from the new rule; a dynamic one stays live.
+ */
+export async function updateClusterFromCriteria(input: {
+  id: number;
+  name: string;
+  criteria: ClusterCriteria;
+}): Promise<CreateClusterResult & { count?: number }> {
+  const perm = await requireClusterAuthor(); if (!perm.ok) return perm;
+  const name = input.name.trim();
+  if (!name) return { ok: false, error: "Give the cluster a name." };
+  if (!hasConditions(input.criteria))
+    return { ok: false, error: "Add at least one filter — this rule would target every farmer." };
+  try {
+    const existing = await prisma.cluster.findUnique({ where: { id: input.id }, select: { mode: true } });
+    if (!existing) return { ok: false, error: "Cluster not found." };
+    const lock = await clusterCampaignLock(input.id);
+    if (lock) return { ok: false, error: `This cluster can't be edited while it's in the active campaign "${lock}". Close that campaign first.` };
+
+    const storeNames = input.criteria.storeIds?.length
+      ? new Map(
+          (await prisma.store.findMany({ where: { id: { in: input.criteria.storeIds } }, select: { id: true, name: true } }))
+            .map((s) => [s.id, shortStoreName(s.name)] as const),
+        )
+      : undefined;
+    const description = describeCriteria(input.criteria, storeNames);
+    const count = await resolveClusterCount(input.criteria);
+    if (count === 0) return { ok: false, error: "No farmers match this rule." };
+    // Static clusters freeze a member snapshot — rebuild it from the new rule; dynamic clusters resolve live.
+    const farmerIds =
+      existing.mode === "static"
+        ? input.criteria.explicitIds?.length
+          ? input.criteria.explicitIds.slice(0, MAX_CLUSTER)
+          : await resolveClusterIds(input.criteria, MAX_CLUSTER)
+        : undefined;
+    await prisma.cluster.update({
+      where: { id: input.id },
+      data: {
+        name,
+        criteria: JSON.stringify(input.criteria),
+        description,
+        ...(farmerIds ? { farmerIds } : {}),
+      },
+    });
+    revalidatePath("/clusters");
+    revalidatePath("/campaigns");
+    return { ok: true, count, id: input.id };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to update cluster" };
   }
 }
 

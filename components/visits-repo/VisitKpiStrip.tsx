@@ -63,13 +63,18 @@ export function VisitKpiStrip({
   followup,
   officers,
   farmers,
+  periodLabel,
 }: {
   total: number;
   followup: number;
   officers: number;
   farmers: number;
+  /** The active window these counts cover, e.g. "All time" / "Last 30 days" - shown so the headline
+   *  "Total Visits" is never mistaken for an all-time grand total when a narrower filter is on. */
+  periodLabel?: string;
 }) {
   const values = { total, followup, officers, farmers };
+  const n = (x: number) => x.toLocaleString("en-IN");
   return (
     <div className="grid grid-cols-2 gap-[14px] mb-5 lg:grid-cols-4">
       {KPIS.map((k) => (
@@ -85,9 +90,12 @@ export function VisitKpiStrip({
           </div>
           <div>
             <div className="text-2xl font-bold text-[#1A1C1A] leading-none">
-              {values[k.key]}
+              {n(values[k.key])}
             </div>
-            <div className="text-[11px] text-[#9E9E9E] mt-[3px]">{k.label}</div>
+            <div className="text-[11px] text-[#9E9E9E] mt-[3px]">
+              {k.label}
+              {periodLabel && <span className="text-[#BDBDBD]"> &middot; {periodLabel}</span>}
+            </div>
           </div>
         </div>
       ))}

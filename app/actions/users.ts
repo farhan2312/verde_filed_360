@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
@@ -109,8 +109,10 @@ export async function createUserAction(
   const key = input.roleKey;
   const mobile = input.mobile.replace(/\D/g, "");
   try {
-    const clash = await prisma.user.findUnique({ where: { employeeCode: code }, select: { id: true } });
-    if (clash) return { ok: false, error: `Employee code ${code} already exists.` };
+    const clash = await prisma.user.findUnique({ where: { employeeCode: code }, select: { id: true, name: true, active: true } });
+    if (clash) return { ok: false, error: clash.active
+      ? `Employee code ${code} already exists (${clash.name}).`
+      : `Employee code ${code} belongs to a deactivated account (${clash.name}). Find them in the Users list (set the status filter to Inactive), then reactivate and edit that account instead of creating a new one.` };
     const [gradA, gradB] = ROLE_GRAD[key];
     const passwordHash = await bcrypt.hash(input.password.trim() || mobile || "verde@123", 10);
     const created = await prisma.user.create({
@@ -141,6 +143,27 @@ export async function createUserAction(
   }
 }
 
+/**
+ * Every column that stores a user's EMPLOYEE CODE for attribution/ownership. When an admin changes a
+ * user's code (e.g. a temporary code -> their permanent VER code), these must be re-stamped old->new, or
+ * the user stops matching their own records: `canSignOff`/`canReviewVisit` key off the code, so they
+ * could no longer mark their own follow-ups done, sign off their visits, etc.
+ * NB: AuditLog is keyed by actor NAME (not code), so it needs no migration.
+ */
+const EMPLOYEE_CODE_COLUMNS: [table: string, column: string][] = [
+  ["Action", "createdByCode"], ["Action", "completedByCode"],
+  ["ActionComment", "authorCode"],
+  ["Visit", "recordedByCode"], ["Visit", "reviewedByCode"],
+  ["VisitReviewRevision", "actorCode"],
+  ["CampaignMember", "reachedByCode"],
+  ["CampaignCaller", "assignedByCode"], ["CampaignHelper", "assignedByCode"], ["CampaignWorker", "assignedByCode"],
+  ["CampaignPhaseAdvance", "byCode"],
+  ["Cluster", "createdByCode"], ["Broadcast", "createdByCode"],
+  ["Ghoshti", "createdByCode"], ["Ghoshti", "approvedByCode"], ["GhoshtiAttendee", "recordedByCode"],
+  ["Bug", "reporterCode"],
+  ["SmsLog", "sentByCode"], ["WhatsAppLog", "sentByCode"], ["WhatsAppMessage", "sentByCode"],
+];
+
 /** Update an existing user's details (System-Admin edit modal). */
 export async function saveUser(
   input: UserFormInput & { id: number },
@@ -150,12 +173,18 @@ export async function saveUser(
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Name is required." };
   try {
+    const existing = await prisma.user.findUnique({ where: { id: input.id }, select: { employeeCode: true } });
+    const oldCode = existing?.employeeCode ?? null;
+    // Code changed (temp -> permanent): carry this user's existing attribution across to the new code.
+    const migrateCode = !!(code && oldCode && oldCode !== code);
     if (code) {
       const clash = await prisma.user.findFirst({
         where: { employeeCode: code, NOT: { id: input.id } },
-        select: { id: true },
+        select: { id: true, name: true, active: true },
       });
-      if (clash) return { ok: false, error: `Employee code ${code} is already used by someone else.` };
+      if (clash) return { ok: false, error: clash.active
+        ? `Employee code ${code} is already used by someone else (${clash.name}).`
+        : `Employee code ${code} belongs to a deactivated account (${clash.name}). Reactivate that account instead of reusing the code here.` };
     }
     const data: Prisma.UserUpdateInput = {
       name,
@@ -164,6 +193,9 @@ export async function saveUser(
       workEmail: input.workEmail.trim() || null,
       territory: input.territory.trim() || null,
       active: input.active,
+      // Reactivating here must also clear a REJECTED approval flag - login refuses REJECTED accounts
+      // regardless of `active`, so without this a reactivated rejected account still couldn't sign in.
+      ...(input.active ? { approvalStatus: "APPROVED" as const } : {}),
     };
     if (isRoleKey(input.roleKey)) {
       const [gradA, gradB] = ROLE_GRAD[input.roleKey];
@@ -176,8 +208,21 @@ export async function saveUser(
       data.passwordHash = await bcrypt.hash(input.password.trim(), 10);
       data.mustChangePassword = true;
     }
-    await prisma.user.update({ where: { id: input.id }, data });
+    // Only touch columns that exist in this database (some models are added by later schema pushes);
+    // a raw UPDATE on a missing table would abort the whole transaction.
+    let migrations: ReturnType<typeof prisma.$executeRaw>[] = [];
+    if (migrateCode) {
+      const present = await prisma.$queryRaw<{ table_name: string; column_name: string }[]>`
+        SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = current_schema()`;
+      const have = new Set(present.map((r) => `${r.table_name}.${r.column_name}`));
+      migrations = EMPLOYEE_CODE_COLUMNS
+        .filter(([t, c]) => have.has(`${t}.${c}`))
+        .map(([t, c]) =>
+          prisma.$executeRaw`UPDATE ${Prisma.raw(`"${t}"`)} SET ${Prisma.raw(`"${c}"`)} = ${code} WHERE ${Prisma.raw(`"${c}"`)} = ${oldCode}`);
+    }
+    await prisma.$transaction([prisma.user.update({ where: { id: input.id }, data }), ...migrations]);
     revalidatePath("/users");
+    if (migrateCode) { revalidatePath("/action-registry"); revalidatePath("/visits"); revalidatePath("/campaigns"); }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Save failed" };

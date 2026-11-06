@@ -6,6 +6,7 @@ import { getScope, storeScopeWhere } from "@/lib/scope";
 import { segMeta, VALUE_SEGMENTS, LIFECYCLE_SEGMENTS } from "@/lib/campaign-segments";
 import { cropLabel } from "@/lib/crops";
 import { shortStoreName } from "@/lib/store-utils";
+import { startOfToday } from "@/lib/action-constants";
 
 /**
  * Store 360 — a store-level mirror of Farmer 360. Visible to Regional Managers (their managed stores
@@ -37,14 +38,29 @@ export interface StoreListItem {
   lastVisit: string | null;
 }
 
+export interface StoreListResult {
+  stores: StoreListItem[];
+  /** Farmers with no store assigned - they cannot sit under any store card, so the per-store total
+   *  (sum of cards) is less than the org-wide farmer count by exactly this many. 0 for RMs
+   *  (an unassigned farmer belongs to no one's stores). */
+  unassignedFarmers: number;
+  /** Open overdue follow-ups with no store assigned - same story: they cannot appear under a store
+   *  card, so the summed overdue total trails the org-wide one by this many. 0 for RMs. */
+  unassignedOverdue: number;
+}
+
 /** Stores the caller may see, each with headline KPIs. null = no access (officer / campaigner). */
-export async function getStoreList(): Promise<StoreListItem[] | null> {
+export async function getStoreList(): Promise<StoreListResult | null> {
   const scope = await getScope();
   if (!MANAGER_ROLES.has(scope.role)) return null;
 
   // Scope on LAST — "none" (an RM with no mapped stores) fails closed to an empty list.
   const sw = storeScopeWhere(scope);
-  if (sw === "none") return [];
+  if (sw === "none") return { stores: [], unassignedFarmers: 0, unassignedOverdue: 0 };
+  const sod = startOfToday(); // overdue = due strictly before today, IST (matches Action Registry)
+  // Store-less rows are visible org-wide only (sw === null: central / sysadmin). An RM's scope is a set
+  // of store ids, and an unassigned row belongs to none of them.
+  const orgWide = sw === null;
 
   const stores = await prisma.store.findMany({
     where: sw ?? undefined,
@@ -52,9 +68,14 @@ export async function getStoreList(): Promise<StoreListItem[] | null> {
     orderBy: { name: "asc" },
   });
   const ids = stores.map((s) => s.id);
-  if (!ids.length) return [];
+  const [unassignedFarmers, unassignedOverdue] = orgWide
+    ? await Promise.all([
+        prisma.farmer.count({ where: { storeId: null } }),
+        prisma.action.count({ where: { status: "OPEN", dueDate: { lt: sod }, storeId: null } }),
+      ])
+    : [0, 0];
+  if (!ids.length) return { stores: [], unassignedFarmers, unassignedOverdue };
   const inIds = { in: ids };
-  const now = new Date();
 
   const [farmerG, officerG, ltvG, openG, overG, visitG, activeMap] = await Promise.all([
     prisma.farmer.groupBy({ by: ["storeId"], where: { storeId: inIds }, _count: { _all: true } }),
@@ -67,7 +88,7 @@ export async function getStoreList(): Promise<StoreListItem[] | null> {
     prisma.action.groupBy({ by: ["storeId"], where: { storeId: inIds, status: "OPEN" }, _count: { _all: true } }),
     prisma.action.groupBy({
       by: ["storeId"],
-      where: { storeId: inIds, status: "OPEN", dueDate: { lt: now } },
+      where: { storeId: inIds, status: "OPEN", dueDate: { lt: sod } },
       _count: { _all: true },
     }),
     prisma.visit.groupBy({ by: ["storeId"], where: { storeId: inIds }, _max: { visitedAt: true } }),
@@ -101,7 +122,7 @@ export async function getStoreList(): Promise<StoreListItem[] | null> {
   const ltvMap = new Map(ltvG.map((r) => [r.storeId, Math.round(r._sum.basic ?? 0)] as const));
   const vMap = new Map(visitG.map((r) => [r.storeId, r._max.visitedAt] as const));
 
-  return stores.map((s) => ({
+  const list = stores.map((s) => ({
     id: s.id,
     name: shortStoreName(s.name) || s.name,
     code: s.code,
@@ -116,6 +137,7 @@ export async function getStoreList(): Promise<StoreListItem[] | null> {
     overdueActions: overMap.get(s.id) ?? 0,
     lastVisit: iso(vMap.get(s.id) ?? null),
   }));
+  return { stores: list, unassignedFarmers, unassignedOverdue };
 }
 
 export interface StoreDetail {
@@ -183,7 +205,7 @@ export async function getStoreDetail(storeId: number): Promise<StoreDetail | nul
     },
   });
   if (!store) return null;
-  const now = new Date();
+  const sod = startOfToday(); // overdue = due strictly before today, IST (matches Action Registry)
 
   const [
     farmerCount, officerRows, ltvAgg, openActions, overdueActions, doneActions, visitCount, ghoshtiCount,
@@ -198,7 +220,7 @@ export async function getStoreDetail(storeId: number): Promise<StoreDetail | nul
     }),
     prisma.saleLine.aggregate({ where: { storeId, source: "REAL" }, _sum: { basic: true } }),
     prisma.action.count({ where: { storeId, status: "OPEN" } }),
-    prisma.action.count({ where: { storeId, status: "OPEN", dueDate: { lt: now } } }),
+    prisma.action.count({ where: { storeId, status: "OPEN", dueDate: { lt: sod } } }),
     prisma.action.count({ where: { storeId, status: "DONE" } }),
     prisma.visit.count({ where: { storeId } }),
     prisma.ghoshti.count({ where: { storeId } }),

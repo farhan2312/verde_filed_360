@@ -20,6 +20,7 @@ function NavLink({ item, active, badge, badgeTitle }: { item: NavItem; active: b
   return (
     <Link
       href={item.href}
+      prefetch={false}
       className={cn(
         "flex items-center gap-3 rounded-[10px] px-3.5 py-[11px] text-[13.5px] transition-all duration-150",
         active

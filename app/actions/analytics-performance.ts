@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getScope, storeScopeWhere } from "@/lib/scope";
+import { startOfToday } from "@/lib/action-constants";
 
 /**
  * Performance analytics — the Stores / RMs / Agri-Officers leaderboards.
@@ -104,7 +105,7 @@ export async function getPerformance(kind: PerfKind, range: PerfRange = {}): Pro
   const from = D(range.from), to = D(range.to), pFrom = D(range.prevFrom), pTo = D(range.prevTo);
   const hasWin = !!(from && to);
   const hasPrev = !!(pFrom && pTo);
-  const now = new Date();
+  const sod = startOfToday(); // overdue cutoff = start of today (IST); a follow-up due today isn't overdue
 
   // Scope predicate applied to whichever store column each query exposes.
   const storeIn = (expr: Prisma.Sql) =>
@@ -114,8 +115,8 @@ export async function getPerformance(kind: PerfKind, range: PerfRange = {}): Pro
   const prevWin = (c: Prisma.Sql) => (hasPrev ? Prisma.sql`${c} >= ${pFrom} AND ${c} < ${pTo}` : Prisma.sql`FALSE`);
 
   try {
-    if (kind === "officers") return await officerBoard({ ids, storeIn, curWin, from, to, now, range, empty });
-    return await storeAxisBoard({ kind, ids, storeIn, curWin, prevWin, from, to, now, range, empty });
+    if (kind === "officers") return await officerBoard({ ids, storeIn, curWin, from, to, now: sod, range, empty });
+    return await storeAxisBoard({ kind, ids, storeIn, curWin, prevWin, from, to, now: sod, range, empty });
   } catch {
     return empty;
   }

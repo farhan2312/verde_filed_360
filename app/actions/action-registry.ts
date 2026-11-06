@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getScope, getActor, canSignOff, farmerScopeWhere } from "@/lib/scope";
-import { FOLLOWUP_REASONS, type ActionVM, type FarmerPick } from "@/lib/action-constants";
+import { FOLLOWUP_REASONS, startOfToday, type ActionVM, type FarmerPick } from "@/lib/action-constants";
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 const shortStore = (s?: string | null) => (s ? s.replace(/\s*\(.*?\)\s*/g, "").trim() || s : "");
-const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 
 /** Row-level scope for actions (officer → own store, RM → their managed stores, central/admin → all). */
 function actionScope(scope: Awaited<ReturnType<typeof getScope>>): Prisma.ActionWhereInput | "none" | null {

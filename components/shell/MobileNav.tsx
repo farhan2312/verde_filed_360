@@ -94,6 +94,7 @@ export function MobileNav({
                   <Link
                     key={item.id}
                     href={item.href}
+                    prefetch={false}
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center gap-2.5 rounded-[10px] px-3 py-3 text-[13.5px]",
@@ -123,6 +124,7 @@ export function MobileNav({
             <Link
               key={item.id}
               href={item.href}
+              prefetch={false}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[9.5px] font-semibold",
                 on ? "text-[#7DA02E]" : "text-[#9E9E9E]",

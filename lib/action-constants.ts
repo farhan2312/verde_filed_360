@@ -1,5 +1,21 @@
 /** Shared Action-registry enums, reasons + view-model (kept out of the "use server" actions file). */
 
+const IST_OFFSET_MS = 5.5 * 3600 * 1000;
+
+/**
+ * Start of "today" at IST midnight (the server runs UTC, the users are in India) - the single, shared
+ * overdue cutoff. An action is OVERDUE only when its dueDate is strictly before this: a follow-up due
+ * *today* is still due, not overdue. Follow-up dueDates are stored as UTC midnight of the calendar day
+ * the user picked, so IST midnight (18:30 UTC the evening before) sits correctly between "yesterday" and
+ * "today" all day long in India. Every overdue count in the app (Action Registry, sidebar badge, Store
+ * 360, Overall + leaderboards) must use this so the numbers agree - using `new Date()` instead wrongly
+ * flags all of today's follow-ups as overdue.
+ */
+export const startOfToday = (now: Date = new Date()): Date => {
+  const istMs = now.getTime() + IST_OFFSET_MS;
+  return new Date(istMs - (((istMs % 86_400_000) + 86_400_000) % 86_400_000) - IST_OFFSET_MS);
+};
+
 export const ACTION_STATUSES = ["OPEN", "DONE"] as const;
 export type ActionStatus = (typeof ACTION_STATUSES)[number];
 

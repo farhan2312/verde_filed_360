@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getRole } from "@/lib/session";
 import { shortStoreName } from "@/lib/store-utils";
 import { PRISMA_TO_KEY, type RoleKey } from "@/lib/roles";
+import { startOfToday } from "@/lib/action-constants";
 
 /**
  * "Overall" dashboard for the Audit Log page (sysadmin-only). Turns the raw audit trail + domain
@@ -290,7 +291,7 @@ export async function getOverallAnalytics(f: OverallFilters): Promise<OverallDat
   const attStoreIn = filterActive && pop.storeIds.length ? { in: pop.storeIds } : undefined;
   const [openAct, overdueAct, unreviewed, pendingGhoshti, openBugs] = await Promise.all([
     prisma.action.count({ where: { status: "OPEN", ...(attStoreIn ? { storeId: attStoreIn } : {}) } }),
-    prisma.action.count({ where: { status: "OPEN", dueDate: { lt: new Date() }, ...(attStoreIn ? { storeId: attStoreIn } : {}) } }),
+    prisma.action.count({ where: { status: "OPEN", dueDate: { lt: startOfToday() }, ...(attStoreIn ? { storeId: attStoreIn } : {}) } }),
     prisma.visit.count({ where: { reviewedAt: null, ...(codeIn ? { recordedByCode: codeIn } : {}) } }),
     prisma.ghoshti.count({ where: { status: "PENDING", ...(attStoreIn ? { storeId: attStoreIn } : {}) } }),
     prisma.bug.count({ where: { status: { in: ["OPEN", "NEEDS_CLARIFICATION", "TESTING"] } } }),
@@ -407,7 +408,7 @@ export async function getOverallDrilldown(tileKey: string, f: OverallFilters): P
   // Needs-attention tiles.
   const attStoreIn = filterActive && pop.storeIds.length ? { in: pop.storeIds } : undefined;
   if (tileKey === "a_overdue" || tileKey === "a_open") {
-    const w: Prisma.ActionWhereInput = { status: "OPEN", ...(tileKey === "a_overdue" ? { dueDate: { lt: new Date() } } : {}), ...(attStoreIn ? { storeId: attStoreIn } : {}) };
+    const w: Prisma.ActionWhereInput = { status: "OPEN", ...(tileKey === "a_overdue" ? { dueDate: { lt: startOfToday() } } : {}), ...(attStoreIn ? { storeId: attStoreIn } : {}) };
     const count = await prisma.action.count({ where: w });
     const list = await prisma.action.findMany({ where: w, orderBy: { dueDate: "asc" }, take: DRILL_CAP, select: { dueDate: true, reason: true, createdByName: true, storeId: true } });
     const sMap = await storeNames(list.map((a) => a.storeId));

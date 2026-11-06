@@ -14,17 +14,18 @@ const rel = (iso: string | null) => {
   return d <= 0 ? "today" : d === 1 ? "yesterday" : d < 30 ? `${d}d ago` : d < 365 ? `${Math.floor(d / 30)}mo ago` : `${Math.floor(d / 365)}y ago`;
 };
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function Stat({ label, value, tone, sub }: { label: string; value: string; tone?: string; sub?: string }) {
   return (
     <div>
       <div className="text-[15px] font-bold leading-none tabular-nums" style={{ color: tone ?? "#1A1C1A" }}>{value}</div>
       <div className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-[0.3px] text-ink-muted">{label}</div>
+      {sub && <div className="mt-0.5 text-[9.5px] font-medium text-ink-400">{sub}</div>}
     </div>
   );
 }
 
 /** Store 360 list — one KPI card per store in scope, searchable, with a totals row on top. */
-export function StoreListScreen({ stores }: { stores: StoreListItem[] }) {
+export function StoreListScreen({ stores, unassignedFarmers = 0, unassignedOverdue = 0 }: { stores: StoreListItem[]; unassignedFarmers?: number; unassignedOverdue?: number }) {
   const [q, setQ] = useState("");
 
   const rows = useMemo(() => {
@@ -48,9 +49,11 @@ export function StoreListScreen({ stores }: { stores: StoreListItem[] }) {
     <div className="animate-fadeUp">
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className={`${CARD} px-4 py-3`}><Stat label="Stores" value={n(totals.stores)} /></div>
-        <div className={`${CARD} px-4 py-3`}><Stat label="Farmers" value={n(totals.farmers)} tone="#7DA02E" /></div>
+        <div className={`${CARD} px-4 py-3`}><Stat label="Farmers" value={n(totals.farmers)} tone="#7DA02E"
+          sub={unassignedFarmers > 0 ? `in ${n(totals.stores)} stores · +${n(unassignedFarmers)} unassigned` : undefined} /></div>
         <div className={`${CARD} px-4 py-3`}><Stat label="Sales LTV (base)" value={inrShort(totals.ltv)} tone="#1565C0" /></div>
-        <div className={`${CARD} px-4 py-3`}><Stat label="Overdue follow-ups" value={n(totals.overdue)} tone={totals.overdue > 0 ? "#C62828" : "#1A1C1A"} /></div>
+        <div className={`${CARD} px-4 py-3`}><Stat label="Overdue follow-ups" value={n(totals.overdue)} tone={totals.overdue > 0 ? "#C62828" : "#1A1C1A"}
+          sub={unassignedOverdue > 0 ? `+${n(unassignedOverdue)} unassigned` : undefined} /></div>
       </div>
 
       <div className="mb-4 flex items-center gap-2">

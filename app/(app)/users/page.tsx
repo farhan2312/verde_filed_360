@@ -62,7 +62,11 @@ function relTime(d: Date | null | undefined): string {
 async function loadUsers(): Promise<UserRow[]> {
   try {
     const [dbUsers, stores, visitAgg] = await Promise.all([
-      prisma.user.findMany({ where: { approvalStatus: "APPROVED" }, orderBy: { id: "asc" } }),
+      // Everything except still-PENDING registrations (those live in the Pending Approvals panel).
+      // REJECTED/deactivated accounts MUST appear here (as Inactive) so an admin can find the holder of
+      // a clashing employee code and reactivate it - otherwise the "find them in the Users list" hint is
+      // a dead end, since a rejected account is invisible under an "APPROVED-only" filter.
+      prisma.user.findMany({ where: { approvalStatus: { not: "PENDING" } }, orderBy: { id: "asc" } }),
       prisma.store.findMany({ select: { id: true, name: true } }),
       // Most recent visit each officer recorded — a real activity signal beyond sign-in.
       prisma.visit.groupBy({

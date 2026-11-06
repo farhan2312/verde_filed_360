@@ -359,6 +359,7 @@ model SaleLine {
 
   @@index([productId])
   @@index([farmerId])
+  @@index([farmerId, soldAt]) // per-farmer FY-window EXISTS / spend / recency (analytics FY scoping)
   @@index([orderNo])
   @@index([couponCode])
   @@index([invoiceCouponCode])
@@ -417,8 +418,13 @@ model Campaign {
   testPct        Int              @default(75)
   commPlans      String[]         @default([]) // comm-plan names this campaign is tagged with (1+)
   status         String           @default("DRAFT") // DRAFT | ACTIVE | CLOSED
+  // Who works (sees + calls) this campaign's TEST group. STORE = store officers/RMs (default, legacy
+  // behaviour); CAMPAIGNERS = only assigned campaigners + managers (hidden from officers/RMs);
+  // BOTH = officers/RMs AND campaigners. An explicit helper grant always overrides this.
+  workedBy       String           @default("STORE")
   projectId      Int? // Step 3: campaign runs on a project (all its clusters)…
-  clusterId      Int? // …or one specific cluster within it
+  clusterId      Int? // …or one specific cluster within it (legacy single pick; set too when exactly one is chosen)
+  clusterIds     Int[]            @default([]) // …or any chosen set of the project's clusters (empty = whole project)
   // Rounds status mapping (which product-catalogue categories count as fertiliser vs combo — combo is
   // campaign-specific). Used by the status engine to auto-derive member purchase flags.
   fertiliserCategories String[]    @default([])
@@ -429,6 +435,10 @@ model Campaign {
   phases         CampaignPhase[]
   phaseAdvances  CampaignPhaseAdvance[]
   callers        CampaignCaller[]
+  helpers        CampaignHelper[]
+  // true = officer access comes from the picked team (CampaignWorker); false = legacy workedBy rule.
+  teamExplicit   Boolean          @default(false)
+  workers        CampaignWorker[]
 }
 
 /// Assigns a Campaigner (part-time call-team user) to a campaign. A campaigner only sees + calls the
@@ -828,6 +838,10 @@ model Visit {
   whatsappNumber  String?
   photos          String[] @default([])
   voiceNotes      String[] @default([])
+  // Denormalised element counts — SUM(cardinality(photos)) detoasts every multi-MB base64 array
+  // (50s+ over 23k visits). Keep plain-int counts so analytics never reads the media columns.
+  photoCount      Int      @default(0)
+  voiceNoteCount  Int      @default(0)
 
   // Optional review / sign-off layer. A visit is "reviewed" when reviewedAt is set. Officer visits are
   // signed off by their managing RM (or the officer themselves / an admin); RM visits by themselves / admins.
@@ -836,6 +850,14 @@ model Visit {
   reviewedByName String?
   reviewedByCode String?
   reviewedByRole String? // roleKey of the reviewer at sign-off
+  reviewRating   Int? // optional 1–5 quality rating given at review
+  // First sign-off time — drives turnaround / SLA. Edits, un-review and re-review never move it.
+  firstReviewedAt DateTime?
+  // "Needs follow-up" flag raised at review. Raising it creates an Action (reviewFlagActionId); the flag
+  // stays OPEN until that Action is signed off in the Action Registry (completeAction clears it).
+  reviewFlagged        Boolean   @default(false)
+  reviewFlagActionId   Int?
+  reviewFlagResolvedAt DateTime?
 
   source    DataSource @default(DEMO)
   createdAt DateTime   @default(now())
@@ -844,6 +866,8 @@ model Visit {
   @@index([farmerId])
   @@index([storeId])
   @@index([visitedAt]) // recent-visit sorts (dashboard, visit repository)
+  @@index([reviewFlagged]) // review queue "Flagged" filter
+  @@index([reviewFlagActionId]) // action sign-off → resolve the visit's flag
   @@index([officerName]) // per-officer dashboard + repository filters
   @@index([reviewedAt]) // reviewed/unreviewed filter + pending-review counts
 }
@@ -984,5 +1008,126 @@ model Bug {
   updatedAt    DateTime  @updatedAt @default(now())
 
   @@index([status])
+  @@index([createdAt])
+}
+
+/// A store officer picked to work a campaign ("Who works this campaign?"). Only for campaigns with
+/// teamExplicit; RMs always see their own stores and campaigners use CampaignCaller.
+model CampaignWorker {
+  id             Int      @id @default(autoincrement())
+  campaignId     Int
+  userId         Int // the officer (ASR / STORE_MANAGER)
+  allStores      Boolean  @default(false) // true = sees the whole TEST group; false = only their own store's farmers
+  assignedByName String?
+  assignedByCode String?
+  createdAt      DateTime @default(now())
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([userId])
+}
+
+/// Lends a field user (agri officer / regional manager) to a campaign their store isn't part of,
+/// scoped to named store(s). On that one campaign they can mark-reached + comment on those stores'
+/// TEST members, while keeping their normal role (and own-store scope) everywhere else. Added by
+/// whoever manages the campaign (central / sysadmin) from the campaign screen.
+model CampaignHelper {
+  id             Int      @id @default(autoincrement())
+  campaignId     Int
+  userId         Int // the officer / RM lent to this campaign
+  storeIds       Int[]    @default([]) // store ids this helper covers on this campaign
+  assignedByName String?
+  assignedByCode String?
+  createdAt      DateTime @default(now())
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@index([userId])
+  @@index([campaignId])
+}
+
+/// One weekly visit-review report per Regional Manager per reporting week (R3/R5). Generated by the hourly
+/// cron (/api/cron/reviews): rows are created PENDING for every RM when the week's report time passes,
+/// then built (stats + summary) and announced (bell + email). Unique per RM/week, so re-runs never duplicate.
+model WeeklyReport {
+  id            Int       @id @default(autoincrement())
+  rmUserId      Int
+  rmName        String
+  weekStart     DateTime // IST 00:00 of the first day, as a UTC instant
+  weekEnd       DateTime // exclusive
+  storeIds      Int[]     @default([])
+  status        String    @default("PENDING") // PENDING | DONE | FAILED
+  stats         Json?
+  summary       Json?
+  summarySource String? // template | llm
+  attempts      Int       @default(0)
+  error         String?
+  generatedAt   DateTime?
+  notifiedAt    DateTime? // RM bell + email sent
+  createdAt     DateTime  @default(now())
+
+  @@unique([rmUserId, weekStart])
+  @@index([weekStart])
+  @@index([status])
+}
+
+/// Every outbound email attempt (Resend), mirroring SmsLog. `dedupeKey` guards scheduled sends (digest,
+/// report-ready, SLA alert) so a retried cron run never emails the same person twice; it doubles as
+/// Resend's Idempotency-Key. Not unique — a failed attempt may be retried under the same key.
+model EmailLog {
+  id         Int      @id @default(autoincrement())
+  to         String
+  subject    String
+  type       String // TEST | DIGEST | REPORT_READY | SLA_BREACH | GENERIC
+  userId     Int? // recipient user, when known
+  ok         Boolean  @default(false)
+  providerId String? // Resend email id
+  error      String?
+  dedupeKey  String?
+  sentByName String? // who triggered it (manual sends); null for scheduled jobs
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([dedupeKey])
+}
+
+/// In-app notification inbox (the header bell). One row per recipient per item. "Rolling" items (e.g. an
+/// RM's daily "N new visits to review") reuse ONE row via dedupeKey: each new event bumps `count`,
+/// refreshes the body and resurfaces it as unread, so the inbox never floods.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String // NEW_VISITS | REPORT_READY | SLA_BREACH | GENERIC
+  title     String
+  body      String?   @db.Text
+  href      String?
+  count     Int       @default(1)
+  dedupeKey String?   @unique
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) // last EVENT time (rolling bumps set it) — deliberately not @updatedAt, so mark-read doesn't re-sort the inbox
+
+  @@index([userId, readAt])
+  @@index([userId, updatedAt])
+}
+
+/// Immutable audit trail of visit review actions — one row per review / edit / un-review / flag change,
+/// holding the state AFTER that change (so any prior version is retrievable). Append-only: no code path
+/// updates or deletes these rows. visitId is a loose id (no FK) so the trail survives a visit deletion.
+model VisitReviewRevision {
+  id           Int      @id @default(autoincrement())
+  visitId      Int
+  // REVIEWED | EDITED | UNREVIEWED | FLAGGED | UNFLAGGED | FLAG_RESOLVED | FLAG_REOPENED
+  action       String
+  note         String?  @db.Text
+  rating       Int?
+  flagged      Boolean  @default(false)
+  flagActionId Int?
+  actorName    String?
+  actorCode    String?
+  actorRole    String?
+  createdAt    DateTime @default(now())
+
+  @@index([visitId])
   @@index([createdAt])
 }

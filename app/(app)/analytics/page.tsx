@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { getPersona } from "@/lib/session";
-import { getScope } from "@/lib/scope";
+import { getScope, type Scope } from "@/lib/scope";
 import { canAccess } from "@/lib/roles";
 import { loadOverview } from "@/lib/overview";
 import { canManage } from "@/lib/scope";
@@ -11,6 +12,13 @@ import { NewFarmersChart } from "@/components/analytics/NewFarmersChart";
 import { ScopedDashboard, UnassignedDashboard, type ScopedDashboardData } from "@/components/dashboard/ScopedDashboard";
 
 export const dynamic = "force-dynamic";
+
+/** The scoped dashboard KPIs change slowly — cache per scope for 5 min (keyed by the scope object). */
+const cachedOverview = unstable_cache(
+  (scope: Scope) => loadOverview(scope),
+  ["analytics-overview"],
+  { revalidate: 300 },
+);
 
 const EMPTY: WbData = {
   kpis: { farmers: 0, spend: 0, visits: 0 },
@@ -33,7 +41,14 @@ export default async function AnalyticsPage() {
   let facets: WbFacets = { stores: [], zones: [], salesCrops: [], visitCrops: [], pests: [], problems: [], spendTiers: [], years: [], visitMinDate: null, villages: [], storeTags: [] };
   let newFarmers: NewFarmerAcq = { keys: [], months: [], total: 0, distinct: 0 };
   try {
-    [overview, data, facets, newFarmers] = await Promise.all([loadOverview(scope), getWorkbench({ lens: "sales" }), getWorkbenchFacets(), getNewFarmerAcquisition()]);
+    // facets + newFarmers cache internally; overview is cached here per scope. Only the default
+    // workbench runs live — these heavy queries dominated the page load.
+    [overview, data, facets, newFarmers] = await Promise.all([
+      cachedOverview(scope),
+      getWorkbench({ lens: "sales" }),
+      getWorkbenchFacets(),
+      getNewFarmerAcquisition(),
+    ]);
   } catch {
     // DB unavailable — render an empty shell.
   }

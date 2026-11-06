@@ -8,6 +8,7 @@ import { getPersona } from "@/lib/session";
 import { getActor, getScope } from "@/lib/scope";
 import { logAudit } from "@/lib/audit";
 import { STATS_TAG } from "@/lib/stats";
+import { notifyNewVisit } from "@/lib/notify";
 import {
   LEAD_LABEL_TO_ENUM,
   SEGMENT_ENUM_TO_LABEL,
@@ -271,6 +272,8 @@ export async function submitVisitAction(
           : null,
         photos: form.photos,
         voiceNotes: form.voiceNotes,
+        photoCount: form.photos?.length ?? 0,
+        voiceNoteCount: form.voiceNotes?.length ?? 0,
         visitedAt: new Date(),
         source: "REAL",
       },
@@ -330,7 +333,11 @@ export async function submitVisitAction(
       },
     });
 
+    // Tell the store's RM there's a new visit to review (rolling daily bell item; best-effort).
+    await notifyNewVisit({ storeId: createdVisit.storeId, recordedByCode: actor.code, farmerName: form.name || null, officerName });
+
     revalidatePath("/visits");
+    revalidatePath("/visit-reviews");
     revalidatePath("/analytics");
     revalidatePath("/action-registry");
     // Farmer count / segment summary may have changed — bust the cached stats.

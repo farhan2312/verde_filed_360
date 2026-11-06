@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { segMeta, VALUE_SEGMENTS, LIFECYCLE_SEGMENTS, VALUE_HNI_MIN, VALUE_POTENTIAL_MIN, LIFECYCLE_RECENT_MONTHS, LIFECYCLE_LAPSED_MIN_MONTHS } from "@/lib/campaign-segments";
@@ -105,6 +106,11 @@ function tiersCte(f: WbFilters): Prisma.Sql {
   const recentM = Prisma.raw(String(LIFECYCLE_RECENT_MONTHS)), lapsedM = Prisma.raw(String(LIFECYCLE_LAPSED_MIN_MONTHS));
   // Crop filter → only that crop's tagged lines. No crop → every line.
   const cropCond = f.crops?.length ? Prisma.sql`AND sl."cropTag" = ANY(${f.crops}::text[])` : Prisma.empty;
+  // When an FY is selected, the population is the farmers who actually TRANSACTED in that FY (so the
+  // headcount + matrix track the year, not the whole base). No FY ("All time") → every scoped farmer.
+  const fyActive = f.fyStarts?.length
+    ? Prisma.sql`AND EXISTS (SELECT 1 FROM "SaleLine" sl WHERE sl."farmerId" = f.id AND sl.source = 'REAL' AND sl."soldAt" IS NOT NULL ${cropCond} AND ${window("sl")})`
+    : Prisma.empty;
   // Value tier: crop lens → crop-scoped FY spend; otherwise → the stored lifetime-LTV segment.
   const vsegSql = f.crops?.length
     ? Prisma.sql`CASE WHEN spend >= ${VALUE_HNI_MIN} THEN 'HNI' WHEN spend >= ${VALUE_POTENTIAL_MIN} THEN 'POTENTIAL_HNI' ELSE 'REGULAR' END`
@@ -115,7 +121,7 @@ function tiersCte(f: WbFilters): Prisma.Sql {
         WHERE sl.source = 'REAL' AND sl."soldAt" IS NOT NULL ${cropCond}
         GROUP BY 1)`;
   return Prisma.sql`
-    scoped AS (SELECT f.id, f."storeId", f."zone", f."valueSegment" vstored FROM "Farmer" f ${where}),
+    scoped AS (SELECT f.id, f."storeId", f."zone", f."valueSegment" vstored FROM "Farmer" f ${where} ${fyActive}),
     ${spendAgg},
     recency_agg AS (
       SELECT s."farmerId" id,
@@ -184,6 +190,12 @@ export interface WbFacets {
 }
 export async function getWorkbenchFacets(): Promise<WbFacets> {
   const { role, storeId, managedStoreIds } = await getScope();
+  return _facetsCached(role, storeId ?? null, managedStoreIds ?? null);
+}
+
+/** Facets = filter-option lists (~9 queries). They change rarely, so cache per scope for 10 min —
+ *  on the (Burstable, cross-region) prod DB these serialized to ~19s and dominated the page load. */
+const _facetsCached = unstable_cache(async (role: string, storeId: number | null, managedStoreIds: number[] | null): Promise<WbFacets> => {
   if (role === "campaigner") // call team has no analytics access — fail closed
     return { stores: [], zones: [], salesCrops: [], visitCrops: [], pests: [], problems: [], spendTiers: [], years: [], visitMinDate: null, villages: [], storeTags: [] };
   const isOfficer = role === "officer", isRM = role === "regional";
@@ -243,7 +255,7 @@ export async function getWorkbenchFacets(): Promise<WbFacets> {
     villages: vil.map((r) => ({ village: r.village, count: num(r.n) })),
     storeTags: (await prisma.storeTag.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] })).map((t) => ({ id: t.id, name: t.name, color: t.color })),
   };
-}
+}, ["wb-facets"], { revalidate: 600 });
 
 /* ── The workbench data for the current filter ── */
 export interface WbKpis { farmers: number; spend: number; visits: number }
@@ -437,10 +449,15 @@ const orderBars = (bars: WbBar[], order: string[]) =>
 export async function getVisitAnalytics(f: WbFilters): Promise<VisitAnalytics> {
   const scoped = await scopeFilters({ ...f, lens: "visit" });
   if (scoped === "none") return EMPTY_VISITS;
+  return _visitAnalyticsCached(scoped);
+}
+/** The Visits-tab bundle (~16 queries over the visits ⋈ farmers join). Cache per scope+filter for 5 min —
+ *  keyed by the scope-resolved filter object, so the default view and repeat filters are instant. */
+const _visitAnalyticsCached = unstable_cache(async (scoped: WbFilters): Promise<VisitAnalytics> => {
   const whereF = whereOf(scoped, "f");
   // Visit date range (buckets/slider). visitFrom/To are ISO dates; applied on Visit.visitedAt.
-  const dFrom = f.visitFrom && /^\d{4}-\d{2}-\d{2}$/.test(f.visitFrom) ? new Date(`${f.visitFrom}T00:00:00Z`) : null;
-  const dTo = f.visitTo && /^\d{4}-\d{2}-\d{2}$/.test(f.visitTo) ? new Date(`${f.visitTo}T23:59:59Z`) : null;
+  const dFrom = scoped.visitFrom && /^\d{4}-\d{2}-\d{2}$/.test(scoped.visitFrom) ? new Date(`${scoped.visitFrom}T00:00:00Z`) : null;
+  const dTo = scoped.visitTo && /^\d{4}-\d{2}-\d{2}$/.test(scoped.visitTo) ? new Date(`${scoped.visitTo}T23:59:59Z`) : null;
   const dateSql = [
     dFrom ? Prisma.sql`v."visitedAt" >= ${dFrom}` : null,
     dTo ? Prisma.sql`v."visitedAt" <= ${dTo}` : null,
@@ -455,8 +472,8 @@ export async function getVisitAnalytics(f: WbFilters): Promise<VisitAnalytics> {
       SELECT COUNT(*)::int visits, COUNT(DISTINCT v."farmerId")::int farmers,
         COUNT(DISTINCT f."village")::int villages, COUNT(DISTINCT v."officerName")::int officers,
         COUNT(*) FILTER (WHERE v."visitMode" = 'field')::int field,
-        COALESCE(SUM(cardinality(v."photos")), 0)::int photos,
-        COALESCE(SUM(cardinality(v."voiceNotes")), 0)::int voices,
+        COALESCE(SUM(v."photoCount"), 0)::int photos,
+        COALESCE(SUM(v."voiceNoteCount"), 0)::int voices,
         COUNT(*) FILTER (WHERE v."whatsappAvail")::int wa
       ${BASE}`),
     prisma.$queryRaw<{ ym: string; n: number }[]>(Prisma.sql`
@@ -559,7 +576,7 @@ export async function getVisitAnalytics(f: WbFilters): Promise<VisitAnalytics> {
     officers: bars(officerRows),
     byStore: storeRows.filter((r) => r.store).map((r) => ({ store: r.store as string, visits: num(r.visits), farmers: num(r.farmers) })),
   };
-}
+}, ["visit-analytics"], { revalidate: 300 });
 
 /* ── Drill: farmers in a matrix cell (respects the active filters) ── */
 export interface WbCustomer { id: number; name: string; mobile: string | null; village: string | null; spend: string; segment: string; salesCrops: string[]; visitCrops: string[] }
@@ -806,8 +823,12 @@ export interface NewFarmerAcq {
  * contiguous from the first to the last month with a new customer (quiet months appear as zero rows).
  */
 export async function getNewFarmerAcquisition(): Promise<NewFarmerAcq> {
-  const empty: NewFarmerAcq = { keys: [], months: [], total: 0, distinct: 0 };
   const { role, storeId, managedStoreIds } = await getScope();
+  return _newFarmersCached(role, storeId ?? null, managedStoreIds ?? null);
+}
+/** New-customers-from-sales chart — a heavy Farmer⋈Sale aggregate; cache per scope for 10 min. */
+const _newFarmersCached = unstable_cache(async (role: string, storeId: number | null, managedStoreIds: number[] | null): Promise<NewFarmerAcq> => {
+  const empty: NewFarmerAcq = { keys: [], months: [], total: 0, distinct: 0 };
   if (role === "campaigner") return empty;
   const scopeSql: Prisma.Sql =
     role === "officer"
@@ -863,7 +884,7 @@ export async function getNewFarmerAcquisition(): Promise<NewFarmerAcq> {
   }
   const keys = [...top, ...(hasUnassigned ? [UNASSIGNED] : [])];
   return { keys, months: [...byYm.values()], total, distinct };
-}
+}, ["new-farmer-acq"], { revalidate: 600 });
 
 /* ── Lead → customer conversions (wasLead flag), role-scoped, broken down by month + store ── */
 export interface LeadConversions {

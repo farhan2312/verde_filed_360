@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { getPerformance, type PerfKind, type PerfData, type PerfEntity, type PerfRange } from "@/app/actions/analytics-performance";
+import { getPerformance, getPerfRmOptions, exportPerformanceXlsx, type PerfKind, type PerfData, type PerfEntity, type PerfRange } from "@/app/actions/analytics-performance";
+import { downloadB64 } from "@/lib/download";
 
 const CARD = "rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
 const n = (x: number) => Math.round(x).toLocaleString("en-IN");
@@ -46,16 +47,29 @@ export function PerformanceBoard({ kind, storeTags }: { kind: PerfKind; storeTag
   const [cf, setCf] = useState(""); const [ct, setCt] = useState("");
   const [tags, setTags] = useState<number[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
+  const [rmSel, setRmSel] = useState<number[]>([]);
+  const [rmOptions, setRmOptions] = useState<{ id: number; name: string }[]>([]);
   const [data, setData] = useState<PerfData | null>(null);
   const [loading, start] = useTransition();
+  const [exporting, setExporting] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set()); // compare selection
 
-  const range = useMemo(() => ({ ...computeRange(preset, cf, ct), storeTags: tags.length ? tags : undefined, storeStatus: statuses.length ? statuses : undefined }), [preset, cf, ct, tags, statuses]);
+  const range = useMemo(() => ({ ...computeRange(preset, cf, ct), storeTags: tags.length ? tags : undefined, storeStatus: statuses.length ? statuses : undefined, rms: rmSel.length ? rmSel : undefined }), [preset, cf, ct, tags, statuses, rmSel]);
+
+  useEffect(() => { getPerfRmOptions().then(setRmOptions).catch(() => {}); }, []);
 
   useEffect(() => {
     start(async () => setData(await getPerformance(kind, range)));
     setSel(new Set()); // reset compare when axis/range changes
   }, [kind, range]);
+
+  const doExport = () => {
+    setExporting(true);
+    exportPerformanceXlsx(kind, range)
+      .then((res) => { if (res.ok && res.b64 && res.filename) downloadB64(res.b64, res.filename); else alert(res.error ?? "Export failed."); })
+      .catch(() => alert("Export failed."))
+      .finally(() => setExporting(false));
+  };
 
   const rows = data?.rows ?? [];
   const t = data?.totals;
@@ -83,6 +97,9 @@ export function PerformanceBoard({ kind, storeTags }: { kind: PerfKind; storeTag
         {storeTags.length > 0 && kind !== "officers" && (
           <TagFilter tags={storeTags} selected={tags} onToggle={(id) => setTags((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id])} onClear={() => setTags([])} />
         )}
+        {rmOptions.length > 0 && kind !== "rms" && (
+          <RmFilter options={rmOptions} selected={rmSel} onToggle={(id) => setRmSel((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id])} onClear={() => setRmSel([])} />
+        )}
         {/* Store status filter */}
         <div className="flex items-center gap-1">
           {(["Active", "Inactive"] as const).map((s) => {
@@ -97,8 +114,14 @@ export function PerformanceBoard({ kind, storeTags }: { kind: PerfKind; storeTag
             );
           })}
         </div>
-        <div className="ml-auto text-[12px] font-medium text-[#9E9E9E]">
-          {loading ? "Updating…" : `${rows.length} ${KIND_NOUN[kind].toLowerCase()}${rows.length === 1 ? "" : "s"}`}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[12px] font-medium text-[#9E9E9E]">
+            {loading ? "Updating…" : `${rows.length} ${KIND_NOUN[kind].toLowerCase()}${rows.length === 1 ? "" : "s"}`}
+          </span>
+          <button type="button" onClick={doExport} disabled={exporting || rows.length === 0}
+            className="rounded-[8px] border border-[#1565C0] px-3 py-1.5 text-[12px] font-semibold text-[#1565C0] hover:bg-[#E3F2FD] disabled:opacity-40">
+            {exporting ? "Exporting…" : "⬇ Export to Excel"}
+          </button>
         </div>
       </div>
       <div className="-mt-1 text-[11.5px] text-[#9E9E9E]">{data?.rangeLabel}</div>
@@ -337,6 +360,29 @@ function ComparePanel({ kind, rows, showSales, onClear }: { kind: PerfKind; rows
         </table>
       </div>
     </div>
+  );
+}
+
+/* ── RM multi-select — filters the board to the chosen regional managers' stores (by account id,
+      since Store.regionalManager is only a comma-joined display label) ── */
+function RmFilter({ options, selected, onToggle, onClear }: { options: { id: number; name: string }[]; selected: number[]; onToggle: (id: number) => void; onClear: () => void }) {
+  const text = selected.length === 0 ? "All RMs" : selected.length === 1 ? (options.find((o) => o.id === selected[0])?.name ?? "1 RM") : `${selected.length} RMs`;
+  return (
+    <details className="group relative">
+      <summary className="flex w-[150px] cursor-pointer list-none items-center justify-between gap-1.5 rounded-lg border border-[#E0E0E0] bg-white px-2.5 py-2 text-[12.5px] text-[#424242]">
+        <span className={`truncate ${selected.length ? "font-semibold" : ""}`} style={selected.length ? { color: "#7DA02E" } : undefined}>{text}</span>
+        <span className="shrink-0 text-[10px] text-[#9E9E9E] transition-transform group-open:rotate-180">▾</span>
+      </summary>
+      <div className="absolute left-0 z-30 mt-1 max-h-[300px] w-[230px] overflow-y-auto rounded-lg border border-[#E0E0E0] bg-white p-1 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
+        <button type="button" onClick={onClear} className="w-full rounded px-2 py-1.5 text-left text-[12.5px] font-semibold hover:bg-[#F5F7F5]" style={selected.length === 0 ? { color: "#7DA02E" } : { color: "#616161" }}>All RMs</button>
+        {options.map((o) => (
+          <label key={o.id} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[12.5px] text-[#424242] hover:bg-[#F5F7F5]">
+            <input type="checkbox" checked={selected.includes(o.id)} onChange={() => onToggle(o.id)} style={{ accentColor: "#7DA02E" }} />
+            <span className="truncate" title={o.name}>{o.name}</span>
+          </label>
+        ))}
+      </div>
+    </details>
   );
 }
 

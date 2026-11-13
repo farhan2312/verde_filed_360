@@ -7,7 +7,8 @@ import { loadOverview } from "@/lib/overview";
 import { canManage } from "@/lib/scope";
 import { getWorkbench, getWorkbenchFacets, getNewFarmerAcquisition, type WbData, type WbFacets, type NewFarmerAcq } from "@/app/actions/analytics-segments";
 import { VALUE_SEGMENTS, LIFECYCLE_SEGMENTS } from "@/lib/campaign-segments";
-import { AnalyticsWorkbench } from "@/components/analytics/AnalyticsWorkbench";
+import { AnalyticsWorkbench, type CustomTab } from "@/components/analytics/AnalyticsWorkbench";
+import { getPinnedReport, type ReportFull } from "@/app/actions/custom-analytics";
 import { NewFarmersChart } from "@/components/analytics/NewFarmersChart";
 import { ScopedDashboard, UnassignedDashboard, type ScopedDashboardData } from "@/components/dashboard/ScopedDashboard";
 
@@ -32,7 +33,7 @@ const EMPTY: WbData = {
  * officer→store, RM→region, central/sysadmin→org-wide) on top of the Sales/Visit segmentation
  * workbench: filter → view → save as cluster.
  */
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({ searchParams }: { searchParams?: { tab?: string } }) {
   const [scope, persona] = await Promise.all([getScope(), getPersona()]);
   if (!canAccess("analytics", scope.role)) notFound();
 
@@ -52,6 +53,11 @@ export default async function AnalyticsPage() {
   } catch {
     // DB unavailable — render an empty shell.
   }
+  // Custom analytics: a pinned report opens first; ?tab=mine|shared lands on a report list.
+  let pinned: ReportFull | null = null;
+  try { pinned = await getPinnedReport(); } catch { /* table missing / DB down — no pin */ }
+  const tab = searchParams?.tab;
+  const initialCustomTab: CustomTab | null = tab === "mine" || tab === "shared" ? tab : null;
 
   // A scoped user with no store/region assigned must see nothing — not global data.
   if (overview == null && (scope.role === "officer" || scope.role === "regional")) {
@@ -68,11 +74,14 @@ export default async function AnalyticsPage() {
       <div className="mt-6">
         <div className="mb-3 text-[14px] font-bold text-[#1A1C1A]">Explore — filter, drill in, save as a cluster</div>
         <AnalyticsWorkbench
+          key={tab ?? "home"}
           initial={data}
           facets={facets}
           canChain={canManage(scope.role)}
           canExport={scope.role === "sysadmin"}
           newFarmersSlot={newFarmers.months.length > 0 ? <NewFarmersChart data={newFarmers} /> : null}
+          pinned={pinned}
+          initialCustomTab={initialCustomTab}
         />
       </div>
     </div>

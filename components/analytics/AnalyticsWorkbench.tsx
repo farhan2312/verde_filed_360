@@ -10,6 +10,9 @@ import { tagLabel } from "@/lib/crop-pest";
 import { VisitDateFilter } from "./VisitDateFilter";
 import { LeadConversionsCard } from "./LeadConversionsCard";
 import { PerformanceBoard } from "./PerformanceBoard";
+import { CustomAnalyticsHome } from "@/components/custom-analytics/CustomAnalyticsHome";
+import { ReportViewer } from "@/components/custom-analytics/ReportViewer";
+import type { ReportFull } from "@/app/actions/custom-analytics";
 import type { PerfKind } from "@/app/actions/analytics-performance";
 import {
   getWorkbench, getWorkbenchCustomers, saveWorkbenchSegment, getCropTrend, getVisitAnalytics, getSalesRawData,
@@ -17,6 +20,9 @@ import {
   type VisitAnalytics, type VisitMonth, type VisitAdoption, type VisitStoreRow, type MergedMatrix, type TreeCell, type SegDim,
   type RawKpis, type RawLine,
 } from "@/app/actions/analytics-segments";
+
+/** Custom analytics tabs: a pinned report, your own reports, or reports shared with you. */
+export type CustomTab = "pinned" | "mine" | "shared";
 
 const CARD = "rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
 type ExportScope = "sales" | "visits" | "both";
@@ -27,9 +33,11 @@ const money = (x: number) => (x >= 1e7 ? `₹${(x / 1e7).toFixed(2)} Cr` : x >= 
 const fyStartOfYm = (ym: string) => { const [y, m] = ym.split("-").map(Number); return m >= 4 ? y : y - 1; };
 const fyLabel = (y: number) => `FY ${y}–${String((y + 1) % 100).padStart(2, "0")}`; // FY 2024–25
 
-export function AnalyticsWorkbench({ initial, facets, canChain = false, canExport = false, newFarmersSlot }: { initial: WbData; facets: WbFacets; canChain?: boolean; canExport?: boolean; /** Server-rendered "New customers from sales" chart, slotted under the crop trend. */ newFarmersSlot?: React.ReactNode }) {
+export function AnalyticsWorkbench({ initial, facets, canChain = false, canExport = false, newFarmersSlot, pinned = null, initialCustomTab = null }: { initial: WbData; facets: WbFacets; canChain?: boolean; canExport?: boolean; /** Server-rendered "New customers from sales" chart, slotted under the crop trend. */ newFarmersSlot?: React.ReactNode; pinned?: ReportFull | null; initialCustomTab?: CustomTab | null }) {
   const [filters, setFilters] = useState<WbFilters>({ lens: "sales" });
-  const [perfTab, setPerfTab] = useState<PerfKind | null>(null); // null = segmentation (Sales/Visits); else a performance board
+  const [perfTab, setPerfTabRaw] = useState<PerfKind | null>(null); // null = segmentation (Sales/Visits); else a performance board
+  const [customTab, setCustomTab] = useState<CustomTab | null>(initialCustomTab ?? (pinned ? "pinned" : null));
+  const setPerfTab = (k: PerfKind | null) => { setPerfTabRaw(k); setCustomTab(null); };
   const [data, setData] = useState(initial);
   const [visitData, setVisitData] = useState<VisitAnalytics | null>(null);
   const [loading, start] = useTransition();
@@ -135,7 +143,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false, canExpor
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex flex-wrap rounded-[10px] border border-[#E0E0E0] bg-[#F5F7F5] p-1">
           {(["sales", "visit"] as Lens[]).map((l) => {
-            const active = !perfTab && filters.lens === l;
+            const active = !perfTab && !customTab && filters.lens === l;
             return (
               <button key={l} type="button" onClick={() => { setPerfTab(null); setLens(l); }}
                 className="rounded-[8px] px-5 py-2 text-[12.5px] font-bold transition-colors"
@@ -146,7 +154,7 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false, canExpor
           })}
           <span className="mx-1 my-1 w-px bg-[#E0E0E0]" />
           {([["stores", "Stores"], ["rms", "RMs"], ["officers", "Agri Officers"]] as [PerfKind, string][]).map(([kind, label]) => {
-            const active = perfTab === kind;
+            const active = !customTab && perfTab === kind;
             return (
               <button key={kind} type="button" onClick={() => setPerfTab(kind)}
                 className="rounded-[8px] px-5 py-2 text-[12.5px] font-bold transition-colors"
@@ -155,8 +163,19 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false, canExpor
               </button>
             );
           })}
+          <span className="mx-1 my-1 w-px bg-[#E0E0E0]" />
+          {([...(pinned ? [["pinned", `📌 ${pinned.title.length > 22 ? `${pinned.title.slice(0, 21)}…` : pinned.title}`]] : []), ["mine", "My analytics"], ["shared", "Shared with me"]] as [CustomTab, string][]).map(([k, label]) => {
+            const active = customTab === k;
+            return (
+              <button key={k} type="button" onClick={() => setCustomTab(k)}
+                className="rounded-[8px] px-5 py-2 text-[12.5px] font-bold transition-colors"
+                style={{ background: active ? "#fff" : "transparent", color: active ? "#6A1B9A" : "#9E9E9E", boxShadow: active ? "0 1px 3px rgba(0,0,0,0.12)" : "none" }}>
+                {label}
+              </button>
+            );
+          })}
         </div>
-        {!perfTab && (
+        {!perfTab && !customTab && (
         <div className="flex flex-wrap items-center gap-2">
           {loading && <span className="text-[12px] text-[#9E9E9E]">Updating…</span>}
           {/* Unified export: choose Sales / Visits / Both → one Excel (Both = separate sheets, filters respected). */}
@@ -187,7 +206,11 @@ export function AnalyticsWorkbench({ initial, facets, canChain = false, canExpor
         )}
       </div>
 
-      {perfTab ? (
+      {customTab === "pinned" && pinned ? (
+        <ReportViewer report={pinned} embedded />
+      ) : customTab === "mine" || customTab === "shared" || customTab === "pinned" ? (
+        <CustomAnalyticsHome kind={customTab === "shared" ? "shared" : "mine"} />
+      ) : perfTab ? (
         <PerformanceBoard kind={perfTab} storeTags={facets.storeTags} />
       ) : (
       <>

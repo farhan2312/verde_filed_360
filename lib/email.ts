@@ -38,6 +38,8 @@ export function appUrl(path = "/"): string {
 
 export interface SendEmailInput {
   to: string;
+  /** Extra recipients on the same message (invalid ones and duplicates of `to` are dropped). */
+  cc?: string[];
   subject: string;
   html: string;
   text?: string;
@@ -53,6 +55,11 @@ export interface SendEmailInput {
 export interface SendEmailResult { ok: boolean; id?: string; skipped?: "disabled" | "duplicate" | "not-configured" | "bad-address"; error?: string }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Validated, de-duplicated CC list (never repeats the To address). */
+function ccList(cc: string[] | undefined, to: string): string[] {
+  return [...new Set((cc ?? []).map((a) => { const k = checkEmail(a); return k.ok ? k.normalized : null; }).filter((a): a is string => !!a && a !== to))];
+}
 
 /** Record an attempt we never handed to Resend (best-effort; a logging failure is not an error). */
 async function logAttempt(input: SendEmailInput, to: string, error: string): Promise<void> {
@@ -72,12 +79,15 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     // No API key yet — leave a trail an admin can see in Settings, then carry on quietly.
     const error = `Email not configured: missing ${cfg.missing.join(", ")}`;
     console.warn(`[email] not sent (${input.type}) to ${chk.normalized || input.to}: ${error}`);
-    await logAttempt(input, chk.normalized || input.to.trim().slice(0, 200), error);
+    const base = chk.normalized || input.to.trim().slice(0, 200);
+    const ccs = ccList(input.cc, base);
+    await logAttempt(input, ccs.length ? `${base} | cc ${ccs.join(", ")}` : base, error);
     return { ok: false, skipped: "not-configured", error };
   }
   if (!input.force && !(await getReviewSettings()).emailEnabled) return { ok: false, skipped: "disabled", error: "Email is switched off in Settings." };
   if (!chk.ok || !chk.normalized) return { ok: false, skipped: "bad-address", error: chk.error ?? "No address." };
   const to = chk.normalized;
+  const cc = ccList(input.cc, to);
 
   if (input.dedupeKey) {
     const dup = await prisma.emailLog.findFirst({ where: { dedupeKey: input.dedupeKey, ok: true }, select: { id: true } }).catch(() => null);
@@ -97,6 +107,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         body: JSON.stringify({
           from: cfg.from,
           to: [to],
+          ...(cc.length ? { cc } : {}),
           subject: input.subject.slice(0, 250),
           html: input.html,
           ...(input.text != null ? { text: input.text } : {}),
@@ -117,7 +128,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
   await prisma.emailLog.create({
     data: {
-      to, subject: input.subject.slice(0, 250), type: input.type, userId: input.userId ?? null, ok,
+      to: cc.length ? `${to} | cc ${cc.join(", ")}` : to, subject: input.subject.slice(0, 250), type: input.type, userId: input.userId ?? null, ok,
       providerId: providerId ?? null, error: error?.slice(0, 500) ?? null, dedupeKey: input.dedupeKey ?? null,
       sentByName: input.sentByName ?? null,
     },

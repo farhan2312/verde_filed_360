@@ -299,7 +299,7 @@ export function StoreDetailView({ store }: { store: StoreDetail }) {
         <div className={CARD}>
           <div className="mb-3 flex items-center justify-between">
             <div className="text-[14px] font-bold text-ink">Action Registry</div>
-            <Link href="/action-registry" className="text-[11px] font-semibold text-brand-600 hover:underline">
+            <Link href={`/action-registry?store=${encodeURIComponent(store.code)}`} className="text-[11px] font-semibold text-brand-600 hover:underline">
               Open registry →
             </Link>
           </div>

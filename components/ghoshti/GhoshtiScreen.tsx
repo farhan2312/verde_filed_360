@@ -144,7 +144,7 @@ export function GhoshtiScreen({
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link href={`/ghoshti/${g.id}`} className="rounded-md bg-[#E3F2FD] px-2.5 py-1 text-[11px] font-semibold text-[#1565C0] hover:bg-[#D0E8FB]">Open</Link>
-                        <button type="button" onClick={() => remove(g)} className="rounded-md bg-[#FDECEA] px-2 py-1 text-[11px] font-semibold text-[#C62828] hover:bg-[#FADBD8]">Delete</button>
+                        {g.canDelete && <button type="button" onClick={() => remove(g)} className="rounded-md bg-[#FDECEA] px-2 py-1 text-[11px] font-semibold text-[#C62828] hover:bg-[#FADBD8]">Delete</button>}
                       </div>
                     </td>
                   </tr>

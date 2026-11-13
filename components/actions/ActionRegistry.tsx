@@ -54,15 +54,17 @@ function pageNumbers(cur: number, total: number): (number | "...")[] {
 }
 
 export function ActionRegistry({
-  initial, role, myStoreId, stores,
+  initial, role, myStoreId, stores, initialStoreId = null,
 }: {
   initial: ActionVM[]; role: RoleKey; myStoreId: number | null; stores: { id: number; name: string }[];
+  /** Pre-selected store filter (from ?store=<code>, e.g. Store 360's "Open registry" link). */
+  initialStoreId?: number | null;
 }) {
   const router = useRouter();
   const [actions, setActions] = useState(initial);
   const [tab, setTab] = useState<Tab>("OPEN");
   const [q, setQ] = useState("");
-  const [storeFilter, setStoreFilter] = useState<number | "">("");
+  const [storeFilter, setStoreFilter] = useState<number | "">(initialStoreId ?? "");
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [completing, setCompleting] = useState<ActionVM | null>(null);

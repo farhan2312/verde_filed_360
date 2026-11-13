@@ -88,7 +88,7 @@ export function ReviewsReportsTab({ initial }: { initial: ReviewSettingsState })
             <select className={INPUT} value={s.digestHour} onChange={(e) => set("digestHour", Number(e.target.value))}>
               {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{hh(h)}</option>)}
             </select>
-            <p className="mt-1 text-[11px] text-[#9E9E9E]">RMs get their pending count; Central gets RMs past SLA. Default 09:00.</p>
+            <p className="mt-1 text-[11px] text-[#9E9E9E]">RMs get their pending count; Central + System admins get RMs past SLA. Default 09:00.</p>
           </div>
         </div>
       </div>
@@ -130,7 +130,7 @@ export function ReviewsReportsTab({ initial }: { initial: ReviewSettingsState })
           <input type="checkbox" disabled={!email.ready} checked={s.emailEnabled} onChange={(e) => set("emailEnabled", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#7DA02E]" />
           <span>
             <span className="block text-[13px] font-semibold text-[#1A1C1A]">Send automatic emails</span>
-            <span className="block text-[11.5px] text-[#757575]">RM daily digest, weekly report ready, Central SLA alert. Off by default — send a test first, then switch on and Save.</span>
+            <span className="block text-[11.5px] text-[#757575]">RM daily digest, weekly report ready, Central + System admin SLA alert. Off by default — send a test first, then switch on and Save.</span>
           </span>
         </label>
 

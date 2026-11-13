@@ -24,6 +24,7 @@ export interface GhoshtiListItem {
   createdByRole: string | null;
   createdAt: string;
   canApprove: boolean; // may the current user approve/reject this one
+  canDelete: boolean; // creator or central/sysadmin (mirrors deleteGhoshti)
 }
 
 export interface GhoshtiAttendeeVM {
@@ -319,6 +320,7 @@ export async function listGhoshtis(filter?: { status?: string }): Promise<Ghosht
     createdAt: g.createdAt.toISOString(),
     canApprove: g.status === "PENDING" && canApproveGhoshti(scope, g.createdByRole, g.zone)
       && !(!canManage(scope.role) && scope.userId != null && scope.userId === g.createdById),
+    canDelete: canManage(scope.role) || (scope.userId != null && scope.userId === g.createdById),
   }));
 }
 

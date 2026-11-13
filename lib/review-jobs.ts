@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getReviewSettings, type ReviewSettings } from "@/lib/review-settings";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, type EmailType } from "@/lib/email";
+import { checkEmail } from "@/lib/email-validate";
 import { notifyUsers, bumpRolling } from "@/lib/notify";
 import {
   ensureReportRows, processPendingReports, lastCompletedWeek, lastReportMoment, listReportRms, visitsInStores,
@@ -33,8 +34,21 @@ async function getMarker(key: string): Promise<string | null> {
 async function setMarker(key: string, value: string) {
   await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
 }
+/** Central-team recipients (weekly roll-up, SLA alert, bell): Central admins + System admins. */
 const centralUsers = () =>
-  prisma.user.findMany({ where: { role: "CENTRAL", active: true, approvalStatus: "APPROVED" }, select: { id: true, workEmail: true } });
+  prisma.user.findMany({ where: { role: { in: ["CENTRAL", "SYSADMIN"] }, active: true, approvalStatus: "APPROVED" }, select: { id: true, role: true, workEmail: true }, orderBy: { id: "asc" } });
+
+/**
+ * The Central-team emails are the same for everyone, so they go as ONE message: the first Central admin
+ * with a work email in To, everyone else CC'd. (Resend needs a To; the no-reply sender has no inbox.)
+ * With no API key sendEmail just logs a not-configured attempt and returns; it never throws.
+ */
+async function mailCentral(central: { role: string; workEmail: string | null }[], m: { subject: string; html: string }, type: EmailType, dedupeKey: string) {
+  const ordered = [...central].sort((a, b) => (a.role === b.role ? 0 : a.role === "CENTRAL" ? -1 : 1));
+  const emails = [...new Set(ordered.map((c) => { const k = checkEmail(c.workEmail); return k.ok ? k.normalized : null; }).filter((e): e is string => !!e))];
+  if (!emails.length) return;
+  await sendEmail({ to: emails[0], cc: emails.slice(1), subject: m.subject, html: m.html, type, dedupeKey });
+}
 
 export interface JobLog { scheduledWeek?: string; created?: number; built?: number; failed?: number; remaining?: number; announced?: number; centralMailed?: string[]; digests?: number; slaAlert?: number; skipped?: string[] }
 
@@ -114,7 +128,7 @@ export async function announceReports(now = new Date()): Promise<{ announced: nu
     if (!done.length || now.getTime() - freshest > EMAIL_FRESH_MS) continue;
     const tableRows = await centralWeekRows(done);
     const m = centralWeekEmail(wk.label, ymd, tableRows);
-    for (const c of central) if (c.workEmail) await sendEmail({ to: c.workEmail, subject: m.subject, html: m.html, type: "REPORT_READY", userId: c.id, dedupeKey: `REPORTS_WEEK:${c.id}:${ymd}` });
+    await mailCentral(central, m, "REPORT_READY", `REPORTS_WEEK:${ymd}`);
     centralMailed.push(ymd);
   }
   return { announced, centralMailed };
@@ -174,7 +188,7 @@ export async function runDailyDigests(s: ReviewSettings, today: string): Promise
       href: `/visit-reviews?status=overdue&sort=oldest&from=${istYmd(emailWindowStart())}`,
     });
     const m = centralSlaEmail(breached, s.slaHours);
-    for (const c of central) if (c.workEmail) await sendEmail({ to: c.workEmail, subject: m.subject, html: m.html, type: "SLA_BREACH", userId: c.id, dedupeKey: `SLA:${c.id}:${today}` });
+    await mailCentral(central, m, "SLA_BREACH", `SLA:${today}`);
   }
   return { digests, slaRms: breached.length };
 }

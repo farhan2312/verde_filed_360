@@ -14,9 +14,10 @@ import { startOfToday } from "@/lib/action-constants";
  * a `storeId`, so a store's full record (farmers, officers, sales, campaigns, follow-ups, visits,
  * ghoshti) is assembled by scoping each query to that store.
  *
- * RM scope is the authoritative `Store.regionalManager == User.name` link, reached through
- * `storeScopeWhere(scope)` (lib/scope.ts) so it can never be widened here. An RM who manages no stores
- * gets "none" → an empty list, never everything.
+ * RM scope goes through `storeScopeWhere(scope)` (lib/scope.ts) so it can never be widened here. The
+ * authoritative link is `Store.rmUserIds` — a store can have several managers, and the comma-joined
+ * `Store.regionalManager` is only a display label, matched as a legacy fallback. An RM who manages no
+ * stores gets "none" → an empty list, never everything.
  */
 
 const MANAGER_ROLES = new Set(["regional", "central", "sysadmin"]);

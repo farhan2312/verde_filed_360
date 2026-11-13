@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TrainingVideo } from "@/lib/training";
+import { useAssetPresent, MEDIA_PLACEHOLDER_CLASS } from "./asset-present";
 
 /**
  * Bilingual how-to video player. The same footage has two audio tracks (English + Hindi); the toggle
@@ -11,6 +12,17 @@ import type { TrainingVideo } from "@/lib/training";
 export function VideoPlayer({ video, title }: { video: TrainingVideo; title: string }) {
   const [lang, setLang] = useState<"en" | "hi">("en");
   const src = lang === "en" ? video.en : video.hi;
+  // Both tracks ship together, so probing one says whether the footage exists at all.
+  const present = useAssetPresent(video.en);
+
+  if (present !== true) {
+    return (
+      <div className={`mb-6 ${MEDIA_PLACEHOLDER_CLASS}`}>
+        <span className="text-[18px]">🎬</span>
+        <span>{present === null ? "Looking for the walkthrough video..." : "Walkthrough video to be added"}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6">

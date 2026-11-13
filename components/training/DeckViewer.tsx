@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { TrainingDeck } from "@/lib/training";
+import { useAssetPresent, MEDIA_PLACEHOLDER_CLASS } from "./asset-present";
 
 const DL_ICON = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -13,6 +14,7 @@ const DL_ICON = (
 export function DeckViewer({ deck, title }: { deck: TrainingDeck; title: string }) {
   const [full, setFull] = useState(false);
   const src = `${deck.pdf}#view=FitH`;
+  const present = useAssetPresent(deck.pdf);
 
   useEffect(() => {
     if (!full) return;
@@ -21,6 +23,16 @@ export function DeckViewer({ deck, title }: { deck: TrainingDeck; title: string 
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [full]);
+
+  // The deck file is not in the repo yet; an iframe on a 404 shows the browser's broken PDF viewer.
+  if (present !== true) {
+    return (
+      <div className={MEDIA_PLACEHOLDER_CLASS}>
+        <span className="text-[18px]">📑</span>
+        <span>{present === null ? "Looking for the slide deck..." : <>Slide deck to be added <span className="text-[#AEB6C4]">({deck.pdf})</span></>}</span>
+      </div>
+    );
+  }
 
   return (
     <div>

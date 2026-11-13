@@ -1,8 +1,11 @@
 import { Card } from "@/components/ui";
 import { initials } from "@/lib/format";
 import { cropLabel } from "@/lib/crops";
+import { CROP_SOURCE_TINT } from "@/lib/crop-sources";
 import { InfoTip } from "@/components/InfoTip";
 import type { FarmerDetail } from "./types";
+
+const STORE = CROP_SOURCE_TINT.store;
 
 function DetailRow({
   label,
@@ -87,14 +90,15 @@ export function FarmerProfileCard({ farmer }: { farmer: FarmerDetail }) {
         />
       </div>
 
-      {/* Crops — labelled by source (Sales upload vs Field visits) */}
+      {/* Crops — labelled by source (Sales upload / Field visits / the store's region crops) */}
       <div className="mt-3 border-t border-[#F5F5F5] pt-3">
-        <div className="mb-1.5 flex items-center gap-3">
+        <div className="mb-1.5 flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-[#9E9E9E]">Crops</span>
           <span className="flex items-center gap-1 text-[10px] font-semibold text-[#7DA02E]"><span className="inline-block h-2 w-2 rounded-full bg-[#F5F9EA] ring-1 ring-[#7DA02E]" /> Sales</span>
           <span className="flex items-center gap-1 text-[10px] font-semibold text-[#1565C0]"><span className="inline-block h-2 w-2 rounded-full bg-[#E3F2FD] ring-1 ring-[#1565C0]" /> Visit</span>
+          <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: STORE.color }}><span className="inline-block h-2 w-2 rounded-full" style={{ background: STORE.bg, boxShadow: `0 0 0 1px ${STORE.ring}` }} /> Store region</span>
         </div>
-        {farmer.salesCrops.length === 0 && farmer.visitCrops.length === 0 ? (
+        {farmer.salesCrops.length === 0 && farmer.visitCrops.length === 0 && farmer.storeCrops.length === 0 ? (
           <span className="text-[12px] text-[#BDBDBD]">No crop data yet</span>
         ) : (
           <div className="flex flex-wrap gap-1.5">
@@ -103,6 +107,9 @@ export function FarmerProfileCard({ farmer }: { farmer: FarmerDetail }) {
             ))}
             {farmer.visitCrops.map((c) => (
               <span key={`v-${c}`} className="rounded-full bg-[#E3F2FD] px-2 py-0.5 text-[11px] font-semibold text-[#1565C0]" title="From field visit">{cropLabel(c)}</span>
+            ))}
+            {farmer.storeCrops.map((c) => (
+              <span key={`st-${c}`} className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: STORE.bg, color: STORE.color }} title="Grown around the farmer's store">{cropLabel(c)}</span>
             ))}
           </div>
         )}

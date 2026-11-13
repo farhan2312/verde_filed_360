@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { parseCriteria, scopedCriteriaWhere, type ClusterCriteria } from "@/lib/cluster-rules";
+import { parseCriteria, scopedCriteriaWhere, criteriaCrops, cropSourcesOf, CROP_MATCH_LABEL, type ClusterCriteria } from "@/lib/cluster-rules";
 import { segMeta } from "@/lib/campaign-segments";
 import { cropLabel } from "@/lib/crops";
 import { tagLabel } from "@/lib/crop-pest";
@@ -52,8 +52,9 @@ export async function getFarmerClusters(farmerId: number): Promise<FarmerCluster
     if (crit.valueSegments?.length) a.push({ label: "Value tier", value: crit.valueSegments.map((s) => segMeta(s).label).join(", ") });
     if (crit.lifecycleSegments?.length) a.push({ label: "Lifecycle", value: crit.lifecycleSegments.map((s) => segMeta(s).label).join(", ") });
     if (crit.campaignSegments?.length) a.push({ label: "Segment", value: crit.campaignSegments.map((s) => segMeta(s).label).join(", ") });
-    const crops = [...new Set([...(crit.cropTags ?? []), ...(crit.salesCrops ?? []), ...(crit.visitCrops ?? []), ...(crit.crop ? [crit.crop] : [])])];
+    const crops = criteriaCrops(crit);
     if (crops.length) a.push({ label: "Crops", value: crops.map(cropLabel).join(", ") });
+    if (crit.crops?.length) a.push({ label: "Crop from", value: cropSourcesOf(crit).map((s) => CROP_MATCH_LABEL[s]).join(", ") });
     if (crit.pestTags?.length) a.push({ label: "Pests", value: crit.pestTags.map(tagLabel).join(", ") });
     if (crit.spendMin != null || crit.spendMax != null) a.push({ label: "12-mo spend", value: `${crit.spendMin != null ? kInr(crit.spendMin) : "₹0"} – ${crit.spendMax != null ? kInr(crit.spendMax) : "any"}` });
     if (crit.leadStatus) a.push({ label: "Lead status", value: crit.leadStatus });

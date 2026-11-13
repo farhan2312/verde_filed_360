@@ -21,6 +21,9 @@ import { getRole } from "@/lib/session";
 import { SalesSyncRunCard, type LastRunVM } from "@/components/sales-sync/SalesSyncRunCard";
 import { getReviewSettingsState, type ReviewSettingsState } from "@/app/actions/review-settings";
 import { ReviewsReportsTab } from "@/components/settings/ReviewsReportsTab";
+import { listStoreCrops, type StoreCropRow } from "@/app/actions/store-crops";
+import { getCropOptions } from "@/app/actions/campaigns";
+import { StoreCropsTab } from "@/components/settings/StoreCropsTab";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +121,14 @@ export default async function SettingsPage() {
   let reviewState: ReviewSettingsState | null = null;
   try { reviewState = await getReviewSettingsState(); } catch { /* DB unavailable */ }
 
+  // Store-region crops — System admin only (null for everyone else → no tab).
+  let storeCrops: StoreCropRow[] | null = null;
+  let cropOptions: { crop: string; count: number }[] = [];
+  try {
+    storeCrops = await listStoreCrops();
+    if (storeCrops) cropOptions = await getCropOptions();
+  } catch { /* DB unavailable */ }
+
   // WhatsApp template manager (create/submit/track approval via the Business Management API).
   let tplInit: { ready: boolean; missing: string[]; templates: WaTemplate[] } = { ready: false, missing: [], templates: [] };
   try {
@@ -195,6 +206,14 @@ export default async function SettingsPage() {
             </div>
           ),
         },
+        ...(storeCrops
+          ? [{
+              key: "store-crops",
+              label: "Store Crops",
+              icon: "🌾",
+              content: <StoreCropsTab initial={storeCrops} cropOptions={cropOptions} />,
+            }]
+          : []),
       ]}
     />
   );

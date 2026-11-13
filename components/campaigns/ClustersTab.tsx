@@ -8,6 +8,7 @@ import { cropLabel } from "@/lib/crops";
 import { tagLabel } from "@/lib/crop-pest";
 import { shortStoreName } from "@/lib/store-utils";
 import type { ClusterCriteria } from "@/lib/cluster-rules";
+import { CROP_MATCH_SOURCES, CROP_MATCH_LABEL, CROP_SOURCE_TINT, cropSourcesOf, type CropMatchSource } from "@/lib/crop-sources";
 import type { CropOption, PestOption } from "./CampaignsScreen";
 import {
   listClustersWithCounts, deleteCluster, previewClusterCount, type ClusterVM,
@@ -25,6 +26,13 @@ const ORIGIN_LABEL: Record<string, string> = { map: "Map", segment: "Builder", a
 const fmtDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); };
 
 export interface StoreOption { id: number; name: string; zone: string | null }
+
+const SOURCE_TINT = CROP_SOURCE_TINT; // same colours as Farmer 360's crop chips
+const SOURCE_HELP: Record<CropMatchSource, string> = {
+  sales: "bought its inputs (sales uploads)",
+  visit: "an officer recorded growing it (field visits)",
+  store: "attached to a store where it's grown (Settings → Store crops)",
+};
 
 export function ClustersTab({ initial, zones, crops, pests, stores, canChain, canCreate = true, scopeLabel }: {
   initial: ClusterVM[]; zones: string[]; crops: CropOption[]; pests: PestOption[]; stores: StoreOption[]; canChain: boolean;
@@ -170,16 +178,18 @@ function CheckDropdown({ placeholder, options, selected, onToggle, onSelectAll, 
 /* ── Rule builder ── (also the full-edit modal when `editing` is passed) */
 function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain, editing, onClose, onCreated }: { zones: string[]; crops: CropOption[]; pests: PestOption[]; stores: StoreOption[]; canChain: boolean; editing?: ClusterVM; onClose: () => void; onCreated: () => void }) {
   const seed = editing?.criteria ?? null;
-  // Prefill the crop picker + its source toggle from whichever crop field the saved rule used.
-  const seedCropSource: "any" | "sales" | "visit" = seed?.salesCrops?.length ? "sales" : seed?.visitCrops?.length ? "visit" : "any";
-  const seedCrops = seed?.salesCrops?.length ? seed.salesCrops : seed?.visitCrops?.length ? seed.visitCrops : seed?.cropTags ?? [];
+  // Prefill the crop picker + source pills from whichever crop field the saved rule used. Older rules
+  // keep their meaning (any source = bought or visit); a brand-new cluster starts with all three on.
+  const seedCropSources: CropMatchSource[] = seed?.crops?.length ? cropSourcesOf(seed)
+    : seed?.salesCrops?.length ? ["sales"] : seed?.visitCrops?.length ? ["visit"] : seed?.cropTags?.length ? ["sales", "visit"] : CROP_MATCH_SOURCES;
+  const seedCrops = seed?.crops?.length ? seed.crops : seed?.salesCrops?.length ? seed.salesCrops : seed?.visitCrops?.length ? seed.visitCrops : seed?.cropTags ?? [];
   // Rule conditions this builder has no control for (spend tier, villages, category, legacy segments…)
   // are carried through an edit untouched, so a "full edit" never silently drops them. explicitIds
   // (hand-picked static membership) is intentionally not carried — editing re-defines the rule.
   const carry = useMemo<Partial<ClusterCriteria>>(() => {
     if (!seed) return {};
-    const { valueSegments, lifecycleSegments, salesCrops, visitCrops, cropTags, pestTags, zones: _z, zone, storeIds: _s, q: _q, whatsappOptIn, explicitIds, ...rest } = seed;
-    void valueSegments; void lifecycleSegments; void salesCrops; void visitCrops; void cropTags; void pestTags; void _z; void zone; void _s; void _q; void whatsappOptIn; void explicitIds;
+    const { valueSegments, lifecycleSegments, salesCrops, visitCrops, cropTags, crops: _c, cropSources: _cs, pestTags, zones: _z, zone, storeIds: _s, q: _q, whatsappOptIn, explicitIds, ...rest } = seed;
+    void valueSegments; void lifecycleSegments; void salesCrops; void visitCrops; void cropTags; void _c; void _cs; void pestTags; void _z; void zone; void _s; void _q; void whatsappOptIn; void explicitIds;
     return rest;
   }, [seed]);
   const hasCarry = Object.keys(carry).length > 0;
@@ -189,7 +199,7 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
   const [valueSegs, setValueSegs] = useState<string[]>(seed?.valueSegments ?? []);
   const [lifecycleSegs, setLifecycleSegs] = useState<string[]>(seed?.lifecycleSegments ?? []);
   const [crops, setCrops] = useState<string[]>(seedCrops);
-  const [cropSource, setCropSource] = useState<"any" | "sales" | "visit">(seedCropSource); // which crop record to match
+  const [cropSources, setCropSources] = useState<CropMatchSource[]>(seedCropSources); // where a crop may come from (any of)
   const [pests, setPests] = useState<string[]>(seed?.pestTags ?? []);
   const [zoneList, setZoneList] = useState<string[]>(seed?.zones ?? (seed?.zone ? [seed.zone] : []));
   const [storeIds, setStoreIds] = useState<number[]>(seed?.storeIds ?? []);
@@ -211,12 +221,8 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
     ...carry, // preserve edit-only conditions the builder can't show (spend tier, villages, …)
     valueSegments: valueSegs.length ? valueSegs : undefined,
     lifecycleSegments: lifecycleSegs.length ? lifecycleSegs : undefined,
-    // Route the picked crops to the chosen source: sales bought / seen on a visit / either.
-    ...(crops.length
-      ? cropSource === "sales" ? { salesCrops: crops }
-      : cropSource === "visit" ? { visitCrops: crops }
-      : { cropTags: crops }
-      : {}),
+    // Picked crops from ANY of the picked sources: bought / seen on a visit / grown around the farmer's store.
+    ...(crops.length ? { crops, cropSources } : {}),
     pestTags: pests.length ? pests : undefined,
     zones: zoneList.length ? zoneList : undefined,
     storeIds: storeIds.length ? storeIds : undefined,
@@ -232,7 +238,7 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
     const t = setTimeout(async () => { setCount(await previewClusterCount(criteria())); setCounting(false); }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valueSegs, lifecycleSegs, crops, cropSource, pests, zoneList, storeIds, q, waOptIn]);
+  }, [valueSegs, lifecycleSegs, crops, cropSources, pests, zoneList, storeIds, q, waOptIn]);
 
   const toggle = (arr: string[], set: (a: string[]) => void, v: string) => set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   const toggleZone = (z: string) => {
@@ -280,20 +286,22 @@ function RuleBuilder({ zones, crops: cropOpts, pests: pestOpts, stores, canChain
 
         <div className="mb-1.5 flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-semibold uppercase text-[#9E9E9E]">Crop (any of)</span>
-          <div className="inline-flex rounded-lg border border-[#E0E0E0] bg-[#F5F7F5] p-0.5">
-            {([["any", "Any source"], ["sales", "Bought"], ["visit", "Seen on visit"]] as const).map(([k, l]) => (
-              <button key={k} type="button" onClick={() => setCropSource(k)}
-                className="rounded-md px-2.5 py-0.5 text-[10.5px] font-semibold transition-colors"
-                style={{ background: cropSource === k ? "#fff" : "transparent", color: cropSource === k ? "#7DA02E" : "#9E9E9E", boxShadow: cropSource === k ? "0 1px 2px rgba(0,0,0,0.12)" : "none" }}>
-                {l}
+          <span className="text-[10.5px] text-[#BDBDBD]">from</span>
+          {CROP_MATCH_SOURCES.map((k) => {
+            const on = cropSources.includes(k);
+            const t = SOURCE_TINT[k];
+            return (
+              <button key={k} type="button" aria-pressed={on} title={SOURCE_HELP[k]}
+                onClick={() => setCropSources((l) => (on ? (l.length > 1 ? l.filter((x) => x !== k) : l) : CROP_MATCH_SOURCES.filter((x) => x === k || l.includes(x))))}
+                className="rounded-full border-[1.5px] px-2.5 py-0.5 text-[11px] font-semibold"
+                style={{ background: on ? t.bg : "#fff", color: on ? t.color : "#9E9E9E", borderColor: on ? t.color : "#E0E0E0" }}>
+                {on ? "✓ " : ""}{CROP_MATCH_LABEL[k]}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
         <div className="mb-1.5 text-[10.5px] text-[#9E9E9E]">
-          {cropSource === "sales" ? "Matches farmers who bought this crop's inputs (from sales uploads)."
-            : cropSource === "visit" ? "Matches farmers an officer recorded growing this crop (from field visits)."
-            : "Matches either source — bought it or seen growing on a visit."}
+          Matches farmers with the crop from <b className="font-semibold text-[#616161]">any</b> picked source: {cropSources.map((s) => SOURCE_HELP[s]).join("; or ")}.
         </div>
         <CheckDropdown placeholder="Select crops…" searchable
           options={cropOpts.map((c) => ({ value: c.crop, label: cropLabel(c.crop), hint: c.count.toLocaleString("en-IN") }))}

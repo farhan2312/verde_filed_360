@@ -12,7 +12,7 @@ import { shortStoreName } from "@/lib/store-utils";
 import { getScope, farmerScopeWhere, getActor } from "@/lib/scope";
 import { buildWorkbookB64 } from "@/lib/xlsx-export";
 import { CLUSTER_PAGE_SIZE, type ClusterMembersResult } from "@/components/clusters/types";
-import { parseCriteria, scopedCriteriaWhere } from "@/lib/cluster-rules";
+import { parseCriteria, scopedCriteriaWhere, criteriaCrops } from "@/lib/cluster-rules";
 
 export interface CreateClusterInput {
   name: string;
@@ -169,7 +169,7 @@ export async function getClusterFarmers(
     const crit = cluster.mode === "dynamic" ? parseCriteria(cluster.criteria) : null;
     // The crop(s) this cluster was built on (any mode) — used to scope the Crop + LTV columns.
     const cCrit = parseCriteria(cluster.criteria);
-    const selectedCrops = [...new Set([...(cCrit?.salesCrops ?? []), ...(cCrit?.cropTags ?? []), ...(cCrit?.visitCrops ?? []), ...(cCrit?.crop ? [cCrit.crop] : [])])];
+    const selectedCrops = criteriaCrops(cCrit);
     const base: Prisma.FarmerWhereInput = crit
       ? scopedCriteriaWhere(crit)
       : { source: "REAL", id: { in: cluster.farmerIds } };
@@ -293,7 +293,7 @@ export async function exportClusterFarmersXlsx(clusterId: number): Promise<{ ok:
 
     const crit = cluster.mode === "dynamic" ? parseCriteria(cluster.criteria) : null;
     const cCrit = parseCriteria(cluster.criteria);
-    const selectedCrops = [...new Set([...(cCrit?.salesCrops ?? []), ...(cCrit?.cropTags ?? []), ...(cCrit?.visitCrops ?? []), ...(cCrit?.crop ? [cCrit.crop] : [])])];
+    const selectedCrops = criteriaCrops(cCrit);
     const base: Prisma.FarmerWhereInput = crit ? scopedCriteriaWhere(crit) : { source: "REAL", id: { in: cluster.farmerIds } };
     const where: Prisma.FarmerWhereInput = fScope ? { AND: [base, fScope] } : base;
 

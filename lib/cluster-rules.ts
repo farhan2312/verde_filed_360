@@ -9,6 +9,7 @@ import { SEGMENT_LABEL_TO_ENUM, LEAD_LABEL_TO_ENUM } from "@/lib/segments";
 import { segMeta } from "@/lib/campaign-segments";
 import { cropLabel } from "@/lib/crops";
 import { inr } from "@/lib/format";
+import { CROP_MATCH_SOURCES, CROP_MATCH_LABEL, criteriaCrops, cropSourcesOf, type CropMatchSource } from "@/lib/crop-sources";
 
 /** The rule that defines a cluster. Every field is an AND-ed condition. */
 export interface ClusterCriteria {
@@ -19,6 +20,9 @@ export interface ClusterCriteria {
   pestTags?: string[]; // any Target Pest/Disease/Weed (item-code derived) — match ANY
   salesCrops?: string[]; // crops from the sales upload — match ANY
   visitCrops?: string[]; // crops from field visits — match ANY
+  /** Current builder: these crops, from ANY of `cropSources` (store = the crops set on the farmer's store). */
+  crops?: string[];
+  cropSources?: CropMatchSource[];
   visitProblem?: string; // farmer has a visit recording this problem
   segment?: string; // legacy display label (High Value…)
   campaignSegment?: string; // legacy single collapsed: HNI | AT_RISK | …
@@ -37,6 +41,8 @@ export interface ClusterCriteria {
   explicitIds?: number[]; // hand-picked (static clusters)
 }
 
+export { CROP_MATCH_SOURCES, CROP_MATCH_LABEL, criteriaCrops, cropSourcesOf, type CropMatchSource };
+
 const kFmt = (n: number) => (n >= 1000 ? `₹${n / 1000}K` : `₹${n}`);
 
 /** Turn a criteria rule into a Prisma Farmer `where`. */
@@ -49,6 +55,15 @@ export function criteriaToWhere(c: ClusterCriteria): Prisma.FarmerWhereInput {
   if (c.pestTags?.length) and.push({ pestTags: { hasSome: c.pestTags } });
   if (c.salesCrops?.length) and.push({ salesCropTags: { hasSome: c.salesCrops } });
   if (c.visitCrops?.length) and.push({ visitCropTags: { hasSome: c.visitCrops } });
+  if (c.crops?.length) {
+    const crops = c.crops;
+    const or: Prisma.FarmerWhereInput[] = cropSourcesOf(c).map((s) =>
+      s === "sales" ? { salesCropTags: { hasSome: crops } }
+      : s === "visit" ? { visitCropTags: { hasSome: crops } }
+      : { store: { is: { cropTags: { hasSome: crops } } } }, // live: follows the farmer's current store
+    );
+    and.push(or.length === 1 ? or[0] : { OR: or });
+  }
   if (c.visitProblem) and.push({ visits: { some: { currentProblem: { has: c.visitProblem } } } });
   if (c.valueSegments?.length) and.push({ valueSegment: { in: c.valueSegments } });
   if (c.lifecycleSegments?.length) and.push({ lifecycleSegment: { in: c.lifecycleSegments } });
@@ -118,6 +133,7 @@ export function describeCriteria(c: ClusterCriteria, storeNames?: Map<number, st
   if (c.pestTags?.length) parts.push(`Pest: ${c.pestTags.join(" / ")}`);
   if (c.salesCrops?.length) parts.push(`Sales crop: ${c.salesCrops.map(cropLabel).join(" / ")}`);
   if (c.visitCrops?.length) parts.push(`Visit crop: ${c.visitCrops.map(cropLabel).join(" / ")}`);
+  if (c.crops?.length) parts.push(`Crop: ${c.crops.map(cropLabel).join(" / ")} (${cropSourcesOf(c).map((s) => CROP_MATCH_LABEL[s].toLowerCase()).join(" or ")})`);
   if (c.visitProblem) parts.push(`Problem: ${c.visitProblem}`);
   if (c.leadStatus) parts.push(`Lead: ${c.leadStatus}`);
   if (c.category) parts.push(`Buys: ${c.category}`);

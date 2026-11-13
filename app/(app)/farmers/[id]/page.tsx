@@ -123,6 +123,7 @@ function buildDetail(
     attendedGhoshti: farmer.attendedGhoshti ?? false,
     salesCrops: farmer.salesCropTags ?? [],
     visitCrops: farmer.visitCropTags ?? [],
+    storeCrops: farmer.store?.cropTags ?? [],
     ltv: inr(ltvBaseNum),
     ltvGst: inr(ltvGstNum),
     saleCount: sales.length,

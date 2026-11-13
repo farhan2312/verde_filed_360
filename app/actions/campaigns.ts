@@ -8,7 +8,7 @@ import { inr } from "@/lib/format";
 import type { Prisma } from "@prisma/client";
 import {
   parseCriteria, resolveClusterCount, resolveClusterIds, scopedCriteriaWhere,
-  hasConditions, type ClusterCriteria,
+  hasConditions, criteriaCrops, type ClusterCriteria,
 } from "@/lib/cluster-rules";
 import { clusterCampaignLock, clusterCampaignLocks } from "@/lib/cluster-locks";
 import { explicitClusterIds, resolveCampaignClusters } from "@/lib/campaign-clusters";
@@ -45,10 +45,15 @@ function cropClause(crop: CropFilter, source: CropSource): string {
 
 /** Distinct crops present across farmers (union of sales + visit), most common first. */
 export async function getCropOptions(): Promise<{ crop: string; count: number }[]> {
-  const rows = await prisma.$queryRawUnsafe<{ crop: string; n: number }[]>(
-    `SELECT unnest("cropTags") crop, COUNT(*)::int n FROM "Farmer" WHERE source='REAL' AND array_length("cropTags",1) > 0 GROUP BY 1 ORDER BY 2 DESC`,
-  );
-  return rows.map((r) => ({ crop: r.crop, count: Number(r.n) }));
+  const [rows, storeRows] = await Promise.all([
+    prisma.$queryRawUnsafe<{ crop: string; n: number }[]>(
+      `SELECT unnest("cropTags") crop, COUNT(*)::int n FROM "Farmer" WHERE source='REAL' AND array_length("cropTags",1) > 0 GROUP BY 1 ORDER BY 2 DESC`,
+    ),
+    prisma.$queryRawUnsafe<{ crop: string }[]>(`SELECT DISTINCT unnest("cropTags") crop FROM "Store" WHERE source='REAL'`),
+  ]);
+  // Crops set only on stores (no sales/visit evidence yet) still need to be pickable — count 0.
+  const seen = new Set(rows.map((r) => r.crop));
+  return [...rows.map((r) => ({ crop: r.crop, count: Number(r.n) })), ...storeRows.filter((r) => !seen.has(r.crop)).map((r) => ({ crop: r.crop, count: 0 }))];
 }
 
 /** Distinct Target Pests/Diseases/Weeds across farmers (item-code derived), most common first. */
@@ -1286,10 +1291,7 @@ interface ProductFilter { crops: string[]; categories: string[]; all: boolean }
 function productFilterOf(criteria: ClusterCriteria[]): ProductFilter {
   const crops = new Set<string>(), cats = new Set<string>();
   for (const c of criteria) {
-    for (const x of c.cropTags ?? []) crops.add(x);
-    for (const x of c.salesCrops ?? []) crops.add(x);
-    for (const x of c.visitCrops ?? []) crops.add(x);
-    if (c.crop) crops.add(c.crop);
+    for (const x of criteriaCrops(c)) crops.add(x);
     if (c.category) cats.add(c.category);
   }
   return { crops: [...crops], categories: [...cats], all: crops.size === 0 && cats.size === 0 };

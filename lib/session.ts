@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import {
   PERSONAS,
@@ -19,7 +20,8 @@ function impersonatedRole(): RoleKey | null {
 }
 
 /** Effective role for nav/RBAC. Admins may impersonate any role; others get their own. */
-export async function getRole(): Promise<RoleKey> {
+/** The effective role (an admin's impersonated role wins). Memoised per request. */
+export const getRole = cache(async (): Promise<RoleKey> => {
   const s = await getSession();
   if (!s) return "regional";
   if (s.isAdmin) {
@@ -27,10 +29,10 @@ export async function getRole(): Promise<RoleKey> {
     if (imp) return imp;
   }
   return s.roleKey;
-}
+});
 
-/** Sidebar footer identity. Admin impersonating → the demo persona; else the real user. */
-export async function getPersona(): Promise<Persona> {
+/** Sidebar footer identity. Admin impersonating → the demo persona; else the real user. Memoised per request. */
+export const getPersona = cache(async (): Promise<Persona> => {
   const s = await getSession();
   if (!s) return PERSONAS.regional;
   if (s.isAdmin) {
@@ -44,4 +46,4 @@ export async function getPersona(): Promise<Persona> {
     init: initials(s.name),
     color: roleGradient(s.roleKey),
   };
-}
+});

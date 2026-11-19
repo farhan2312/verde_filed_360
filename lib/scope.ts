@@ -3,6 +3,7 @@
  * create/extend projects & campaigns. Officers are scoped to their store; Regional
  * Managers to their zone (region). Used by the campaign server actions.
  */
+import { cache } from "react";
 import type { Prisma } from "@prisma/client";
 import { getSession } from "./auth";
 import { getRole } from "./session";
@@ -40,13 +41,17 @@ export async function managedStoreIdsFor(userId: number, name: string): Promise<
   return rows.map((s) => s.id);
 }
 
-export async function getScope(): Promise<Scope> {
+/**
+ * Memoised per request: the layout, the page and every server action in a render all need the scope,
+ * and each call otherwise costs a User lookup plus (for an RM) a Store scan. One request, one lookup.
+ */
+export const getScope = cache(async (): Promise<Scope> => {
   const [role, session] = await Promise.all([getRole(), getSession()]);
   if (!session) return { role, userId: null, storeId: null, zone: null, managedStoreIds: null };
   const u = await prisma.user.findUnique({ where: { id: session.userId }, select: { name: true, storeId: true, zone: true } });
   const managedStoreIds = role === "regional" ? await managedStoreIdsFor(session.userId, u?.name ?? "") : null;
   return { role, userId: session.userId, storeId: u?.storeId ?? null, zone: u?.zone ?? null, managedStoreIds };
-}
+});
 
 /** Central team + Sysadmin may create / extend / delete projects & campaigns. */
 export function canManage(role: RoleKey): boolean {
@@ -176,9 +181,10 @@ export interface Actor {
  * Audit identity: the ACTUAL logged-in user (never the impersonated persona) —
  * recorded on visit forms and campaign-outreach marks alongside the timestamp.
  */
-export async function getActor(): Promise<Actor> {
+/** Memoised per request — audit writes call this from many places in one action. */
+export const getActor = cache(async (): Promise<Actor> => {
   const session = await getSession();
   if (!session) return { name: "Unknown", code: null, userId: null };
   const u = await prisma.user.findUnique({ where: { id: session.userId }, select: { name: true, employeeCode: true } });
   return { name: u?.name ?? "Unknown", code: u?.employeeCode ?? null, userId: session.userId };
-}
+});

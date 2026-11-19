@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { visitMediaUrls } from "@/lib/visit-media";
 import { getScope, getActor, visitScopeWhere } from "@/lib/scope";
 import { shortStoreName } from "@/lib/store-utils";
 import { loadReviewState, REVIEW_STATE_SELECT, istDate, istDateTime } from "@/lib/visit-review-state";
@@ -72,13 +73,18 @@ export async function getReviewDrawer(visitId: number): Promise<DrawerData | nul
   }
 }
 
-/** Photos + voice notes for one visit — fetched only when the reviewer asks (multi-MB base64). */
+/**
+ * Media URLs for one visit, fetched when the reviewer asks to see them. This used to return the raw
+ * base64 and push ~1.8 MB through a server action; it now reads only the counts and hands back URLs
+ * that app/api/visits/[id]/media serves (same scope rule), so the browser streams and caches each
+ * item instead.
+ */
 export async function getVisitMedia(visitId: number): Promise<{ photos: string[]; voiceNotes: string[] } | null> {
   const ctx = await drawerScope(visitId);
   if (!ctx) return null;
   try {
-    const v = await prisma.visit.findFirst({ where: ctx.where, select: { photos: true, voiceNotes: true } });
-    return v ? { photos: v.photos ?? [], voiceNotes: v.voiceNotes ?? [] } : null;
+    const v = await prisma.visit.findFirst({ where: ctx.where, select: { id: true, photoCount: true, voiceNoteCount: true } });
+    return v ? visitMediaUrls(v.id, v.photoCount, v.voiceNoteCount) : null;
   } catch {
     return null;
   }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getScope, visitScopeWhere, getActor } from "@/lib/scope";
 import { initials, avatarColor } from "@/lib/format";
 import { shortStoreName, storeColor } from "@/lib/store-utils";
+import { visitMediaUrls } from "@/lib/visit-media";
 import {
   SEGMENT_ENUM_TO_LABEL,
   SEGMENT_COLORS,
@@ -70,8 +71,8 @@ type VisitRow = {
   dairyDetail: string | null;
   whatsappAvail: boolean;
   whatsappNumber: string | null;
-  photos: string[];
-  voiceNotes: string[];
+  photoCount: number | null;
+  voiceNoteCount: number | null;
   farmer: {
     id: number;
     name: string;
@@ -251,8 +252,10 @@ export default async function VisitDetailPage({
         dairyDetail: true,
         whatsappAvail: true,
         whatsappNumber: true,
-        photos: true,
-        voiceNotes: true,
+        // NOT photos / voiceNotes: those are multi-MB base64 arrays and selecting them forces Postgres
+        // to de-TOAST the lot on every page view. The counts are enough to build the media URLs.
+        photoCount: true,
+        voiceNoteCount: true,
         farmer: {
           select: {
             id: true,
@@ -357,8 +360,7 @@ export default async function VisitDetailPage({
     dairyDetail: visit.dairyDetail ?? "",
     whatsappAvail: visit.whatsappAvail,
     whatsappNumber: visit.whatsappNumber ?? "",
-    photos: visit.photos ?? [],
-    voiceNotes: visit.voiceNotes ?? [],
+    ...visitMediaUrls(visit.id, visit.photoCount, visit.voiceNoteCount),
     visitMode: visit.visitMode ?? "",
     justCreated,
   };

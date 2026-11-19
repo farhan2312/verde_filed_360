@@ -175,8 +175,11 @@ export default async function VisitRepoPage({
     const [totalCount, followupCount, officerDistinct, farmerDistinct, visits] = await Promise.all([
       prisma.visit.count({ where: scopedWhere }),
       prisma.visit.count({ where: { AND: [scopedWhere, { followUpDate: { not: null } }] } }),
-      prisma.visit.findMany({ where: { AND: [scopedWhere, { officerName: { not: null } }] }, select: { officerName: true }, distinct: ["officerName"] }),
-      prisma.visit.findMany({ where: { AND: [scopedWhere, { farmerId: { not: null } }] }, select: { farmerId: true }, distinct: ["farmerId"] }),
+      // groupBy, not findMany+distinct: Prisma applies `distinct` in JS, so the old form SELECTed every
+      // matching visit just to count how many officers / farmers were involved. groupBy pushes it down
+      // to a SQL GROUP BY, so the DB returns one row per distinct value instead of one per visit.
+      prisma.visit.groupBy({ by: ["officerName"], where: { AND: [scopedWhere, { officerName: { not: null } }] } }),
+      prisma.visit.groupBy({ by: ["farmerId"], where: { AND: [scopedWhere, { farmerId: { not: null } }] } }),
       prisma.visit.findMany({
         where: scopedWhere,
         orderBy: [{ visitedAt: "desc" }, { id: "desc" }],

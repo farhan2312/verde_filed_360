@@ -50,12 +50,14 @@ export const FALLBACK_OPTIONS: Record<FieldKey, string[]> = {
   ],
   mainCrop: [
     "Wheat", "Paddy", "Maize", "Mustard", "Potato", "Sugarcane", "Gram",
-    "Arhar", "Urad", "Moong", "Soybean", "Groundnut", "Vegetables", "Fruits", "Other",
+    "Arhar", "Urad", "Moong", "Soybean", "Groundnut", "Cotton", "Tobacco",
+    "Vegetables", "Fruits", "Other",
   ],
   crop: [
     "Wheat", "Paddy", "Maize", "Mustard", "Potato", "Sugarcane", "Gram",
-    "Arhar", "Urad", "Moong", "Soybean", "Groundnut", "Tomato", "Onion",
-    "Chilli", "Brinjal", "Okra", "Cabbage", "Cauliflower", "Pea", "Other",
+    "Arhar", "Urad", "Moong", "Soybean", "Groundnut", "Cotton", "Tobacco",
+    "Tomato", "Onion", "Chilli", "Brinjal", "Okra", "Cabbage", "Cauliflower",
+    "Pea", "Other",
   ],
   pests: [
     // Insect pests

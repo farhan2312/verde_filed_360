@@ -72,6 +72,27 @@ async function main() {
   };
   const errOf = (b: any) => `${b?.error?.message ?? "unknown error"}${b?.error?.code ? ` (code ${b.error.code})` : ""}`;
 
+  // Inspect the token once, up front: its granted scopes and the assets it was granted them ON.
+  // Scope and asset access are DIFFERENT things and fail identically from the outside, so knowing
+  // both turns "missing permissions" into an exact instruction.
+  const dbg = await call(`debug_token?input_token=${encodeURIComponent(token)}`);
+  const tokenData = dbg.body?.data ?? {};
+  const grantedScopes: string[] = tokenData.scopes ?? [];
+  const granular: any[] = tokenData.granular_scopes ?? [];
+  const waTargets = [...new Set(granular.filter((g) => /^whatsapp_business_/.test(g?.scope ?? "")).flatMap((g) => g?.target_ids ?? []))] as string[];
+  const hasMgmt = grantedScopes.includes("whatsapp_business_management");
+  const hasMsg = grantedScopes.includes("whatsapp_business_messaging");
+
+  console.log("\n2b. The token itself\n");
+  if (tokenData.is_valid) {
+    ok(`Valid ${tokenData.type ?? "token"}, expires: ${tokenData.expires_at === 0 ? "never" : new Date((tokenData.expires_at ?? 0) * 1000).toISOString()}`);
+    if (tokenData.expires_at) bad("This token EXPIRES — generate a System User token with expiration set to Never.");
+    hasMsg ? ok("Scope whatsapp_business_messaging granted") : bad("Scope whatsapp_business_messaging MISSING");
+    hasMgmt ? ok("Scope whatsapp_business_management granted") : bad("Scope whatsapp_business_management MISSING");
+    if (waTargets.length) ok(`Granted on WhatsApp asset(s): ${waTargets.join(", ")}`);
+    else warn("The token is not granted on ANY WhatsApp asset — the system user has no WABA assigned to it.");
+  } else if (dbg.status !== 200) warn(`Could not inspect the token: ${errOf(dbg.body)}`);
+
   console.log("\n3. Sending — can the token use this number?\n");
   const ph = await call(`${phoneId}?fields=display_phone_number,verified_name,quality_rating,code_verification_status`);
   if (ph.status === 200) {
@@ -97,18 +118,11 @@ async function main() {
       else warn(`Business ${businessId} owns no WhatsApp Business Accounts — is that the right business id?`);
     } else warn(`Could not look the WABA id up from business ${businessId}: ${errOf(owned.body)}`);
   }
-  // Fallback: the token itself knows which WABAs it was granted. debug_token reports granular_scopes,
-  // whose target_ids for the whatsapp_business_* scopes ARE the WABA ids — no business_management needed.
+  // Already-known asset grants double as the WABA id when it was not supplied.
   if (!wabaId) {
-    const dbg = await call(`debug_token?input_token=${encodeURIComponent(token)}`);
-    const scopes: any[] = dbg.body?.data?.granular_scopes ?? [];
-    const ids = [...new Set(scopes.filter((s) => /^whatsapp_business_/.test(s?.scope ?? "")).flatMap((s) => s?.target_ids ?? []))] as string[];
-    const granted: string[] = dbg.body?.data?.scopes ?? [];
-    if (granted.length) ok(`Token scopes: ${granted.join(", ")}`);
-    const waba = ids.filter((id) => id !== phoneId && id !== businessId);
-    if (waba.length === 1) ok(`Found the WABA id — put this in WHATSAPP_WABA_ID:  ${waba[0]}`);
-    else if (waba.length > 1) { warn("The token covers several WhatsApp accounts — pick the Verde one:"); for (const id of waba) console.log(`        · ${id}`); }
-    else if (dbg.status !== 200) warn(`Could not inspect the token: ${errOf(dbg.body)}`);
+    const waba = waTargets.filter((id) => id !== phoneId && id !== businessId);
+    if (waba.length === 1) ok(`Found the WABA id - put this in WHATSAPP_WABA_ID:  ${waba[0]}`);
+    else if (waba.length > 1) { warn("The token covers several WhatsApp accounts - pick the Verde one:"); for (const id of waba) console.log(`        . ${id}`); }
   }
   if (!wabaId) warn("WHATSAPP_WABA_ID is blank — sending will work, the Templates tab stays disabled.");
   else {
@@ -119,8 +133,20 @@ async function main() {
       for (const x of list) console.log(`        · ${x.name} — ${x.status}`);
     } else {
       bad(`Cannot list templates: ${errOf(t.body)}`);
-      console.log("        → almost always the missing whatsapp_business_management scope. Sending still works;");
-      console.log("          only the Templates screen fails, which looks like an app bug but is a token scope.");
+      // Two different causes, same Meta error. Separate them using what debug_token already told us.
+      if (!hasMgmt) {
+        console.log("        → CAUSE: the token lacks the whatsapp_business_management scope.");
+        console.log("          FIX: regenerate the System User token with that permission ticked.");
+      } else if (!waTargets.includes(wabaId)) {
+        console.log("        → CAUSE: the scope IS granted, but this WABA is not assigned to the system user,");
+        console.log(`          so the token has no access to object ${wabaId}. Re-ticking permissions will NOT help.`);
+        console.log("          FIX: Business settings -> Users -> System users -> pick the user -> Add assets ->");
+        console.log("               WhatsApp accounts -> tick the Verde WABA -> enable 'Manage WhatsApp business");
+        console.log("               account' -> Save. Then generate a NEW token (asset grants are baked in at");
+        console.log("               generation time, so the existing token stays blind).");
+      } else {
+        console.log(`        → Scope and asset both look right. Check WHATSAPP_WABA_ID (${wabaId}) is the Verde WABA.`);
+      }
     }
   }
 

@@ -34,6 +34,24 @@ export async function GET() {
       SALES_API_TOKEN: salesApiConfig().ready,
       CRON_SECRET: !!process.env.CRON_SECRET,
     },
+    // WhatsApp: presence only, never a value. `wa.ready` is what the app itself gates sending on;
+    // `verifyToken` false is the usual reason Meta's webhook "Verify and save" returns 403, since the
+    // handshake compares against this var on the DEPLOYED build (env changes need a redeploy).
+    // `tokenLooksQuoted` catches a value pasted into Vercel with its quotes still attached.
+    wa: (() => {
+      const t = (process.env.WHATSAPP_ACCESS_TOKEN ?? "").trim();
+      const bare = t.replace(/^['"]|['"]$/g, "");
+      return {
+        ready: !!bare && !!(process.env.WHATSAPP_PHONE_NUMBER_ID ?? "").trim(),
+        accessToken: !!t,
+        tokenLooksQuoted: !!t && t !== bare,
+        phoneNumberId: !!(process.env.WHATSAPP_PHONE_NUMBER_ID ?? "").trim(),
+        wabaId: !!(process.env.WHATSAPP_WABA_ID ?? "").trim(),
+        appSecret: !!(process.env.WHATSAPP_APP_SECRET ?? "").trim(),
+        verifyToken: !!(process.env.WHATSAPP_VERIFY_TOKEN ?? "").trim(),
+        appUrl: process.env.APP_URL ?? null,
+      };
+    })(),
     runtime: { node: process.version, vercelRegion: process.env.VERCEL_REGION ?? null, env: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? null },
   }, { status: db.ok ? 200 : 503 });
 }

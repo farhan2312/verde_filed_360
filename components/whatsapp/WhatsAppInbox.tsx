@@ -74,7 +74,7 @@ export function WhatsAppInbox({ initial }: { initial: InboxData | null }) {
         <button type="button" onClick={() => load(filter, q)} className="ml-auto rounded-[8px] border border-[#E0E0E0] px-3 py-1.5 text-[12px] font-semibold text-[#616161] hover:bg-[#F5F5F5]">↻ Refresh</button>
       </div>
 
-      <div className="flex h-[calc(100vh-190px)] min-h-[460px] overflow-hidden rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="flex h-[calc(100vh-236px)] min-h-[460px] overflow-hidden rounded-[14px] border border-black/[0.04] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         {/* Conversation list */}
         <div className={`flex w-full flex-col border-r border-[#F0F0F0] sm:w-[340px] ${selected ? "hidden sm:flex" : "flex"}`}>
           <div className="border-b border-[#F0F0F0] p-2.5">

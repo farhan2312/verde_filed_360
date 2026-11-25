@@ -63,9 +63,11 @@ function DefineTab({ cfg, commPlanNames, commPlanMediums, onSaved }: { cfg: Camp
   const [saving, startSave] = useTransition();
 
   const patch = (i: number, p: Partial<PhaseVM>) => setPhases((ps) => ps.map((x, j) => j === i ? { ...x, ...p } : x));
+  // Round 2 onward starts with Round 1's coupons (copied, so editing one round never changes another);
+  // the user can remove them or add more.
   const addPhase = () => setPhases((ps) => [...ps, {
     id: -(ps.length + 1) - 100, ordinal: (ps.at(-1)?.ordinal ?? 0) + 1, name: "",
-    defaultStart: cfg.campaignStart, defaultEnd: cfg.campaignEnd, coupons: [],
+    defaultStart: cfg.campaignStart, defaultEnd: cfg.campaignEnd, coupons: (ps[0]?.coupons ?? []).map((c) => ({ ...c })),
     messaging: { targets: [], purchased: [], notPurchased: [] },
   }]);
   const removePhase = (i: number) => setPhases((ps) => ps.filter((_, j) => j !== i).map((x, k) => ({ ...x, ordinal: k + 1 })));
@@ -145,6 +147,7 @@ function PhaseCard({ phase, commPlanNames, commPlanMediums, onPatch, onRemove, c
       <div className="mt-3 border-t border-[#F5F5F5] pt-3">
         <div className="mb-1.5 flex items-center justify-between"><span className={LBL}>Offers / coupons (fill message [coupon])</span>
           <button type="button" onClick={addCoupon} className="text-[11px] font-semibold text-[#7DA02E]">+ Add coupon</button></div>
+        {phase.ordinal > 1 && <div className="mb-1.5 text-[11px] text-[#9E9E9E]">New rounds start with Round 1&apos;s coupons — remove any you don&apos;t want, or add more.</div>}
         {phase.coupons.length === 0 ? <div className="text-[11.5px] text-[#BDBDBD]">No coupons for this round.</div> : (
           <div className="flex flex-col gap-1.5">
             {phase.coupons.map((c, ci) => (

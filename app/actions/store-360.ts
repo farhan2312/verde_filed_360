@@ -161,6 +161,8 @@ export interface StoreDetail {
     overdueActions: number;
     visits: number;
     ghoshti: number;
+    optIns: number;
+    optIns30: number;
   };
   officers: { name: string; code: string | null; role: string; lastActive: string | null; visits: number }[];
   valueSeg: { label: string; count: number; color: string }[];
@@ -209,7 +211,7 @@ export async function getStoreDetail(storeId: number): Promise<StoreDetail | nul
   const sod = startOfToday(); // overdue = due strictly before today, IST (matches Action Registry)
 
   const [
-    farmerCount, officerRows, ltvAgg, openActions, overdueActions, doneActions, visitCount, ghoshtiCount,
+    farmerCount, officerRows, ltvAgg, openActions, overdueActions, doneActions, visitCount, ghoshtiCount, optInCount, optIn30Count,
     valueG, lifecycleG, topFarmers, monthly, topCrops, topProducts,
     camMembers, camReached, recentActions, recentVisitRows, ghoshtiRows,
   ] = await Promise.all([
@@ -225,6 +227,9 @@ export async function getStoreDetail(storeId: number): Promise<StoreDetail | nul
     prisma.action.count({ where: { storeId, status: "DONE" } }),
     prisma.visit.count({ where: { storeId } }),
     prisma.ghoshti.count({ where: { storeId } }),
+    // WhatsApp opt-ins = this store's farmers who messaged us / scanned the QR (Farmer.whatsappOptIn), + last 30 days.
+    prisma.farmer.count({ where: { storeId, whatsappOptIn: true } }),
+    prisma.farmer.count({ where: { storeId, whatsappOptIn: true, whatsappOptInAt: { gte: new Date(Date.now() - 30 * 86_400_000) } } }),
     prisma.farmer.groupBy({ by: ["valueSegment"], where: { storeId, valueSegment: { not: null } }, _count: { _all: true } }),
     prisma.farmer.groupBy({ by: ["lifecycleSegment"], where: { storeId, lifecycleSegment: { not: null } }, _count: { _all: true } }),
     prisma.farmer.findMany({
@@ -340,6 +345,8 @@ export async function getStoreDetail(storeId: number): Promise<StoreDetail | nul
       overdueActions,
       visits: visitCount,
       ghoshti: ghoshtiCount,
+      optIns: optInCount,
+      optIns30: optIn30Count,
     },
     officers,
     valueSeg: segRow(valueG, "valueSegment", VALUE_SEGMENTS),

@@ -97,6 +97,19 @@ async function main() {
       else warn(`Business ${businessId} owns no WhatsApp Business Accounts — is that the right business id?`);
     } else warn(`Could not look the WABA id up from business ${businessId}: ${errOf(owned.body)}`);
   }
+  // Fallback: the token itself knows which WABAs it was granted. debug_token reports granular_scopes,
+  // whose target_ids for the whatsapp_business_* scopes ARE the WABA ids — no business_management needed.
+  if (!wabaId) {
+    const dbg = await call(`debug_token?input_token=${encodeURIComponent(token)}`);
+    const scopes: any[] = dbg.body?.data?.granular_scopes ?? [];
+    const ids = [...new Set(scopes.filter((s) => /^whatsapp_business_/.test(s?.scope ?? "")).flatMap((s) => s?.target_ids ?? []))] as string[];
+    const granted: string[] = dbg.body?.data?.scopes ?? [];
+    if (granted.length) ok(`Token scopes: ${granted.join(", ")}`);
+    const waba = ids.filter((id) => id !== phoneId && id !== businessId);
+    if (waba.length === 1) ok(`Found the WABA id — put this in WHATSAPP_WABA_ID:  ${waba[0]}`);
+    else if (waba.length > 1) { warn("The token covers several WhatsApp accounts — pick the Verde one:"); for (const id of waba) console.log(`        · ${id}`); }
+    else if (dbg.status !== 200) warn(`Could not inspect the token: ${errOf(dbg.body)}`);
+  }
   if (!wabaId) warn("WHATSAPP_WABA_ID is blank — sending will work, the Templates tab stays disabled.");
   else {
     const t = await call(`${wabaId}/message_templates?fields=name,status&limit=5`);
